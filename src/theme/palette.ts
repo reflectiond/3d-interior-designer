@@ -56,4 +56,9 @@ export const PALETTE = {
     wardrobe: '#FFF8E1',
     veranda: '#E0F2F1',
   },
+  // UI text
+  text: {
+    primary: '#333333',
+    secondary: '#666666',
+  },
 } as const;

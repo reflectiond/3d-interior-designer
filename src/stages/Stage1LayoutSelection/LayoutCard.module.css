@@ -1,0 +1,104 @@
+.card {
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.2s;
+  cursor: pointer;
+  background: #fff;
+}
+
+.card:hover {
+  border-color: #90caf9;
+}
+
+.card.selected {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.preview {
+  aspect-ratio: 4 / 3;
+  background: #fafafa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0.5rem;
+}
+
+.minimap {
+  width: 100%;
+  height: 100%;
+  --wall-color: #424242;
+}
+
+.room_bedroom {
+  fill: #e8f5e9;
+}
+.room_bathroom {
+  fill: #e1f5fe;
+}
+.room_kitchen {
+  fill: #fff3e0;
+}
+.room_boiler {
+  fill: #ffebee;
+}
+.room_living {
+  fill: #f3e5f5;
+}
+.room_corridor {
+  fill: #f5f5f5;
+}
+.room_wardrobe {
+  fill: #fff8e1;
+}
+.room_default {
+  fill: #eeeeee;
+}
+
+.info {
+  text-align: left;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.area {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.rooms {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: #999;
+  line-height: 1.3;
+}
+
+.button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #1976d2;
+  color: white;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.button:hover {
+  background: #1565c0;
+}
+
+.card.selected .button {
+  background: #4caf50;
+}
