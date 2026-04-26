@@ -52,5 +52,8 @@ export const PALETTE = {
     boiler: '#FFEBEE',
     living: '#F3E5F5',
     bedroom: '#E8F5E9',
+    corridor: '#F5F5F5',
+    wardrobe: '#FFF8E1',
+    veranda: '#E0F2F1',
   },
 } as const;
