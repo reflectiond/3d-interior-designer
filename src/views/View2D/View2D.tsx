@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Stage as KonvaStage, Layer, Rect, Text, Circle, Line } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useProjectStore } from '../../store/projectStore';
@@ -48,9 +48,6 @@ export function View2D({ interactionMode = 'none', electricalPointType = 'socket
       const edge = findNearestWallEdge(tileX, tileY, rooms, layout.gridWidth, layout.gridHeight);
 
       if (!edge) return;
-
-      // Don't allow points on external walls
-      if (edge.isExternal) return;
 
       const pointId = `ep_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
@@ -190,23 +187,35 @@ export function View2D({ interactionMode = 'none', electricalPointType = 'socket
             );
           })}
 
-          {/* Electrical points */}
-          {electricalPoints.map((point) => {
+          {/* Electrical points with numbers */}
+          {electricalPoints.map((point, index) => {
             const px = (Number(point.wallId.split('_')[1]) + 0.5) * SCALE;
             const py = (gridHeight - Number(point.wallId.split('_')[2]) - 0.5) * SCALE;
             const color =
               point.type === 'socket' ? PALETTE.electrical.socket : PALETTE.electrical.switch;
+            const num = index + 1;
             return (
-              <Circle
-                key={`epoint-${point.id}`}
-                x={px}
-                y={py}
-                radius={SCALE * 0.35}
-                fill={color}
-                opacity={0.9}
-                stroke={PALETTE.walls.external}
-                strokeWidth={1}
-              />
+              <React.Fragment key={`epoint-${point.id}`}>
+                <Circle
+                  x={px}
+                  y={py}
+                  radius={SCALE * 0.4}
+                  fill={color}
+                  stroke={PALETTE.walls.external}
+                  strokeWidth={1}
+                />
+                <Text
+                  x={px - SCALE * 0.25}
+                  y={py - SCALE * 0.2}
+                  width={SCALE * 0.5}
+                  align="center"
+                  text={String(num)}
+                  fontSize={10}
+                  fontStyle="bold"
+                  fill="white"
+                  listening={false}
+                />
+              </React.Fragment>
             );
           })}
 

@@ -36,7 +36,7 @@ export function ElectricalPanel({ pointType, onPointTypeChange }: ElectricalPane
       </div>
 
       <p style={{ fontSize: '0.82rem', color: PALETTE.text.secondary, margin: '0 0 0.75rem' }}>
-        Кликните по краю комнаты на схеме справа, чтобы добавить точку. Внешние стены заблокированы.
+        Кликните по краю комнаты на схеме справа, чтобы добавить точку.
       </p>
 
       {electricalPoints.length === 0 ? (
