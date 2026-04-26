@@ -14,21 +14,9 @@ const layoutsById = new Map([
   [3, LayoutSchema.parse(layout3Data)],
 ]);
 
-interface SavedState {
-  version: '1.0';
-  layoutId: 1 | 2 | 3 | null;
-  currentStage: 1 | 2 | 3 | 4;
-  flooring: Record<string, string>;
-  ceiling: Record<string, string>;
-  electricalPoints: ProjectState['electricalPoints'];
-  floorCovering: Record<string, string>;
-  wallCovering: Record<string, string>;
-  furniture: ProjectState['furniture'];
-}
-
 export function saveToLocalStorage(state: ProjectState) {
   try {
-    const data: SavedState = {
+    const data = {
       version: '1.0',
       layoutId: state.layoutId,
       currentStage: state.currentStage,
@@ -41,7 +29,7 @@ export function saveToLocalStorage(state: ProjectState) {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {
-    // Silently fail if localStorage is unavailable
+    // Silently fail — SEC-4: localStorage may be unavailable or full
   }
 }
 
@@ -50,28 +38,56 @@ export function restoreFromLocalStorage(): boolean {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return false;
 
-    const data = JSON.parse(raw) as SavedState;
-    if (data.version !== '1.0' || !data.layoutId) return false;
+    // SEC-4: validate JSON structure before using
+    const data = JSON.parse(raw);
+    if (
+      typeof data !== 'object' ||
+      data === null ||
+      data.version !== '1.0' ||
+      typeof data.layoutId !== 'number' ||
+      ![1, 2, 3].includes(data.layoutId)
+    ) {
+      localStorage.removeItem(STORAGE_KEY);
+      return false;
+    }
 
     const store = useProjectStore.getState();
     const layout = layoutsById.get(data.layoutId);
-    if (layout) {
-      store.selectLayout(layout);
+    if (!layout) {
+      localStorage.removeItem(STORAGE_KEY);
+      return false;
     }
 
+    store.selectLayout(layout);
+
     useProjectStore.setState({
-      currentStage: data.currentStage,
-      flooring: (data.flooring ?? {}) as Record<string, FloorType>,
-      ceiling: (data.ceiling ?? {}) as Record<string, CeilingType>,
-      electricalPoints: data.electricalPoints ?? [],
-      floorCovering: (data.floorCovering ?? {}) as Record<string, FloorCovering>,
-      wallCovering: (data.wallCovering ?? {}) as Record<string, WallCovering>,
-      furniture: data.furniture ?? [],
+      currentStage: [1, 2, 3, 4].includes(data.currentStage) ? data.currentStage : 1,
+      flooring: (data.flooring && typeof data.flooring === 'object' ? data.flooring : {}) as Record<
+        string,
+        FloorType
+      >,
+      ceiling: (data.ceiling && typeof data.ceiling === 'object' ? data.ceiling : {}) as Record<
+        string,
+        CeilingType
+      >,
+      electricalPoints: Array.isArray(data.electricalPoints) ? data.electricalPoints : [],
+      floorCovering: (data.floorCovering && typeof data.floorCovering === 'object'
+        ? data.floorCovering
+        : {}) as Record<string, FloorCovering>,
+      wallCovering: (data.wallCovering && typeof data.wallCovering === 'object'
+        ? data.wallCovering
+        : {}) as Record<string, WallCovering>,
+      furniture: Array.isArray(data.furniture) ? data.furniture : [],
     });
 
     return true;
   } catch {
-    localStorage.removeItem(STORAGE_KEY);
+    // SEC-4: corrupted data — start fresh, don't crash
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // localStorage completely broken — ignore
+    }
     return false;
   }
 }

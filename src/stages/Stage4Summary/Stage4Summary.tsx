@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useProjectStore } from '../../store/projectStore';
 import { computeEstimate } from '../../domain/pricing/estimator';
 import type { CatalogItem } from '../../domain/furniture/placement';
 import { exportProjectJSON, importProjectJSON } from '../../persistence/jsonExportImport';
+import { exportPDF } from '../../export/pdfExporter';
+import { exportPNG } from '../../export/imageExporter';
 import catalogData from '../../data/furniture-catalog.json';
 import styles from './Stage4Summary.module.css';
 
@@ -46,6 +48,17 @@ export function Stage4Summary() {
   const roughItems = estimate.items.filter((i) => i.category === 'rough');
   const fineItems = estimate.items.filter((i) => i.category === 'fine');
   const furnitureItems = estimate.items.filter((i) => i.category === 'furniture');
+
+  const handleExportPDF = useCallback(() => {
+    const canvas2D = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
+    const canvas3D = document.querySelector('canvas[data-engine]') as HTMLCanvasElement | null;
+    exportPDF(estimate, canvas2D, canvas3D);
+  }, [estimate]);
+
+  const handleExportPNG = useCallback(() => {
+    const canvas2D = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
+    exportPNG(canvas2D);
+  }, []);
 
   const handleExportJSON = () => {
     exportProjectJSON(state);
@@ -156,6 +169,12 @@ export function Stage4Summary() {
       <div className={styles.actions}>
         <button className={styles.backBtn} onClick={() => setStage(3)}>
           ← Назад
+        </button>
+        <button className={styles.actionBtn} onClick={handleExportPDF}>
+          Сохранить как PDF
+        </button>
+        <button className={styles.actionBtn} onClick={handleExportPNG}>
+          Сохранить как PNG
         </button>
         <button className={styles.actionBtn} onClick={handleExportJSON}>
           Сохранить проект (JSON)
