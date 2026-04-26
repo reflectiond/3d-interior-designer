@@ -1,4 +1,4 @@
-import { Stage as KonvaStage, Layer, Rect, Text, Circle } from 'react-konva';
+import { Stage as KonvaStage, Layer, Rect, Text, Circle, Line } from 'react-konva';
 import { useProjectStore } from '../../store/projectStore';
 import { PALETTE } from '../../theme/palette';
 import { TILE_SIZE } from '../../domain/geometry/tiles';
@@ -12,7 +12,8 @@ function roomColor(type: Room['type']): string {
 }
 
 export function View2D() {
-  const { layout, rooms, electricalPanel } = useProjectStore();
+  const { layout, rooms, electricalPanel, flooring, electricalRoutes, electricalPoints } =
+    useProjectStore();
 
   if (!layout) return null;
 
@@ -100,6 +101,62 @@ export function View2D() {
               />
             </>
           )}
+
+          {/* Heated floor highlight */}
+          {rooms
+            .filter((r) => flooring[r.id] === 'screed_heated')
+            .map((room) => (
+              <Rect
+                key={`heated-${room.id}`}
+                x={room.rect.x * SCALE + 2}
+                y={(gridHeight - room.rect.y - room.rect.height) * SCALE + 2}
+                width={room.rect.width * SCALE - 4}
+                height={room.rect.height * SCALE - 4}
+                stroke={PALETTE.electrical.wire}
+                strokeWidth={2}
+                dash={[6, 3]}
+                listening={false}
+              />
+            ))}
+
+          {/* Electrical routes */}
+          {electricalRoutes.map((route) => {
+            if (route.path.length < 2) return null;
+            const points = route.path.flatMap((t) => [
+              (t.x + 0.5) * SCALE,
+              (gridHeight - t.y - 0.5) * SCALE,
+            ]);
+            return (
+              <Line
+                key={`route-${route.pointId}`}
+                points={points}
+                stroke={PALETTE.electrical.wire}
+                strokeWidth={2}
+                lineCap="round"
+                lineJoin="round"
+                listening={false}
+              />
+            );
+          })}
+
+          {/* Electrical points */}
+          {electricalPoints.map((point) => {
+            // Find room for this point based on wall proximity
+            const px = (Number(point.wallId.split('_')[1] ?? 0) + 0.5) * SCALE;
+            const py = (gridHeight - Number(point.wallId.split('_')[2] ?? 0) - 0.5) * SCALE;
+            const color =
+              point.type === 'socket' ? PALETTE.electrical.socket : PALETTE.electrical.switch;
+            return (
+              <Circle
+                key={`epoint-${point.id}`}
+                x={px}
+                y={py}
+                radius={SCALE * 0.35}
+                fill={color}
+                opacity={0.9}
+              />
+            );
+          })}
 
           {/* Veranda (if present, semi-transparent) */}
           {layout.veranda && (

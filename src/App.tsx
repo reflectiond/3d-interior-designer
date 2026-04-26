@@ -1,6 +1,7 @@
 import { useProjectStore } from './store/projectStore';
 import { StageNavigator } from './stages/StageNavigator';
 import { Stage1LayoutSelection } from './stages/Stage1LayoutSelection/Stage1LayoutSelection';
+import { Stage2RoughFinish } from './stages/Stage2RoughFinish/Stage2RoughFinish';
 import { View2D } from './views/View2D/View2D';
 import './App.css';
 
@@ -20,12 +21,7 @@ function App() {
             {layoutId !== null && <View2D />}
           </>
         )}
-        {currentStage === 2 && (
-          <div className="app-placeholder">
-            <View2D />
-            <p>Этап 2 — Черновая отделка (в разработке)</p>
-          </div>
-        )}
+        {currentStage === 2 && <Stage2RoughFinish />}
         {currentStage === 3 && (
           <div className="app-placeholder">
             <p>Этап 3 — Чистовая отделка (в разработке)</p>
