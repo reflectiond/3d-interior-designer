@@ -1,0 +1,103 @@
+.container {
+  padding: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.heading {
+  text-align: center;
+  margin: 0 0 1.5rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.nextButton {
+  padding: 0.75rem 2.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #1976d2;
+  color: white;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.nextButton:hover {
+  background: #1565c0;
+}
+
+/* Confirm dialog overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.dialog {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.dialog h3 {
+  margin: 0 0 0.5rem;
+}
+
+.dialog p {
+  color: #666;
+  margin: 0 0 1.5rem;
+}
+
+.dialogActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.cancelBtn,
+.confirmBtn {
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.cancelBtn {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.confirmBtn {
+  background: #d32f2f;
+  color: white;
+}
+
+.confirmBtn:hover {
+  background: #c62828;
+}

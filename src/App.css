@@ -5,26 +5,30 @@
 }
 
 .app-header {
-  padding: 1.5rem 2rem;
+  padding: 0.75rem 2rem;
   border-bottom: 1px solid #e0e0e0;
   text-align: center;
+  background: white;
 }
 
 .app-header h1 {
   margin: 0;
-  font-size: 1.5rem;
-}
-
-.app-header p {
-  margin: 0.25rem 0 0;
-  color: #666;
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .app-main {
   flex: 1;
   display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.app-placeholder {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 1rem;
   padding: 2rem;
   color: #999;
 }
