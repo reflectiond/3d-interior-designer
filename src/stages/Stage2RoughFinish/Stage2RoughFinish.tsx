@@ -5,10 +5,12 @@ import { CeilingPanel } from './CeilingPanel';
 import { PlasterPanel } from './PlasterPanel';
 import { ElectricalPanel } from './ElectricalPanel';
 import { View2D } from '../../views/View2D/View2D';
+import { View3D } from '../../views/View3D/View3D';
 import styles from './SidePanel.module.css';
 import stageStyles from './Stage2RoughFinish.module.css';
 
 type Tab = 'screed' | 'electrical' | 'plaster' | 'ceiling';
+type ViewMode = '2d' | '3d';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'screed', label: 'Стяжка' },
@@ -19,6 +21,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 export function Stage2RoughFinish() {
   const [activeTab, setActiveTab] = useState<Tab>('screed');
+  const [viewMode, setViewMode] = useState<ViewMode>('2d');
   const { setStage } = useProjectStore();
 
   return (
@@ -41,7 +44,21 @@ export function Stage2RoughFinish() {
         {activeTab === 'ceiling' && <CeilingPanel />}
       </div>
       <div className={stageStyles.canvas}>
-        <View2D />
+        <div className={stageStyles.viewToggle}>
+          <button
+            className={`${stageStyles.toggleBtn} ${viewMode === '2d' ? stageStyles.toggleActive : ''}`}
+            onClick={() => setViewMode('2d')}
+          >
+            2D-схема
+          </button>
+          <button
+            className={`${stageStyles.toggleBtn} ${viewMode === '3d' ? stageStyles.toggleActive : ''}`}
+            onClick={() => setViewMode('3d')}
+          >
+            Посмотреть в 3D
+          </button>
+        </div>
+        {viewMode === '2d' ? <View2D /> : <View3D />}
         <div className={stageStyles.actions}>
           <button className={stageStyles.backBtn} onClick={() => setStage(1)}>
             ← Назад

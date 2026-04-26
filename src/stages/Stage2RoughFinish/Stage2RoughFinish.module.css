@@ -46,3 +46,35 @@
 .nextBtn:hover {
   background: #1565c0;
 }
+
+.viewToggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.toggleBtn {
+  padding: 0.5rem 1.25rem;
+  border: none;
+  background: #f5f5f5;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.toggleBtn:hover {
+  background: #eeeeee;
+}
+
+.toggleActive {
+  background: #1976d2;
+  color: white;
+}
+
+.toggleActive:hover {
+  background: #1565c0;
+}
