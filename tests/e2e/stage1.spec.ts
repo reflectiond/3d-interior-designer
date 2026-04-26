@@ -42,8 +42,8 @@ test.describe('Stage 1 — Layout Selection', () => {
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
     await page.getByText('Далее →').click();
     // Stage 2 indicator should be active
-    // Stage 2 placeholder text should be visible
-    await expect(page.getByText('Этап 2 — Черновая отделка')).toBeVisible();
+    // Stage 2 screed panel should be visible
+    await expect(page.getByText('Стяжка пола')).toBeVisible();
   });
 
   test('F1.7: changing layout after selection shows confirm dialog', async ({ page }) => {
