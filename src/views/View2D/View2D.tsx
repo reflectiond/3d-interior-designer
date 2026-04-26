@@ -5,23 +5,34 @@ import { useProjectStore } from '../../store/projectStore';
 import { PALETTE } from '../../theme/palette';
 import { TILE_SIZE } from '../../domain/geometry/tiles';
 import { findNearestWallEdge } from '../../domain/electrical/wallDetection';
+import { getEffectiveSize } from '../../domain/furniture/placement';
+import type { CatalogItem } from '../../domain/furniture/placement';
 import type { Room } from '../../domain/geometry/types';
+import catalogData from '../../data/furniture-catalog.json';
 import styles from './View2D.module.css';
 
 const SCALE = 30; // pixels per tile
+
+const catalogMap = new Map<string, CatalogItem>();
+for (const item of catalogData as CatalogItem[]) {
+  catalogMap.set(item.id, item);
+}
 
 function roomColor(type: Room['type']): string {
   return PALETTE.rooms[type] ?? PALETTE.rooms.corridor;
 }
 
 export interface View2DProps {
-  /** When 'electrical', clicks on internal walls create electrical points */
-  interactionMode?: 'none' | 'electrical';
-  /** Type of point to create when clicking */
+  interactionMode?: 'none' | 'electrical' | 'furniture';
   electricalPointType?: 'socket' | 'switch';
+  onFurniturePlace?: (tileX: number, tileY: number) => void;
 }
 
-export function View2D({ interactionMode = 'none', electricalPointType = 'socket' }: View2DProps) {
+export function View2D({
+  interactionMode = 'none',
+  electricalPointType = 'socket',
+  onFurniturePlace,
+}: View2DProps) {
   const {
     layout,
     rooms,
@@ -29,36 +40,37 @@ export function View2D({ interactionMode = 'none', electricalPointType = 'socket
     flooring,
     electricalRoutes,
     electricalPoints,
+    furniture,
     addElectricalPoint,
   } = useProjectStore();
 
   const handleCanvasClick = useCallback(
     (e: KonvaEventObject<MouseEvent>) => {
-      if (interactionMode !== 'electrical' || !layout) return;
+      if (interactionMode === 'none' || !layout) return;
 
       const stage = e.target.getStage();
       if (!stage) return;
       const pos = stage.getPointerPosition();
       if (!pos) return;
 
-      // Convert pixel coords to tile coords (Y is flipped)
       const tileX = pos.x / SCALE;
       const tileY = layout.gridHeight - pos.y / SCALE;
 
-      const edge = findNearestWallEdge(tileX, tileY, rooms, layout.gridWidth, layout.gridHeight);
+      if (interactionMode === 'electrical') {
+        const edge = findNearestWallEdge(tileX, tileY, rooms, layout.gridWidth, layout.gridHeight);
+        if (!edge) return;
 
-      if (!edge) return;
-
-      const pointId = `ep_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-
-      addElectricalPoint({
-        id: pointId,
-        wallId: `wall_${edge.tile.x}_${edge.tile.y}`,
-        position: 0.5,
-        type: electricalPointType,
-      });
+        addElectricalPoint({
+          id: `ep_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          wallId: `wall_${edge.tile.x}_${edge.tile.y}`,
+          position: 0.5,
+          type: electricalPointType,
+        });
+      } else if (interactionMode === 'furniture' && onFurniturePlace) {
+        onFurniturePlace(tileX, tileY);
+      }
     },
-    [interactionMode, electricalPointType, layout, rooms, addElectricalPoint],
+    [interactionMode, electricalPointType, layout, rooms, addElectricalPoint, onFurniturePlace],
   );
 
   if (!layout) return null;
@@ -212,6 +224,37 @@ export function View2D({ interactionMode = 'none', electricalPointType = 'socket
                   text={String(num)}
                   fontSize={10}
                   fontStyle="bold"
+                  fill="white"
+                  listening={false}
+                />
+              </React.Fragment>
+            );
+          })}
+
+          {/* Placed furniture */}
+          {furniture.map((f, i) => {
+            const item = catalogMap.get(f.catalogId);
+            if (!item) return null;
+            const { w, h } = getEffectiveSize(item, f.rotation);
+            const colorKey = item.color_key as keyof typeof PALETTE.furniture;
+            const color = PALETTE.furniture[colorKey] ?? PALETTE.furniture.chair;
+            return (
+              <React.Fragment key={`furn-${f.id}`}>
+                <Rect
+                  x={f.position.x * SCALE}
+                  y={(gridHeight - f.position.y - h) * SCALE}
+                  width={w * SCALE}
+                  height={h * SCALE}
+                  fill={color}
+                  stroke={PALETTE.walls.external}
+                  strokeWidth={1}
+                  cornerRadius={2}
+                />
+                <Text
+                  x={f.position.x * SCALE + 2}
+                  y={(gridHeight - f.position.y - h) * SCALE + 2}
+                  text={`${i + 1}. ${item.name}`}
+                  fontSize={8}
                   fill="white"
                   listening={false}
                 />

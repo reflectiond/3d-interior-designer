@@ -3,8 +3,16 @@ import { OrbitControls } from '@react-three/drei';
 import { useProjectStore } from '../../store/projectStore';
 import { PALETTE } from '../../theme/palette';
 import { TILE_SIZE } from '../../domain/geometry/tiles';
+import { getEffectiveSize } from '../../domain/furniture/placement';
+import type { CatalogItem } from '../../domain/furniture/placement';
 import type { Room, CeilingType } from '../../domain/geometry/types';
+import catalogData from '../../data/furniture-catalog.json';
 import styles from './View3D.module.css';
+
+const catalogMap = new Map<string, CatalogItem>();
+for (const item of catalogData as CatalogItem[]) {
+  catalogMap.set(item.id, item);
+}
 
 const ROOM_HEIGHT = 2.7;
 
@@ -107,6 +115,33 @@ function WireSegments() {
   );
 }
 
+function FurnitureMeshes() {
+  const { furniture } = useProjectStore();
+
+  return (
+    <group>
+      {furniture.map((f) => {
+        const item = catalogMap.get(f.catalogId);
+        if (!item) return null;
+        const { w, h } = getEffectiveSize(item, f.rotation);
+        const wm = w * TILE_SIZE;
+        const dm = h * TILE_SIZE;
+        const hm = item.height_m;
+        const cx = f.position.x * TILE_SIZE + wm / 2;
+        const cz = f.position.y * TILE_SIZE + dm / 2;
+        const colorKey = item.color_key as keyof typeof PALETTE.furniture;
+        const color = PALETTE.furniture[colorKey] ?? PALETTE.furniture.chair;
+        return (
+          <mesh key={f.id} position={[cx, hm / 2, cz]}>
+            <boxGeometry args={[wm, hm, dm]} />
+            <meshStandardMaterial color={color} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
 export function View3D() {
   const { layout, rooms, ceiling } = useProjectStore();
 
@@ -137,6 +172,7 @@ export function View3D() {
         ))}
 
         <WireSegments />
+        <FurnitureMeshes />
 
         <OrbitControls
           target={[totalW / 2, ROOM_HEIGHT / 2, totalD / 2]}
