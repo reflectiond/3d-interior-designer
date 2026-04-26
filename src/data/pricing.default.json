@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "currency": "RUB",
+  "source": "Средние розничные цены по г. Челябинск, апрель 2026",
+  "rough_finish": {
+    "screed_per_m2": { "min": 1500, "max": 2500 },
+    "screed_heated_per_m2": { "min": 3500, "max": 5500 },
+    "electrical_per_m": { "min": 800, "max": 1500 },
+    "plaster_per_m2": { "min": 600, "max": 1200 },
+    "ceiling_stretch_per_m2": { "min": 700, "max": 1500 },
+    "ceiling_drywall_per_m2": { "min": 1200, "max": 2200 }
+  },
+  "fine_finish": {
+    "floor_linoleum_per_m2": { "min": 600, "max": 1500 },
+    "floor_laminate_per_m2": { "min": 1200, "max": 3500 },
+    "floor_tile_per_m2": { "min": 1500, "max": 4500 },
+    "floor_quartz_vinyl_per_m2": { "min": 2000, "max": 5000 },
+    "wall_wallpaper_per_m2": { "min": 400, "max": 1800 },
+    "wall_paint_per_m2": { "min": 300, "max": 1200 }
+  },
+  "furniture": {
+    "sofa": { "min": 30000, "max": 120000 },
+    "bed": { "min": 25000, "max": 95000 },
+    "table": { "min": 8000, "max": 35000 },
+    "chair": { "min": 2500, "max": 15000 },
+    "wardrobe": { "min": 18000, "max": 80000 },
+    "chair_office": { "min": 8000, "max": 45000 },
+    "desk": { "min": 7000, "max": 30000 },
+    "kitchen_lower": { "min": 15000, "max": 50000 },
+    "kitchen_upper": { "min": 8000, "max": 30000 },
+    "kitchen_column": { "min": 20000, "max": 70000 },
+    "toilet": { "min": 6000, "max": 30000 },
+    "sink": { "min": 4000, "max": 25000 }
+  }
+}
