@@ -42,6 +42,11 @@ export interface ProjectState {
   selectLayout: (layout: Layout) => void;
   resetProject: () => void;
   setStage: (stage: Stage) => void;
+  setFlooring: (roomId: string, type: FloorType) => void;
+  setCeiling: (roomId: string, type: CeilingType) => void;
+  addElectricalPoint: (point: ElectricalPoint) => void;
+  removeElectricalPoint: (pointId: string) => void;
+  setElectricalRoutes: (routes: ElectricalRoute[]) => void;
 }
 
 const initialState = {
@@ -91,4 +96,26 @@ export const useProjectStore = create<ProjectState>()((set) => ({
   resetProject: () => set(initialState),
 
   setStage: (stage: Stage) => set({ currentStage: stage }),
+
+  setFlooring: (roomId: string, type: FloorType) =>
+    set((state) => ({
+      flooring: { ...state.flooring, [roomId]: type },
+    })),
+
+  setCeiling: (roomId: string, type: CeilingType) =>
+    set((state) => ({
+      ceiling: { ...state.ceiling, [roomId]: type },
+    })),
+
+  addElectricalPoint: (point: ElectricalPoint) =>
+    set((state) => ({
+      electricalPoints: [...state.electricalPoints, point],
+    })),
+
+  removeElectricalPoint: (pointId: string) =>
+    set((state) => ({
+      electricalPoints: state.electricalPoints.filter((p) => p.id !== pointId),
+    })),
+
+  setElectricalRoutes: (routes: ElectricalRoute[]) => set({ electricalRoutes: routes }),
 }));

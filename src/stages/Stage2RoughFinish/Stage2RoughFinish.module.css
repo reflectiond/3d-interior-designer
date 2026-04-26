@@ -1,0 +1,48 @@
+.layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.canvas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.backBtn,
+.nextBtn {
+  padding: 0.5rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.backBtn {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.backBtn:hover {
+  background: #d0d0d0;
+}
+
+.nextBtn {
+  background: #1976d2;
+  color: white;
+}
+
+.nextBtn:hover {
+  background: #1565c0;
+}
