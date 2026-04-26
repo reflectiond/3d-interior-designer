@@ -1,0 +1,138 @@
+import { useState, useCallback, useEffect } from 'react';
+import { useProjectStore } from '../../store/projectStore';
+import { FloorCoveringPanel } from './FloorCoveringPanel';
+import { WallCoveringPanel } from './WallCoveringPanel';
+import { FurniturePanel } from './FurniturePanel';
+import { View2D } from '../../views/View2D/View2D';
+import { View3D } from '../../views/View3D/View3D';
+import type { CatalogItem } from '../../domain/furniture/placement';
+import {
+  getFurnitureTiles,
+  findContainingRoom,
+  isAllowedInRoom,
+  hasCollision,
+} from '../../domain/furniture/placement';
+import catalogData from '../../data/furniture-catalog.json';
+import panelStyles from '../Stage2RoughFinish/SidePanel.module.css';
+import stageStyles from '../Stage2RoughFinish/Stage2RoughFinish.module.css';
+
+type Tab = 'floor' | 'walls' | 'furniture';
+type ViewMode = '2d' | '3d';
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'floor', label: 'Пол' },
+  { id: 'walls', label: 'Стены' },
+  { id: 'furniture', label: 'Мебель' },
+];
+
+const catalogMap = new Map<string, CatalogItem>();
+for (const item of catalogData as CatalogItem[]) {
+  catalogMap.set(item.id, item);
+}
+
+export function Stage3FineFinish() {
+  const [activeTab, setActiveTab] = useState<Tab>('floor');
+  const [viewMode, setViewMode] = useState<ViewMode>('2d');
+  const [placingItem, setPlacingItem] = useState<CatalogItem | null>(null);
+  const [placingRotation, setPlacingRotation] = useState<0 | 90 | 180 | 270>(0);
+  const { setStage, rooms, furniture, addFurniture } = useProjectStore();
+
+  const handleStartPlace = useCallback((item: CatalogItem) => {
+    setPlacingItem(item);
+    setPlacingRotation(0);
+    setViewMode('2d');
+  }, []);
+
+  const handleFurniturePlace = useCallback(
+    (tileX: number, tileY: number) => {
+      if (!placingItem) return;
+
+      const pos = { x: Math.floor(tileX), y: Math.floor(tileY) };
+      const tiles = getFurnitureTiles(pos, placingItem, placingRotation);
+      const room = findContainingRoom(tiles, rooms);
+
+      if (!room) return;
+      if (!isAllowedInRoom(placingItem, room.type)) return;
+      if (hasCollision(tiles, furniture, catalogMap)) return;
+
+      addFurniture({
+        id: `f_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        catalogId: placingItem.id,
+        position: pos,
+        rotation: placingRotation,
+        mirrored: false,
+      });
+    },
+    [placingItem, placingRotation, rooms, furniture, addFurniture],
+  );
+
+  // Keyboard: R to rotate, Escape to cancel
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (!placingItem) return;
+      if (e.key === 'r' || e.key === 'R') {
+        setPlacingRotation((prev) => ((prev + 90) % 360) as 0 | 90 | 180 | 270);
+      }
+      if (e.key === 'Escape') {
+        setPlacingItem(null);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [placingItem]);
+
+  return (
+    <div className={stageStyles.layout}>
+      <div className={panelStyles.panel}>
+        <div className={panelStyles.tabBar}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              className={`${panelStyles.tab} ${activeTab === tab.id ? panelStyles.tabActive : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        {activeTab === 'floor' && <FloorCoveringPanel />}
+        {activeTab === 'walls' && <WallCoveringPanel />}
+        {activeTab === 'furniture' && (
+          <FurniturePanel onStartPlace={handleStartPlace} placingItem={placingItem} />
+        )}
+      </div>
+      <div className={stageStyles.canvas}>
+        <div className={stageStyles.viewToggle}>
+          <button
+            className={`${stageStyles.toggleBtn} ${viewMode === '2d' ? stageStyles.toggleActive : ''}`}
+            onClick={() => setViewMode('2d')}
+          >
+            2D-схема
+          </button>
+          <button
+            className={`${stageStyles.toggleBtn} ${viewMode === '3d' ? stageStyles.toggleActive : ''}`}
+            onClick={() => setViewMode('3d')}
+          >
+            Посмотреть в 3D
+          </button>
+        </div>
+        {viewMode === '2d' ? (
+          <View2D
+            interactionMode={placingItem ? 'furniture' : 'none'}
+            onFurniturePlace={handleFurniturePlace}
+          />
+        ) : (
+          <View3D />
+        )}
+        <div className={stageStyles.actions}>
+          <button className={stageStyles.backBtn} onClick={() => setStage(2)}>
+            ← Назад
+          </button>
+          <button className={stageStyles.nextBtn} onClick={() => setStage(4)}>
+            Далее →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

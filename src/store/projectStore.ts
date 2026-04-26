@@ -47,6 +47,14 @@ export interface ProjectState {
   addElectricalPoint: (point: ElectricalPoint) => void;
   removeElectricalPoint: (pointId: string) => void;
   setElectricalRoutes: (routes: ElectricalRoute[]) => void;
+  setFloorCovering: (roomId: string, type: FloorCovering) => void;
+  setWallCovering: (wallId: string, type: WallCovering) => void;
+  addFurniture: (item: FurnitureInstance) => void;
+  updateFurniture: (
+    id: string,
+    updates: Partial<Pick<FurnitureInstance, 'position' | 'rotation' | 'mirrored'>>,
+  ) => void;
+  removeFurniture: (id: string) => void;
 }
 
 const initialState = {
@@ -118,4 +126,32 @@ export const useProjectStore = create<ProjectState>()((set) => ({
     })),
 
   setElectricalRoutes: (routes: ElectricalRoute[]) => set({ electricalRoutes: routes }),
+
+  setFloorCovering: (roomId: string, type: FloorCovering) =>
+    set((state) => ({
+      floorCovering: { ...state.floorCovering, [roomId]: type },
+    })),
+
+  setWallCovering: (wallId: string, type: WallCovering) =>
+    set((state) => ({
+      wallCovering: { ...state.wallCovering, [wallId]: type },
+    })),
+
+  addFurniture: (item: FurnitureInstance) =>
+    set((state) => ({
+      furniture: [...state.furniture, item],
+    })),
+
+  updateFurniture: (
+    id: string,
+    updates: Partial<Pick<FurnitureInstance, 'position' | 'rotation' | 'mirrored'>>,
+  ) =>
+    set((state) => ({
+      furniture: state.furniture.map((f) => (f.id === id ? { ...f, ...updates } : f)),
+    })),
+
+  removeFurniture: (id: string) =>
+    set((state) => ({
+      furniture: state.furniture.filter((f) => f.id !== id),
+    })),
 }));
