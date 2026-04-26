@@ -1,0 +1,96 @@
+{
+  "id": 1,
+  "name": "Планировка 1",
+  "gridWidth": 36,
+  "gridHeight": 32,
+  "rooms": [
+    {
+      "id": "bedroom_1",
+      "type": "bedroom",
+      "name": "Спальня 1",
+      "x": 0,
+      "y": 0,
+      "width": 12,
+      "height": 15,
+      "_area_m2": 11.25,
+      "_target_m2": 11.0
+    },
+    {
+      "id": "bedroom_2",
+      "type": "bedroom",
+      "name": "Спальня 2",
+      "x": 0,
+      "y": 15,
+      "width": 12,
+      "height": 17,
+      "_area_m2": 12.75,
+      "_target_m2": 12.0
+    },
+    {
+      "id": "boiler_room",
+      "type": "boiler",
+      "name": "Котельная",
+      "x": 12,
+      "y": 0,
+      "width": 8,
+      "height": 8,
+      "_area_m2": 4.0,
+      "_target_m2": 4.0
+    },
+    {
+      "id": "corridor_1",
+      "type": "corridor",
+      "name": "Коридор",
+      "x": 12,
+      "y": 8,
+      "width": 8,
+      "height": 12,
+      "_area_m2": 6.0,
+      "_target_m2": 6.0
+    },
+    {
+      "id": "bathroom_1",
+      "type": "bathroom",
+      "name": "Ванная",
+      "x": 12,
+      "y": 20,
+      "width": 8,
+      "height": 12,
+      "_area_m2": 6.0,
+      "_target_m2": 6.0
+    },
+    {
+      "id": "kitchen",
+      "type": "kitchen",
+      "name": "Кухня",
+      "x": 20,
+      "y": 0,
+      "width": 16,
+      "height": 6,
+      "_area_m2": 6.0,
+      "_target_m2": 6.5
+    },
+    {
+      "id": "living_room",
+      "type": "living",
+      "name": "Гостиная",
+      "x": 20,
+      "y": 6,
+      "width": 16,
+      "height": 26,
+      "_area_m2": 26.0,
+      "_target_m2": 25.6
+    }
+  ],
+  "veranda": {
+    "name": "Веранда",
+    "x": 0,
+    "y": 32,
+    "width": 36,
+    "height": 8
+  },
+  "electricalPanel": {
+    "x": 15,
+    "y": 3
+  }
+}
