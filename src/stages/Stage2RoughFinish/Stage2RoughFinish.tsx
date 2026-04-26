@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useProjectStore } from '../../store/projectStore';
+import { useElectricalRoutes } from '../../domain/electrical/useElectricalRoutes';
 import { ScreedPanel } from './ScreedPanel';
 import { CeilingPanel } from './CeilingPanel';
 import { PlasterPanel } from './PlasterPanel';
@@ -22,7 +23,11 @@ const TABS: { id: Tab; label: string }[] = [
 export function Stage2RoughFinish() {
   const [activeTab, setActiveTab] = useState<Tab>('screed');
   const [viewMode, setViewMode] = useState<ViewMode>('2d');
+  const [pointType, setPointType] = useState<'socket' | 'switch'>('socket');
   const { setStage } = useProjectStore();
+
+  // Auto-recompute BFS routes when electrical points change
+  useElectricalRoutes();
 
   return (
     <div className={stageStyles.layout}>
@@ -39,7 +44,9 @@ export function Stage2RoughFinish() {
           ))}
         </div>
         {activeTab === 'screed' && <ScreedPanel />}
-        {activeTab === 'electrical' && <ElectricalPanel />}
+        {activeTab === 'electrical' && (
+          <ElectricalPanel pointType={pointType} onPointTypeChange={setPointType} />
+        )}
         {activeTab === 'plaster' && <PlasterPanel />}
         {activeTab === 'ceiling' && <CeilingPanel />}
       </div>
@@ -58,7 +65,14 @@ export function Stage2RoughFinish() {
             Посмотреть в 3D
           </button>
         </div>
-        {viewMode === '2d' ? <View2D /> : <View3D />}
+        {viewMode === '2d' ? (
+          <View2D
+            interactionMode={activeTab === 'electrical' ? 'electrical' : 'none'}
+            electricalPointType={pointType}
+          />
+        ) : (
+          <View3D />
+        )}
         <div className={stageStyles.actions}>
           <button className={stageStyles.backBtn} onClick={() => setStage(1)}>
             ← Назад

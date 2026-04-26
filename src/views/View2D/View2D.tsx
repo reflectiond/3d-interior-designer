@@ -1,7 +1,10 @@
+import { useCallback } from 'react';
 import { Stage as KonvaStage, Layer, Rect, Text, Circle, Line } from 'react-konva';
+import type { KonvaEventObject } from 'konva/lib/Node';
 import { useProjectStore } from '../../store/projectStore';
 import { PALETTE } from '../../theme/palette';
 import { TILE_SIZE } from '../../domain/geometry/tiles';
+import { findNearestWallEdge } from '../../domain/electrical/wallDetection';
 import type { Room } from '../../domain/geometry/types';
 import styles from './View2D.module.css';
 
@@ -11,9 +14,55 @@ function roomColor(type: Room['type']): string {
   return PALETTE.rooms[type] ?? PALETTE.rooms.corridor;
 }
 
-export function View2D() {
-  const { layout, rooms, electricalPanel, flooring, electricalRoutes, electricalPoints } =
-    useProjectStore();
+export interface View2DProps {
+  /** When 'electrical', clicks on internal walls create electrical points */
+  interactionMode?: 'none' | 'electrical';
+  /** Type of point to create when clicking */
+  electricalPointType?: 'socket' | 'switch';
+}
+
+export function View2D({ interactionMode = 'none', electricalPointType = 'socket' }: View2DProps) {
+  const {
+    layout,
+    rooms,
+    electricalPanel,
+    flooring,
+    electricalRoutes,
+    electricalPoints,
+    addElectricalPoint,
+  } = useProjectStore();
+
+  const handleCanvasClick = useCallback(
+    (e: KonvaEventObject<MouseEvent>) => {
+      if (interactionMode !== 'electrical' || !layout) return;
+
+      const stage = e.target.getStage();
+      if (!stage) return;
+      const pos = stage.getPointerPosition();
+      if (!pos) return;
+
+      // Convert pixel coords to tile coords (Y is flipped)
+      const tileX = pos.x / SCALE;
+      const tileY = layout.gridHeight - pos.y / SCALE;
+
+      const edge = findNearestWallEdge(tileX, tileY, rooms, layout.gridWidth, layout.gridHeight);
+
+      if (!edge) return;
+
+      // Don't allow points on external walls
+      if (edge.isExternal) return;
+
+      const pointId = `ep_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+      addElectricalPoint({
+        id: pointId,
+        wallId: `wall_${edge.tile.x}_${edge.tile.y}`,
+        position: 0.5,
+        type: electricalPointType,
+      });
+    },
+    [interactionMode, electricalPointType, layout, rooms, addElectricalPoint],
+  );
 
   if (!layout) return null;
 
@@ -23,7 +72,7 @@ export function View2D() {
 
   return (
     <div className={styles.container}>
-      <KonvaStage width={canvasWidth} height={canvasHeight}>
+      <KonvaStage width={canvasWidth} height={canvasHeight} onClick={handleCanvasClick}>
         <Layer>
           {/* Room fills */}
           {rooms.map((room) => (
@@ -83,21 +132,23 @@ export function View2D() {
             />
           ))}
 
-          {/* Electrical panel icon */}
+          {/* Electrical panel (щиток) — rendered as a square on the wall */}
           {electricalPanel && (
             <>
-              <Circle
-                x={(electricalPanel.x + 0.5) * SCALE}
-                y={(gridHeight - electricalPanel.y - 0.5) * SCALE}
-                radius={SCALE * 0.6}
+              <Rect
+                x={(electricalPanel.x + 0.1) * SCALE}
+                y={(gridHeight - electricalPanel.y - 0.9) * SCALE}
+                width={SCALE * 0.8}
+                height={SCALE * 0.8}
                 fill={PALETTE.electrical.panel}
-                opacity={0.8}
+                cornerRadius={3}
               />
               <Text
-                x={(electricalPanel.x + 0.5) * SCALE - 6}
+                x={(electricalPanel.x + 0.5) * SCALE - 5}
                 y={(gridHeight - electricalPanel.y - 0.5) * SCALE - 5}
                 text="⚡"
-                fontSize={12}
+                fontSize={11}
+                listening={false}
               />
             </>
           )}
@@ -141,9 +192,8 @@ export function View2D() {
 
           {/* Electrical points */}
           {electricalPoints.map((point) => {
-            // Find room for this point based on wall proximity
-            const px = (Number(point.wallId.split('_')[1] ?? 0) + 0.5) * SCALE;
-            const py = (gridHeight - Number(point.wallId.split('_')[2] ?? 0) - 0.5) * SCALE;
+            const px = (Number(point.wallId.split('_')[1]) + 0.5) * SCALE;
+            const py = (gridHeight - Number(point.wallId.split('_')[2]) - 0.5) * SCALE;
             const color =
               point.type === 'socket' ? PALETTE.electrical.socket : PALETTE.electrical.switch;
             return (
@@ -154,6 +204,8 @@ export function View2D() {
                 radius={SCALE * 0.35}
                 fill={color}
                 opacity={0.9}
+                stroke={PALETTE.walls.external}
+                strokeWidth={1}
               />
             );
           })}
@@ -174,6 +226,12 @@ export function View2D() {
           )}
         </Layer>
       </KonvaStage>
+      {interactionMode === 'electrical' && (
+        <p className={styles.hint}>
+          Кликните по внутренней стене комнаты для добавления{' '}
+          {electricalPointType === 'socket' ? 'розетки' : 'выключателя'}
+        </p>
+      )}
       <p className={styles.legend}>Масштаб: 1 тайл = {TILE_SIZE * 100} см</p>
     </div>
   );

@@ -6,8 +6,15 @@
   overflow: auto;
 }
 
-.legend {
+.hint {
   margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.legend {
+  margin-top: 0.25rem;
   font-size: 0.8rem;
   color: #999;
 }
