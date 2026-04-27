@@ -74,4 +74,11 @@ export const PALETTE = {
     tile: '#A0A0A0',
     quartz_vinyl: '#6B5C45',
   },
+  // v1.4.0 — feedback colors during furniture placement and drag-to-move.
+  // valid/invalid render with opacity 0.35; ghost (drag preview) at 0.4.
+  placement_highlight: {
+    valid: '#4CAF50',
+    invalid: '#E53935',
+    ghost: '#9E9E9E',
+  },
 } as const;

@@ -11,6 +11,7 @@ import {
   findContainingRoom,
   isAllowedInRoom,
   hasCollision,
+  getEffectiveSize,
 } from '../../domain/furniture/placement';
 import catalogData from '../../data/furniture-catalog.json';
 import panelStyles from '../Stage2RoughFinish/SidePanel.module.css';
@@ -120,6 +121,26 @@ export function Stage3FineFinish() {
           <View2D
             interactionMode={placingItem ? 'furniture' : 'none'}
             onFurniturePlace={handleFurniturePlace}
+            placingPreview={
+              placingItem
+                ? (() => {
+                    const { w, h } = getEffectiveSize(placingItem, placingRotation);
+                    return {
+                      width: w,
+                      height: h,
+                      isValid: (tx: number, ty: number) => {
+                        const pos = { x: Math.floor(tx), y: Math.floor(ty) };
+                        const tiles = getFurnitureTiles(pos, placingItem, placingRotation);
+                        const room = findContainingRoom(tiles, rooms);
+                        if (!room) return false;
+                        if (!isAllowedInRoom(placingItem, room.type)) return false;
+                        if (hasCollision(tiles, furniture, catalogMap)) return false;
+                        return true;
+                      },
+                    };
+                  })()
+                : null
+            }
           />
         ) : (
           <View3D />

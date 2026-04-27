@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Stage as KonvaStage, Layer, Rect, Text, Circle, Line, Path } from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
@@ -31,16 +31,28 @@ function roomColor(type: Room['type']): string {
   return PALETTE.rooms[type] ?? PALETTE.rooms.corridor;
 }
 
+export interface PlacingPreview {
+  /** Effective width of the item being placed, in tiles (post-rotation). */
+  width: number;
+  /** Effective height in tiles (post-rotation). */
+  height: number;
+  /** Returns true when placing the item at (tx, ty) (bottom-left in tile-up space) is allowed. */
+  isValid: (tx: number, ty: number) => boolean;
+}
+
 export interface View2DProps {
   interactionMode?: 'none' | 'electrical' | 'furniture';
   electricalPointType?: 'socket' | 'switch';
   onFurniturePlace?: (tileX: number, tileY: number) => void;
+  /** F8.3 — when set, View2D renders a validity-coloured highlight under the cursor. */
+  placingPreview?: PlacingPreview | null;
 }
 
 export function View2D({
   interactionMode = 'none',
   electricalPointType = 'socket',
   onFurniturePlace,
+  placingPreview,
 }: View2DProps) {
   const {
     layout,
@@ -56,6 +68,9 @@ export function View2D({
   } = useProjectStore();
 
   const stageRef = useRef<Konva.Stage | null>(null);
+
+  // F8.3 — current cursor tile while placing furniture, for validity highlight
+  const [hoverTile, setHoverTile] = useState<{ tx: number; ty: number } | null>(null);
 
   useEffect(() => {
     registerKonvaStage(stageRef.current);
@@ -91,6 +106,23 @@ export function View2D({
     [interactionMode, electricalPointType, layout, rooms, addElectricalPoint, onFurniturePlace],
   );
 
+  // F8.3.2 — track cursor only while placing; one tile granularity is fine, no debounce needed
+  const handleStageMove = useCallback(
+    (e: KonvaEventObject<MouseEvent>) => {
+      if (!placingPreview || !layout) return;
+      const stage = e.target.getStage();
+      if (!stage) return;
+      const pos = stage.getPointerPosition();
+      if (!pos) return;
+      const tx = Math.floor(pos.x / SCALE);
+      const ty = Math.floor(layout.gridHeight - pos.y / SCALE);
+      setHoverTile((prev) => (prev && prev.tx === tx && prev.ty === ty ? prev : { tx, ty }));
+    },
+    [placingPreview, layout],
+  );
+
+  const handleStageLeave = useCallback(() => setHoverTile(null), []);
+
   if (!layout) return null;
 
   const { gridWidth, gridHeight } = layout;
@@ -104,6 +136,8 @@ export function View2D({
         width={canvasWidth}
         height={canvasHeight}
         onClick={handleCanvasClick}
+        onMouseMove={handleStageMove}
+        onMouseLeave={handleStageLeave}
       >
         <Layer>
           {/* Canonical z-order (F6.4.1):
@@ -433,6 +467,32 @@ export function View2D({
               </React.Fragment>
             );
           })}
+
+          {/* Placement validity highlight (F8.3) — drawn last so it floats above
+              every other element while the user is positioning a piece. */}
+          {placingPreview &&
+            hoverTile &&
+            (() => {
+              const tx = hoverTile.tx;
+              const ty = hoverTile.ty;
+              const valid = placingPreview.isValid(tx, ty);
+              const color = valid
+                ? PALETTE.placement_highlight.valid
+                : PALETTE.placement_highlight.invalid;
+              return (
+                <Rect
+                  x={tx * SCALE}
+                  y={(gridHeight - ty - placingPreview.height) * SCALE}
+                  width={placingPreview.width * SCALE}
+                  height={placingPreview.height * SCALE}
+                  fill={color}
+                  opacity={0.35}
+                  stroke={color}
+                  strokeWidth={1.5}
+                  listening={false}
+                />
+              );
+            })()}
         </Layer>
       </KonvaStage>
       {interactionMode === 'electrical' && (
