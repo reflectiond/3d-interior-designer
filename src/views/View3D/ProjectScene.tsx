@@ -3,7 +3,7 @@ import { PALETTE } from '../../theme/palette';
 import { TILE_SIZE } from '../../domain/geometry/tiles';
 import { getEffectiveSize } from '../../domain/furniture/placement';
 import type { CatalogItem } from '../../domain/furniture/placement';
-import type { Room, CeilingType } from '../../domain/geometry/types';
+import type { Room, CeilingType, FloorType } from '../../domain/geometry/types';
 import catalogData from '../../data/furniture-catalog.json';
 
 const catalogMap = new Map<string, CatalogItem>();
@@ -21,17 +21,29 @@ function ceilingColor(type: CeilingType): string {
   return type === 'drywall' ? PALETTE.ceiling.drywall : PALETTE.ceiling.stretch;
 }
 
-function RoomMesh({ room, ceilingType }: { room: Room; ceilingType: CeilingType }) {
+function RoomMesh({
+  room,
+  ceilingType,
+  flooringType,
+}: {
+  room: Room;
+  ceilingType: CeilingType;
+  flooringType: FloorType;
+}) {
   const w = room.rect.width * TILE_SIZE;
   const d = room.rect.height * TILE_SIZE;
   const cx = room.rect.x * TILE_SIZE + w / 2;
   const cz = room.rect.y * TILE_SIZE + d / 2;
+  const isHeated = flooringType === 'screed_heated';
+  const heatProps = isHeated
+    ? { emissive: PALETTE.heated_floor.icon, emissiveIntensity: 0.08 }
+    : {};
 
   return (
     <group>
       <mesh position={[cx, 0, cz]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[w, d]} />
-        <meshStandardMaterial color={roomFloorColor()} />
+        <meshStandardMaterial color={roomFloorColor()} {...heatProps} />
       </mesh>
       <mesh position={[cx, ROOM_HEIGHT, cz]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[w, d]} />
@@ -134,7 +146,7 @@ function FurnitureMeshes() {
 }
 
 export function ProjectScene() {
-  const { layout, rooms, ceiling } = useProjectStore();
+  const { layout, rooms, ceiling, flooring } = useProjectStore();
   if (!layout) return null;
 
   const totalW = layout.gridWidth * TILE_SIZE;
@@ -146,7 +158,12 @@ export function ProjectScene() {
       <directionalLight position={[totalW, 10, totalD]} intensity={0.8} />
 
       {rooms.map((room) => (
-        <RoomMesh key={room.id} room={room} ceilingType={ceiling[room.id] ?? 'stretch'} />
+        <RoomMesh
+          key={room.id}
+          room={room}
+          ceilingType={ceiling[room.id] ?? 'stretch'}
+          flooringType={flooring[room.id] ?? 'screed'}
+        />
       ))}
 
       {rooms.map((room) => (
