@@ -282,10 +282,10 @@
 | F11.2.1 | Тайловая сетка с настраиваемым размером                    | 🚧     | feature/editor-canvas-tools                                                      |
 | F11.2.2 | Инструменты: стена, комната, щиток, окно, дверь            | 🚧     | feature/editor-canvas-tools (стена не нужна — выводится из rooms; см. DECISIONS) |
 | F11.2.3 | Удаление через Shift+клик или кнопку                       | 🚧     | feature/editor-canvas-tools                                                      |
-| F11.2.4 | Реалтайм валидация замкнутости и связности                 | ⚪     | —                                                                                |
-| F11.2.5 | Кнопка экспорта валидного JSON                             | ⚪     | —                                                                                |
+| F11.2.4 | Реалтайм валидация замкнутости и связности                 | 🚧     | feature/editor-validation-export                                                 |
+| F11.2.5 | Кнопка экспорта валидного JSON                             | 🚧     | feature/editor-validation-export                                                 |
 | F11.2.6 | Не сохраняет в localStorage основного приложения           | 🚧     | feature/editor-canvas-tools                                                      |
-| E2E-18  | Доступ только с верным токеном; экспорт даёт валидный JSON | ⚪     | —                                                                                |
+| E2E-18  | Доступ только с верным токеном; экспорт даёт валидный JSON | 🚧     | feature/editor-validation-export                                                 |
 | SEC-7   | Невозможен открытый доступ без токена                      | 🚧     | feature/editor-gating                                                            |
 
 ---

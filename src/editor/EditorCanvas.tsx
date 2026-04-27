@@ -4,6 +4,7 @@ import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { PALETTE } from '../theme/palette';
 import { findObjectAt, type EditorAction, type EditorState, type EditorTool } from './state';
+import { invalidObjectKeys, validateEditor } from './validation';
 import type { TileCoord } from '../domain/geometry/types';
 
 const SCALE = 24;
@@ -35,6 +36,7 @@ function snapAxisAligned(start: TileCoord, end: TileCoord): TileCoord {
 export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
   const widthPx = state.gridWidth * SCALE;
   const heightPx = state.gridHeight * SCALE;
+  const invalidKeys = invalidObjectKeys(validateEditor(state));
 
   const [roomAnchor, setRoomAnchor] = useState<Anchor | null>(null);
   const [pointerTile, setPointerTile] = useState<TileCoord | null>(null);
@@ -183,6 +185,12 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
           {/* Rooms */}
           {state.rooms.map((room) => {
             const isSelected = state.selection?.kind === 'room' && state.selection.id === room.id;
+            const isInvalid = invalidKeys.has(`room:${room.id}`);
+            const stroke = isInvalid
+              ? PALETTE.placement_highlight.invalid
+              : isSelected
+                ? PALETTE.editor.selection
+                : PALETTE.text.primary;
             return (
               <Group key={room.id}>
                 <Rect
@@ -191,8 +199,9 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
                   width={room.width * SCALE}
                   height={room.height * SCALE}
                   fill={PALETTE.rooms[room.type] ?? PALETTE.rooms.corridor}
-                  stroke={isSelected ? PALETTE.editor.selection : PALETTE.text.primary}
-                  strokeWidth={isSelected ? 2.5 : 1}
+                  stroke={stroke}
+                  strokeWidth={isInvalid || isSelected ? 2.5 : 1}
+                  dash={isInvalid ? [6, 4] : undefined}
                   listening={true}
                 />
                 <Text
@@ -220,17 +229,23 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
             const nx = (-dy / len) * offset;
             const ny = (dx / len) * offset;
             const isSelected = state.selection?.kind === 'window' && state.selection.id === win.id;
+            const isInvalid = invalidKeys.has(`window:${win.id}`);
+            const stroke = isInvalid
+              ? PALETTE.placement_highlight.invalid
+              : isSelected
+                ? PALETTE.editor.selection
+                : PALETTE.openings.window_frame;
             return (
               <React.Fragment key={`win-${win.id}`}>
                 <Line
                   points={[x1 + nx, y1 + ny, x2 + nx, y2 + ny]}
-                  stroke={isSelected ? PALETTE.editor.selection : PALETTE.openings.window_frame}
-                  strokeWidth={isSelected ? 3 : 2}
+                  stroke={stroke}
+                  strokeWidth={isSelected || isInvalid ? 3 : 2}
                 />
                 <Line
                   points={[x1 - nx, y1 - ny, x2 - nx, y2 - ny]}
-                  stroke={isSelected ? PALETTE.editor.selection : PALETTE.openings.window_frame}
-                  strokeWidth={isSelected ? 3 : 2}
+                  stroke={stroke}
+                  strokeWidth={isSelected || isInvalid ? 3 : 2}
                 />
               </React.Fragment>
             );
@@ -253,16 +268,27 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
             const r = Math.hypot(otherS.x - hingeS.x, otherS.y - hingeS.y);
             const sweepFlag = door.swing_side === 'left' ? 1 : 0;
             const isSelected = state.selection?.kind === 'door' && state.selection.id === door.id;
+            const isInvalid = invalidKeys.has(`door:${door.id}`);
+            const leafStroke = isInvalid
+              ? PALETTE.placement_highlight.invalid
+              : isSelected
+                ? PALETTE.editor.selection
+                : PALETTE.openings.door_frame;
+            const arcStroke = isInvalid
+              ? PALETTE.placement_highlight.invalid
+              : isSelected
+                ? PALETTE.editor.selection
+                : PALETTE.openings.door_arc;
             return (
               <React.Fragment key={`door-${door.id}`}>
                 <Line
                   points={[hingeS.x, hingeS.y, tipS.x, tipS.y]}
-                  stroke={isSelected ? PALETTE.editor.selection : PALETTE.openings.door_frame}
-                  strokeWidth={isSelected ? 3 : 2}
+                  stroke={leafStroke}
+                  strokeWidth={isSelected || isInvalid ? 3 : 2}
                 />
                 <Path
                   data={`M ${tipS.x} ${tipS.y} A ${r} ${r} 0 0 ${sweepFlag} ${otherS.x} ${otherS.y}`}
-                  stroke={isSelected ? PALETTE.editor.selection : PALETTE.openings.door_arc}
+                  stroke={arcStroke}
                   strokeWidth={1.5}
                   dash={[4, 3]}
                 />
@@ -279,7 +305,11 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
               height={SCALE * 0.7}
               fill={PALETTE.electrical.panel}
               stroke={
-                state.selection?.kind === 'panel' ? PALETTE.editor.selection : PALETTE.text.primary
+                invalidKeys.has('panel')
+                  ? PALETTE.placement_highlight.invalid
+                  : state.selection?.kind === 'panel'
+                    ? PALETTE.editor.selection
+                    : PALETTE.text.primary
               }
               strokeWidth={state.selection?.kind === 'panel' ? 2.5 : 1}
             />
