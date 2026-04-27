@@ -1,5 +1,6 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Stage as KonvaStage, Layer, Rect, Text, Circle, Line } from 'react-konva';
+import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useProjectStore } from '../../store/projectStore';
 import { PALETTE } from '../../theme/palette';
@@ -8,6 +9,7 @@ import { findNearestWallEdge } from '../../domain/electrical/wallDetection';
 import { getEffectiveSize } from '../../domain/furniture/placement';
 import type { CatalogItem } from '../../domain/furniture/placement';
 import type { Room } from '../../domain/geometry/types';
+import { registerKonvaStage } from '../../export/snapshots';
 import catalogData from '../../data/furniture-catalog.json';
 import styles from './View2D.module.css';
 
@@ -43,6 +45,13 @@ export function View2D({
     furniture,
     addElectricalPoint,
   } = useProjectStore();
+
+  const stageRef = useRef<Konva.Stage | null>(null);
+
+  useEffect(() => {
+    registerKonvaStage(stageRef.current);
+    return () => registerKonvaStage(null);
+  }, [layout]);
 
   const handleCanvasClick = useCallback(
     (e: KonvaEventObject<MouseEvent>) => {
@@ -81,7 +90,12 @@ export function View2D({
 
   return (
     <div className={styles.container}>
-      <KonvaStage width={canvasWidth} height={canvasHeight} onClick={handleCanvasClick}>
+      <KonvaStage
+        ref={stageRef}
+        width={canvasWidth}
+        height={canvasHeight}
+        onClick={handleCanvasClick}
+      >
         <Layer>
           {/* Room fills */}
           {rooms.map((room) => (

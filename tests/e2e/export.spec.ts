@@ -3,28 +3,32 @@ import { readFile } from 'node:fs/promises';
 // pdfjs-dist legacy build works in Node-side test environments
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 
+async function downloadPdf(page: import('@playwright/test').Page) {
+  await page.goto('/');
+  await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
+  await page.locator('nav[aria-label="Этапы"] button').nth(3).click();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Сохранить как PDF' }).click();
+  const download = await downloadPromise;
+
+  const downloadPath = await download.path();
+  expect(downloadPath).not.toBeNull();
+  const buffer = await readFile(downloadPath!);
+  return pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+}
+
+async function pageHasImage(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<boolean> {
+  const page = await pdf.getPage(pageNum);
+  const ops = await page.getOperatorList();
+  // pdfjs-dist exposes OPS.paintImageXObject which is emitted whenever an image is drawn
+  return ops.fnArray.includes(pdfjsLib.OPS.paintImageXObject);
+}
+
 test.describe('Export — PDF', () => {
   test('E2E-10: generated PDF contains readable cyrillic «Стяжка пола»', async ({ page }) => {
-    await page.goto('/');
+    const pdf = await downloadPdf(page);
 
-    // Select layout 1 to populate the project state
-    await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
-
-    // Jump straight to Stage 4 via the stage navigator
-    await page.locator('nav[aria-label="Этапы"] button').nth(3).click();
-
-    // Trigger PDF export and capture the download
-    const downloadPromise = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Сохранить как PDF' }).click();
-    const download = await downloadPromise;
-
-    const downloadPath = await download.path();
-    expect(downloadPath).not.toBeNull();
-
-    const buffer = await readFile(downloadPath!);
-    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
-
-    // The estimate is on page 3 (план 2D / вид 3D / смета)
     expect(pdf.numPages).toBeGreaterThanOrEqual(3);
 
     const estimatePage = await pdf.getPage(3);
@@ -32,5 +36,25 @@ test.describe('Export — PDF', () => {
     const text = textContent.items.map((item) => ('str' in item ? item.str : '')).join(' ');
 
     expect(text).toContain('Стяжка пола');
+  });
+
+  test('F10.2.1/F10.2.4: PDF has 3 pages and embeds images on plan & 3D pages', async ({
+    page,
+  }) => {
+    const pdf = await downloadPdf(page);
+
+    expect(pdf.numPages).toBe(3);
+    expect(await pageHasImage(pdf, 1)).toBe(true); // 2D plan
+    expect(await pageHasImage(pdf, 2)).toBe(true); // 3D view
+  });
+
+  test('F10.2.5: page is A4 landscape (297×210 mm)', async ({ page }) => {
+    const pdf = await downloadPdf(page);
+    const firstPage = await pdf.getPage(1);
+    const viewport = firstPage.getViewport({ scale: 1 });
+    // A4 in points: 297mm = 841.89pt, 210mm = 595.28pt — landscape: width > height
+    expect(viewport.width).toBeGreaterThan(viewport.height);
+    expect(viewport.width).toBeGreaterThan(800);
+    expect(viewport.width).toBeLessThan(900);
   });
 });
