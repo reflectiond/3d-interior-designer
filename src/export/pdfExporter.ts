@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import type { Estimate } from '../domain/pricing/estimator';
 import { registerPTSans, PT_SANS_FAMILY } from './fonts/ptSans';
+import { buildExportFilename } from './sanitizeFilename';
 
 const PAGE_WIDTH_MM = 297;
 const PAGE_HEIGHT_MM = 210;
@@ -67,6 +68,7 @@ export async function exportPDF(
   estimate: Estimate,
   snapshot2D: string | null,
   snapshot3D: string | null,
+  projectId?: string | null,
 ) {
   const doc = new jsPDF('l', 'mm', 'a4');
   await registerPTSans(doc);
@@ -138,5 +140,5 @@ export async function exportPDF(
     y,
   );
 
-  doc.save('interior-project.pdf');
+  doc.save(buildExportFilename('interior_design', projectId, 'pdf'));
 }

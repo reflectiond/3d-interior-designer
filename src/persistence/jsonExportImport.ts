@@ -4,6 +4,7 @@ import { useProjectStore } from '../store/projectStore';
 import type { ProjectState } from '../store/projectStore';
 import type { FloorType, CeilingType, FloorCovering, WallCovering } from '../domain/geometry/types';
 import { LayoutSchema } from '../domain/geometry/types';
+import { buildExportFilename } from '../export/sanitizeFilename';
 import layout1Data from '../data/layouts/layout1.json';
 import layout2Data from '../data/layouts/layout2.json';
 import layout3Data from '../data/layouts/layout3.json';
@@ -77,7 +78,8 @@ export function exportProjectJSON(state: ProjectState) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'interior-project.json';
+  const projectId = state.layoutId !== null ? `layout${state.layoutId}` : null;
+  a.download = buildExportFilename('interior_design', projectId, 'json');
   a.click();
   URL.revokeObjectURL(url);
 }

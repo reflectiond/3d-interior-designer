@@ -1,5 +1,6 @@
 import type { Estimate } from '../domain/pricing/estimator';
 import { PALETTE } from '../theme/palette';
+import { buildExportFilename } from './sanitizeFilename';
 
 const PNG_WIDTH = 1920;
 const PNG_HEIGHT = 1080;
@@ -104,7 +105,11 @@ function triggerDownload(canvas: HTMLCanvasElement, filename: string): Promise<v
   });
 }
 
-export async function exportPNG(snapshot2D: string | null, estimate: Estimate): Promise<void> {
+export async function exportPNG(
+  snapshot2D: string | null,
+  estimate: Estimate,
+  projectId?: string | null,
+): Promise<void> {
   const canvas = document.createElement('canvas');
   canvas.width = PNG_WIDTH;
   canvas.height = PNG_HEIGHT;
@@ -125,5 +130,5 @@ export async function exportPNG(snapshot2D: string | null, estimate: Estimate): 
   }
 
   drawEstimate(ctx, estimate);
-  await triggerDownload(canvas, 'interior-plan.png');
+  await triggerDownload(canvas, buildExportFilename('interior_design', projectId, 'png'));
 }

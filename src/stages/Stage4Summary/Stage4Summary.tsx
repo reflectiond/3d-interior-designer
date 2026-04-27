@@ -30,8 +30,11 @@ export function Stage4Summary() {
     wallCovering,
     electricalRoutes,
     furniture,
+    layoutId,
     setStage,
   } = state;
+
+  const projectId = layoutId !== null ? `layout${layoutId}` : null;
 
   const estimate = useMemo(
     () =>
@@ -55,19 +58,19 @@ export function Stage4Summary() {
   const handleExportPDF = useCallback(() => {
     const snapshot2D = capture2DSnapshot();
     const snapshot3D = capture3DSnapshot();
-    exportPDF(estimate, snapshot2D, snapshot3D).catch((err: unknown) => {
+    exportPDF(estimate, snapshot2D, snapshot3D, projectId).catch((err: unknown) => {
       console.error('PDF export failed:', err);
       alert('Не удалось экспортировать PDF. Попробуйте перезагрузить страницу.');
     });
-  }, [estimate]);
+  }, [estimate, projectId]);
 
   const handleExportPNG = useCallback(() => {
     const snapshot2D = capture2DSnapshot();
-    exportPNG(snapshot2D, estimate).catch((err: unknown) => {
+    exportPNG(snapshot2D, estimate, projectId).catch((err: unknown) => {
       console.error('PNG export failed:', err);
       alert('Не удалось экспортировать PNG. Попробуйте перезагрузить страницу.');
     });
-  }, [estimate]);
+  }, [estimate, projectId]);
 
   const handleExportJSON = () => {
     exportProjectJSON(state);
