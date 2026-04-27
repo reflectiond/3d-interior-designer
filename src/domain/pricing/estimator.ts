@@ -5,9 +5,12 @@ import type {
   FloorCovering,
   WallCovering,
   ElectricalRoute,
+  Window,
+  Door,
 } from '../geometry/types';
 import type { FurnitureInstance } from '../geometry/types';
 import { TILE_SIZE } from '../geometry/tiles';
+import { openingAreaM2 } from '../geometry/openings';
 import type { CatalogItem } from '../furniture/placement';
 import pricingData from '../../data/pricing.default.json';
 
@@ -57,6 +60,8 @@ export function computeEstimate(
   electricalRoutes: ElectricalRoute[],
   furniture: FurnitureInstance[],
   catalog: Map<string, CatalogItem>,
+  windows: Window[] = [],
+  doors: Door[] = [],
 ): Estimate {
   const items: EstimateLineItem[] = [];
 
@@ -103,6 +108,11 @@ export function computeEstimate(
   for (const room of rooms) {
     totalWallArea += wallArea(room);
   }
+  // F7.2.4 + F7.3.5 — windows and doors reduce the plaster surface
+  let openingAreaTotal = 0;
+  for (const win of windows) openingAreaTotal += openingAreaM2(win, TILE_SIZE);
+  for (const door of doors) openingAreaTotal += openingAreaM2(door, TILE_SIZE);
+  totalWallArea = Math.max(0, totalWallArea - openingAreaTotal);
   items.push({
     category: 'rough',
     name: 'Штукатурка стен',

@@ -150,6 +150,64 @@ function WireSegments() {
   );
 }
 
+function WindowMeshes() {
+  const { layout } = useProjectStore();
+  if (!layout || layout.windows.length === 0) return null;
+  return (
+    <group>
+      {layout.windows.map((win) => {
+        const cx = ((win.start.x + win.end.x) / 2) * TILE_SIZE;
+        const cz = ((win.start.y + win.end.y) / 2) * TILE_SIZE;
+        const lengthM =
+          (Math.abs(win.start.x - win.end.x) + Math.abs(win.start.y - win.end.y)) * TILE_SIZE;
+        const cy = win.sill_height_m + win.height_m / 2;
+        const isVertical = win.start.x === win.end.x;
+        const rotY = isVertical ? Math.PI / 2 : 0;
+        return (
+          <mesh key={win.id} position={[cx, cy, cz]} rotation={[0, rotY, 0]}>
+            <planeGeometry args={[lengthM, win.height_m]} />
+            <meshStandardMaterial
+              color={PALETTE.openings.window_glass}
+              transparent
+              opacity={0.5}
+              side={2}
+            />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function DoorMeshes() {
+  const { layout } = useProjectStore();
+  if (!layout || layout.doors.length === 0) return null;
+  return (
+    <group>
+      {layout.doors.map((door) => {
+        const cx = ((door.start.x + door.end.x) / 2) * TILE_SIZE;
+        const cz = ((door.start.y + door.end.y) / 2) * TILE_SIZE;
+        const lengthM =
+          (Math.abs(door.start.x - door.end.x) + Math.abs(door.start.y - door.end.y)) * TILE_SIZE;
+        const cy = door.height_m / 2;
+        const isVertical = door.start.x === door.end.x;
+        const rotY = isVertical ? Math.PI / 2 : 0;
+        return (
+          <mesh key={door.id} position={[cx, cy, cz]} rotation={[0, rotY, 0]}>
+            <planeGeometry args={[lengthM, door.height_m]} />
+            <meshStandardMaterial
+              color={PALETTE.openings.door_frame}
+              transparent
+              opacity={0.4}
+              side={2}
+            />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
 function FurnitureMeshes() {
   const { furniture } = useProjectStore();
 
@@ -207,6 +265,12 @@ export function ProjectScene() {
       {rooms.map((room) => (
         <WallMeshes key={`wall-${room.id}`} room={room} />
       ))}
+
+      {/* F7.2.2 / F7.3.3 — windows and door openings overlay the wall meshes
+          since we don't CSG-cut them; semi-transparent so the wall stays
+          legible while the opening is unmistakable. */}
+      <WindowMeshes />
+      <DoorMeshes />
 
       <WireSegments />
       <FurnitureMeshes />

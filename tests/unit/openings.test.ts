@@ -12,6 +12,8 @@ import {
   segmentLength,
   openingTiles,
   openingAreaM2,
+  getDoorBlockedTiles,
+  tilesIntersect,
 } from '../../src/domain/geometry/openings';
 
 const minimalLayout = {
@@ -195,5 +197,63 @@ describe('openingTiles & helpers', () => {
     });
     // 4 tiles × 0.25 m × 2.1 m = 2.1 m²
     expect(openingAreaM2(door, 0.25)).toBeCloseTo(2.1);
+  });
+});
+
+describe('getDoorBlockedTiles (F7.3.4)', () => {
+  it('blocks the segment tiles plus a 1-tile buffer perpendicular to a horizontal door', () => {
+    const door = DoorSchema.parse({
+      id: 'd',
+      start: { x: 4, y: 10 },
+      end: { x: 7, y: 10 },
+    });
+    const blocked = getDoorBlockedTiles([door]);
+    // 3 segment tiles + 6 buffer tiles (3 above + 3 below)
+    expect(blocked).toHaveLength(9);
+    const set = new Set(blocked.map((t) => `${t.x},${t.y}`));
+    expect(set.has('4,10')).toBe(true);
+    expect(set.has('5,10')).toBe(true);
+    expect(set.has('6,10')).toBe(true);
+    expect(set.has('4,9')).toBe(true); // buffer south
+    expect(set.has('5,11')).toBe(true); // buffer north
+  });
+
+  it('blocks the segment tiles plus a 1-tile buffer perpendicular to a vertical door', () => {
+    const door = DoorSchema.parse({
+      id: 'd',
+      start: { x: 10, y: 4 },
+      end: { x: 10, y: 7 },
+    });
+    const blocked = getDoorBlockedTiles([door]);
+    expect(blocked).toHaveLength(9);
+    const set = new Set(blocked.map((t) => `${t.x},${t.y}`));
+    expect(set.has('10,4')).toBe(true);
+    expect(set.has('9,4')).toBe(true); // buffer west
+    expect(set.has('11,5')).toBe(true); // buffer east
+  });
+
+  it('returns an empty array when there are no doors', () => {
+    expect(getDoorBlockedTiles([])).toEqual([]);
+  });
+});
+
+describe('tilesIntersect', () => {
+  it('returns false when no tiles overlap', () => {
+    const a = [{ x: 0, y: 0 }];
+    const b = [{ x: 1, y: 1 }];
+    expect(tilesIntersect(a, b)).toBe(false);
+  });
+
+  it('returns true when at least one tile is shared', () => {
+    const a = [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+    ];
+    const b = [{ x: 1, y: 0 }];
+    expect(tilesIntersect(a, b)).toBe(true);
+  });
+
+  it('returns false when blocked is empty', () => {
+    expect(tilesIntersect([{ x: 0, y: 0 }], [])).toBe(false);
   });
 });

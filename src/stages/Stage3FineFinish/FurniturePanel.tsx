@@ -9,6 +9,7 @@ import {
   isAllowedInRoom,
   hasCollision,
 } from '../../domain/furniture/placement';
+import { getDoorBlockedTiles, tilesIntersect } from '../../domain/geometry/openings';
 import styles from '../Stage2RoughFinish/SidePanel.module.css';
 import fStyles from './FurniturePanel.module.css';
 
@@ -24,7 +25,9 @@ interface FurniturePanelProps {
 }
 
 export function FurniturePanel({ onStartPlace, placingItem }: FurniturePanelProps) {
-  const { furniture, rooms, removeFurniture, updateFurniture } = useProjectStore();
+  const { furniture, rooms, layout, removeFurniture, updateFurniture } = useProjectStore();
+
+  const doorBlockedTiles = layout ? getDoorBlockedTiles(layout.doors) : [];
 
   // Validates that an in-place edit (rotation toggle, mirror) keeps the piece
   // inside a single room and out of collisions with the rest of the layout.
@@ -42,6 +45,7 @@ export function FurniturePanel({ onStartPlace, placingItem }: FurniturePanelProp
     if (!isAllowedInRoom(item, room.type)) return false;
     const others = furniture.filter((x) => x.id !== fId);
     if (hasCollision(tiles, others, catalogMap)) return false;
+    if (tilesIntersect(tiles, doorBlockedTiles)) return false;
     return true;
   }
 

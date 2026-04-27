@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useProjectStore } from '../../store/projectStore';
 import { FloorCoveringPanel } from './FloorCoveringPanel';
 import { WallCoveringPanel } from './WallCoveringPanel';
@@ -13,6 +13,7 @@ import {
   hasCollision,
   getEffectiveSize,
 } from '../../domain/furniture/placement';
+import { getDoorBlockedTiles, tilesIntersect } from '../../domain/geometry/openings';
 import catalogData from '../../data/furniture-catalog.json';
 import panelStyles from '../Stage2RoughFinish/SidePanel.module.css';
 import stageStyles from '../Stage2RoughFinish/Stage2RoughFinish.module.css';
@@ -36,7 +37,13 @@ export function Stage3FineFinish() {
   const [viewMode, setViewMode] = useState<ViewMode>('2d');
   const [placingItem, setPlacingItem] = useState<CatalogItem | null>(null);
   const [placingRotation, setPlacingRotation] = useState<0 | 90 | 180 | 270>(0);
-  const { setStage, rooms, furniture, addFurniture, updateFurniture } = useProjectStore();
+  const { setStage, rooms, furniture, layout, addFurniture, updateFurniture } = useProjectStore();
+
+  // F7.3.4 — door swing tiles forbid furniture placement
+  const doorBlockedTiles = useMemo(
+    () => (layout ? getDoorBlockedTiles(layout.doors) : []),
+    [layout],
+  );
 
   // F8.1 — drag-to-move handlers for placed furniture
   const validateMove = useCallback(
@@ -53,9 +60,11 @@ export function Stage3FineFinish() {
       // its own current footprint while moving.
       const others = furniture.filter((x) => x.id !== id);
       if (hasCollision(tiles, others, catalogMap)) return false;
+      // F7.3.4 — reject placements that would block a door swing
+      if (tilesIntersect(tiles, doorBlockedTiles)) return false;
       return true;
     },
-    [furniture, rooms],
+    [furniture, rooms, doorBlockedTiles],
   );
 
   const commitMove = useCallback(
@@ -82,6 +91,8 @@ export function Stage3FineFinish() {
       if (!room) return;
       if (!isAllowedInRoom(placingItem, room.type)) return;
       if (hasCollision(tiles, furniture, catalogMap)) return;
+      // F7.3.4 — reject placements that would block a door swing
+      if (tilesIntersect(tiles, doorBlockedTiles)) return;
 
       addFurniture({
         id: `f_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -91,7 +102,7 @@ export function Stage3FineFinish() {
         mirrored: false,
       });
     },
-    [placingItem, placingRotation, rooms, furniture, addFurniture],
+    [placingItem, placingRotation, rooms, furniture, addFurniture, doorBlockedTiles],
   );
 
   // Keyboard: R to rotate, Escape to cancel
@@ -162,6 +173,7 @@ export function Stage3FineFinish() {
                         if (!room) return false;
                         if (!isAllowedInRoom(placingItem, room.type)) return false;
                         if (hasCollision(tiles, furniture, catalogMap)) return false;
+                        if (tilesIntersect(tiles, doorBlockedTiles)) return false;
                         return true;
                       },
                     };

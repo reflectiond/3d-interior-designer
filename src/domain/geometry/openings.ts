@@ -64,3 +64,41 @@ export function openingAreaM2(
 ): number {
   return segmentLength(seg) * tileSizeM * seg.height_m;
 }
+
+/**
+ * F7.3.4 — tiles a door reserves so furniture doesn't block the swing.
+ * For each door we block the segment tiles themselves plus one tile in
+ * each perpendicular direction (covers buffer for both rooms adjacent
+ * to the wall).
+ */
+export function getDoorBlockedTiles(doors: Door[]): TileCoord[] {
+  const blocked: TileCoord[] = [];
+  for (const door of doors) {
+    const segTiles = openingTiles(door);
+    for (const t of segTiles) blocked.push(t);
+    if (door.start.x === door.end.x) {
+      // vertical segment (wall faces ±x) — buffer along ±x
+      for (const t of segTiles) {
+        blocked.push({ x: t.x - 1, y: t.y });
+        blocked.push({ x: t.x + 1, y: t.y });
+      }
+    } else {
+      // horizontal segment (wall faces ±y) — buffer along ±y
+      for (const t of segTiles) {
+        blocked.push({ x: t.x, y: t.y - 1 });
+        blocked.push({ x: t.x, y: t.y + 1 });
+      }
+    }
+  }
+  return blocked;
+}
+
+/** True when any tile in `a` matches any tile in `blocked`. */
+export function tilesIntersect(a: TileCoord[], blocked: TileCoord[]): boolean {
+  if (blocked.length === 0) return false;
+  const blockedSet = new Set(blocked.map((t) => `${t.x},${t.y}`));
+  for (const t of a) {
+    if (blockedSet.has(`${t.x},${t.y}`)) return true;
+  }
+  return false;
+}
