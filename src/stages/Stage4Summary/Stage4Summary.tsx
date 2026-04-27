@@ -1,6 +1,11 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { useProjectStore } from '../../store/projectStore';
 import { computeEstimate } from '../../domain/pricing/estimator';
+import {
+  groupEstimateByWorkType,
+  formatGroupQuantity,
+  type EstimateGroup,
+} from '../../domain/pricing/groupEstimate';
 import type { CatalogItem } from '../../domain/furniture/placement';
 import { exportProjectJSON, importProjectJSON } from '../../persistence/jsonExportImport';
 import { exportPDF } from '../../export/pdfExporter';
@@ -18,6 +23,59 @@ for (const item of catalogData as CatalogItem[]) {
 
 function formatPrice(n: number): string {
   return n.toLocaleString('ru-RU') + ' ₽';
+}
+
+interface CategorySectionProps {
+  title: string;
+  groups: EstimateGroup[];
+  expanded: Record<string, boolean>;
+  onToggle: (key: string) => void;
+}
+
+function CategorySection({ title, groups, expanded, onToggle }: CategorySectionProps) {
+  return (
+    <section className={styles.group}>
+      <h3 className={styles.groupTitle}>{title}</h3>
+      <ul className={styles.estimateList}>
+        {groups.map((g) => {
+          const key = `${g.category}:${g.workType}`;
+          const isOpen = !!expanded[key];
+          return (
+            <li key={key} className={styles.estimateItem}>
+              <button
+                type="button"
+                className={styles.estimateRow}
+                onClick={() => onToggle(key)}
+                aria-expanded={isOpen}
+              >
+                <span className={styles.disclosure} aria-hidden="true">
+                  {isOpen ? '▼' : '▶'}
+                </span>
+                <span className={styles.estimateName}>{g.workType}</span>
+                <span className={styles.estimateQty}>{formatGroupQuantity(g)}</span>
+                <span className={styles.estimatePrice}>
+                  {formatPrice(g.totalPriceMin)} — {formatPrice(g.totalPriceMax)}
+                </span>
+              </button>
+              {isOpen && g.items.length > 1 && (
+                <ul className={styles.estimateDetails}>
+                  {g.items.map((item, i) => (
+                    <li key={`${key}-detail-${i}`} className={styles.estimateDetailRow}>
+                      <span className={styles.estimateName}>{item.name}</span>
+                      <span className={styles.estimateQty}>{item.quantity}</span>
+                      <span className={styles.estimatePrice}>
+                        {formatPrice(item.priceMin)} — {formatPrice(item.priceMax)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
 }
 
 export function Stage4Summary() {
@@ -51,9 +109,16 @@ export function Stage4Summary() {
     [rooms, flooring, ceiling, floorCovering, wallCovering, electricalRoutes, furniture],
   );
 
-  const roughItems = estimate.items.filter((i) => i.category === 'rough');
-  const fineItems = estimate.items.filter((i) => i.category === 'fine');
-  const furnitureItems = estimate.items.filter((i) => i.category === 'furniture');
+  const allGroups = useMemo(() => groupEstimateByWorkType(estimate.items), [estimate.items]);
+  const roughGroups = allGroups.filter((g) => g.category === 'rough');
+  const fineGroups = allGroups.filter((g) => g.category === 'fine');
+  const furnitureGroups = allGroups.filter((g) => g.category === 'furniture');
+
+  // F9.1.3 — все группы по умолчанию свёрнуты
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const toggleGroup = useCallback((key: string) => {
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
   const handleExportPDF = useCallback(() => {
     const snapshot2D = capture2DSnapshot();
@@ -108,82 +173,31 @@ export function Stage4Summary() {
 
       <h2 className={styles.heading}>Итоговая смета</h2>
 
-      {roughItems.length > 0 && (
-        <section className={styles.group}>
-          <h3 className={styles.groupTitle}>Черновая отделка</h3>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Позиция</th>
-                <th>Кол-во</th>
-                <th>Мин. цена</th>
-                <th>Макс. цена</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roughItems.map((item, i) => (
-                <tr key={`rough-${i}`}>
-                  <td>{item.name}</td>
-                  <td>{item.quantity}</td>
-                  <td>{formatPrice(item.priceMin)}</td>
-                  <td>{formatPrice(item.priceMax)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+      {roughGroups.length > 0 && (
+        <CategorySection
+          title="Черновая отделка"
+          groups={roughGroups}
+          expanded={expanded}
+          onToggle={toggleGroup}
+        />
       )}
 
-      {fineItems.length > 0 && (
-        <section className={styles.group}>
-          <h3 className={styles.groupTitle}>Чистовая отделка</h3>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Позиция</th>
-                <th>Кол-во</th>
-                <th>Мин. цена</th>
-                <th>Макс. цена</th>
-              </tr>
-            </thead>
-            <tbody>
-              {fineItems.map((item, i) => (
-                <tr key={`fine-${i}`}>
-                  <td>{item.name}</td>
-                  <td>{item.quantity}</td>
-                  <td>{formatPrice(item.priceMin)}</td>
-                  <td>{formatPrice(item.priceMax)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+      {fineGroups.length > 0 && (
+        <CategorySection
+          title="Чистовая отделка"
+          groups={fineGroups}
+          expanded={expanded}
+          onToggle={toggleGroup}
+        />
       )}
 
-      {furnitureItems.length > 0 && (
-        <section className={styles.group}>
-          <h3 className={styles.groupTitle}>Мебель</h3>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Позиция</th>
-                <th>Кол-во</th>
-                <th>Мин. цена</th>
-                <th>Макс. цена</th>
-              </tr>
-            </thead>
-            <tbody>
-              {furnitureItems.map((item, i) => (
-                <tr key={`furn-${i}`}>
-                  <td>{item.name}</td>
-                  <td>{item.quantity}</td>
-                  <td>{formatPrice(item.priceMin)}</td>
-                  <td>{formatPrice(item.priceMax)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+      {furnitureGroups.length > 0 && (
+        <CategorySection
+          title="Мебель"
+          groups={furnitureGroups}
+          expanded={expanded}
+          onToggle={toggleGroup}
+        />
       )}
 
       <div className={styles.total}>
