@@ -67,4 +67,11 @@ export const PALETTE = {
     background: '#FF8A65',
     icon: '#E64A19',
   },
+  // v1.2.0 — fine-finish floor pattern seam colors. Used for the lines that delineate
+  // boards/tiles/chevrons on top of the base floor color (PALETTE.floor.<type>).
+  floor_pattern_seam: {
+    laminate: '#8C7355',
+    tile: '#A0A0A0',
+    quartz_vinyl: '#6B5C45',
+  },
 } as const;

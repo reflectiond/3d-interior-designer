@@ -10,10 +10,16 @@ import { getEffectiveSize } from '../../domain/furniture/placement';
 import type { CatalogItem } from '../../domain/furniture/placement';
 import type { Room } from '../../domain/geometry/types';
 import { registerKonvaStage } from '../../export/snapshots';
+import { getFloorPatternCanvas } from '../floorPatterns';
 import catalogData from '../../data/furniture-catalog.json';
 import styles from './View2D.module.css';
 
 const SCALE = 30; // pixels per tile
+
+// Pattern canvases are authored at 240 px / m, i.e. 60 px / tile (one tile = 0.25 m).
+// Konva pattern fill is rendered at native pixel size by default — scale it down to
+// match the on-screen tile size.
+const PATTERN_SCALE = SCALE / 60;
 
 const catalogMap = new Map<string, CatalogItem>();
 for (const item of catalogData as CatalogItem[]) {
@@ -40,6 +46,7 @@ export function View2D({
     rooms,
     electricalPanel,
     flooring,
+    floorCovering,
     electricalRoutes,
     electricalPoints,
     furniture,
@@ -110,6 +117,29 @@ export function View2D({
               strokeWidth={1}
             />
           ))}
+
+          {/* Floor coverings (F6.2) — Konva pattern fills with per-room covering */}
+          {rooms.map((room) => {
+            const cov = floorCovering[room.id];
+            if (!cov) return null;
+            return (
+              <Rect
+                key={`floor-cov-${room.id}`}
+                x={room.rect.x * SCALE}
+                y={(gridHeight - room.rect.y - room.rect.height) * SCALE}
+                width={room.rect.width * SCALE}
+                height={room.rect.height * SCALE}
+                fillPatternImage={
+                  // Konva accepts HTMLCanvasElement at runtime; the TS type is overly narrow.
+                  getFloorPatternCanvas(cov) as unknown as HTMLImageElement
+                }
+                fillPatternRepeat="repeat"
+                fillPatternScaleX={PATTERN_SCALE}
+                fillPatternScaleY={PATTERN_SCALE}
+                listening={false}
+              />
+            );
+          })}
 
           {/* Room labels */}
           {rooms.map((room) => {
