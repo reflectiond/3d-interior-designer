@@ -36,7 +36,34 @@ export function Stage3FineFinish() {
   const [viewMode, setViewMode] = useState<ViewMode>('2d');
   const [placingItem, setPlacingItem] = useState<CatalogItem | null>(null);
   const [placingRotation, setPlacingRotation] = useState<0 | 90 | 180 | 270>(0);
-  const { setStage, rooms, furniture, addFurniture } = useProjectStore();
+  const { setStage, rooms, furniture, addFurniture, updateFurniture } = useProjectStore();
+
+  // F8.1 — drag-to-move handlers for placed furniture
+  const validateMove = useCallback(
+    (id: string, tx: number, ty: number): boolean => {
+      const f = furniture.find((x) => x.id === id);
+      if (!f) return false;
+      const item = catalogMap.get(f.catalogId);
+      if (!item) return false;
+      const tiles = getFurnitureTiles({ x: tx, y: ty }, item, f.rotation);
+      const room = findContainingRoom(tiles, rooms);
+      if (!room) return false;
+      if (!isAllowedInRoom(item, room.type)) return false;
+      // Exclude self from collision check — the piece is allowed to occupy
+      // its own current footprint while moving.
+      const others = furniture.filter((x) => x.id !== id);
+      if (hasCollision(tiles, others, catalogMap)) return false;
+      return true;
+    },
+    [furniture, rooms],
+  );
+
+  const commitMove = useCallback(
+    (id: string, tx: number, ty: number) => {
+      updateFurniture(id, { position: { x: tx, y: ty } });
+    },
+    [updateFurniture],
+  );
 
   const handleStartPlace = useCallback((item: CatalogItem) => {
     setPlacingItem(item);
@@ -141,6 +168,7 @@ export function Stage3FineFinish() {
                   })()
                 : null
             }
+            furnitureDrag={placingItem ? null : { isValid: validateMove, onCommit: commitMove }}
           />
         ) : (
           <View3D />
