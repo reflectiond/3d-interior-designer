@@ -73,7 +73,13 @@ function RoomMesh({
       </mesh>
       <mesh position={[cx, ROOM_HEIGHT, cz]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[w, d]} />
-        <meshStandardMaterial color={ceilingColor(ceilingType)} />
+        {ceilingType === 'stretch' ? (
+          // F6.3.4 — glossy stretch ceiling
+          <meshPhysicalMaterial color={ceilingColor(ceilingType)} roughness={0.2} clearcoat={0.5} />
+        ) : (
+          // F6.3.5 — matte drywall
+          <meshStandardMaterial color={ceilingColor(ceilingType)} roughness={0.95} />
+        )}
       </mesh>
     </group>
   );
