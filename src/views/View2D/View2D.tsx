@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Stage as KonvaStage, Layer, Rect, Text, Circle, Line, Path } from 'react-konva';
+import { Stage as KonvaStage, Layer, Rect, Text, Circle, Line, Path, Group } from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useProjectStore } from '../../store/projectStore';
@@ -40,12 +40,27 @@ export interface PlacingPreview {
   isValid: (tx: number, ty: number) => boolean;
 }
 
+export interface FurnitureDragHandlers {
+  /** Returns true if dropping furniture id at (tx, ty) (bottom-left in tile-up space) is allowed. */
+  isValid: (id: string, tx: number, ty: number) => boolean;
+  /** Called once after a valid drop. Caller updates the store. */
+  onCommit: (id: string, tx: number, ty: number) => void;
+}
+
 export interface View2DProps {
   interactionMode?: 'none' | 'electrical' | 'furniture';
   electricalPointType?: 'socket' | 'switch';
   onFurniturePlace?: (tileX: number, tileY: number) => void;
   /** F8.3 — when set, View2D renders a validity-coloured highlight under the cursor. */
   placingPreview?: PlacingPreview | null;
+  /** F8.1 — when set, placed furniture is draggable; ghost follows cursor, drop validates. */
+  furnitureDrag?: FurnitureDragHandlers | null;
+}
+
+interface DragState {
+  id: string;
+  tx: number;
+  ty: number;
 }
 
 export function View2D({
@@ -53,6 +68,7 @@ export function View2D({
   electricalPointType = 'socket',
   onFurniturePlace,
   placingPreview,
+  furnitureDrag,
 }: View2DProps) {
   const {
     layout,
@@ -71,6 +87,14 @@ export function View2D({
 
   // F8.3 — current cursor tile while placing furniture, for validity highlight
   const [hoverTile, setHoverTile] = useState<{ tx: number; ty: number } | null>(null);
+  // F8.1 — drag-to-move state and short-lived invalid-drop flash
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const [invalidFlash, setInvalidFlash] = useState<{
+    tx: number;
+    ty: number;
+    w: number;
+    h: number;
+  } | null>(null);
 
   useEffect(() => {
     registerKonvaStage(stageRef.current);
@@ -356,18 +380,56 @@ export function View2D({
             );
           })}
 
-          {/* Placed furniture */}
+          {/* Placed furniture (F8.1 — draggable when furnitureDrag is provided) */}
           {furniture.map((f, i) => {
             const item = catalogMap.get(f.catalogId);
             if (!item) return null;
             const { w, h } = getEffectiveSize(item, f.rotation);
             const colorKey = item.color_key as keyof typeof PALETTE.furniture;
             const color = PALETTE.furniture[colorKey] ?? PALETTE.furniture.chair;
+            const screenX = f.position.x * SCALE;
+            const screenY = (gridHeight - f.position.y - h) * SCALE;
+            const draggable = !!furnitureDrag;
             return (
-              <React.Fragment key={`furn-${f.id}`}>
+              <Group
+                key={`furn-${f.id}`}
+                x={screenX}
+                y={screenY}
+                draggable={draggable}
+                // F8.1.2 — keep the original visually static during drag; ghost
+                // shows the candidate position separately.
+                dragBoundFunc={() => ({ x: screenX, y: screenY })}
+                onDragStart={() => {
+                  setDragState({ id: f.id, tx: f.position.x, ty: f.position.y });
+                }}
+                onDragMove={(e) => {
+                  const stage = e.target.getStage();
+                  const pos = stage?.getPointerPosition();
+                  if (!pos) return;
+                  // Center the ghost on the cursor for predictable placement.
+                  const tx = Math.round(pos.x / SCALE - w / 2);
+                  const ty = Math.round(gridHeight - pos.y / SCALE - h / 2);
+                  setDragState((prev) =>
+                    prev && prev.tx === tx && prev.ty === ty ? prev : { id: f.id, tx, ty },
+                  );
+                }}
+                onDragEnd={() => {
+                  if (!dragState || !furnitureDrag) {
+                    setDragState(null);
+                    return;
+                  }
+                  const { id, tx, ty } = dragState;
+                  if (furnitureDrag.isValid(id, tx, ty)) {
+                    furnitureDrag.onCommit(id, tx, ty);
+                  } else {
+                    // F8.1.3 — flash red at the rejected drop position
+                    setInvalidFlash({ tx, ty, w, h });
+                    window.setTimeout(() => setInvalidFlash(null), 500);
+                  }
+                  setDragState(null);
+                }}
+              >
                 <Rect
-                  x={f.position.x * SCALE}
-                  y={(gridHeight - f.position.y - h) * SCALE}
                   width={w * SCALE}
                   height={h * SCALE}
                   fill={color}
@@ -376,14 +438,14 @@ export function View2D({
                   cornerRadius={2}
                 />
                 <Text
-                  x={f.position.x * SCALE + 2}
-                  y={(gridHeight - f.position.y - h) * SCALE + 2}
+                  x={2}
+                  y={2}
                   text={`${i + 1}. ${item.name}`}
                   fontSize={8}
                   fill="white"
                   listening={false}
                 />
-              </React.Fragment>
+              </Group>
             );
           })}
 
@@ -493,6 +555,49 @@ export function View2D({
                 />
               );
             })()}
+
+          {/* Drag-to-move ghost (F8.1.2) — semi-transparent silhouette that
+              follows the cursor while a placed piece is being dragged. Border
+              colour reflects validity so the user sees feedback before drop. */}
+          {dragState &&
+            furnitureDrag &&
+            (() => {
+              const f = furniture.find((x) => x.id === dragState.id);
+              if (!f) return null;
+              const item = catalogMap.get(f.catalogId);
+              if (!item) return null;
+              const { w: gw, h: gh } = getEffectiveSize(item, f.rotation);
+              const valid = furnitureDrag.isValid(dragState.id, dragState.tx, dragState.ty);
+              const border = valid
+                ? PALETTE.placement_highlight.valid
+                : PALETTE.placement_highlight.invalid;
+              return (
+                <Rect
+                  x={dragState.tx * SCALE}
+                  y={(gridHeight - dragState.ty - gh) * SCALE}
+                  width={gw * SCALE}
+                  height={gh * SCALE}
+                  fill={PALETTE.placement_highlight.ghost}
+                  opacity={0.4}
+                  stroke={border}
+                  strokeWidth={2}
+                  listening={false}
+                />
+              );
+            })()}
+
+          {/* Invalid-drop flash (F8.1.3) — short red blink at the rejected position. */}
+          {invalidFlash && (
+            <Rect
+              x={invalidFlash.tx * SCALE}
+              y={(gridHeight - invalidFlash.ty - invalidFlash.h) * SCALE}
+              width={invalidFlash.w * SCALE}
+              height={invalidFlash.h * SCALE}
+              fill={PALETTE.placement_highlight.invalid}
+              opacity={0.5}
+              listening={false}
+            />
+          )}
         </Layer>
       </KonvaStage>
       {interactionMode === 'electrical' && (
