@@ -5,6 +5,9 @@ import type { CatalogItem } from '../../domain/furniture/placement';
 import { exportProjectJSON, importProjectJSON } from '../../persistence/jsonExportImport';
 import { exportPDF } from '../../export/pdfExporter';
 import { exportPNG } from '../../export/imageExporter';
+import { capture2DSnapshot, capture3DSnapshot } from '../../export/snapshots';
+import { View3DSnapshot } from '../../export/snapshot/View3DSnapshot';
+import { View2D } from '../../views/View2D/View2D';
 import catalogData from '../../data/furniture-catalog.json';
 import styles from './Stage4Summary.module.css';
 
@@ -50,9 +53,9 @@ export function Stage4Summary() {
   const furnitureItems = estimate.items.filter((i) => i.category === 'furniture');
 
   const handleExportPDF = useCallback(() => {
-    const canvas2D = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
-    const canvas3D = document.querySelector('canvas[data-engine]') as HTMLCanvasElement | null;
-    exportPDF(estimate, canvas2D, canvas3D).catch((err: unknown) => {
+    const snapshot2D = capture2DSnapshot();
+    const snapshot3D = capture3DSnapshot();
+    exportPDF(estimate, snapshot2D, snapshot3D).catch((err: unknown) => {
       console.error('PDF export failed:', err);
       alert('Не удалось экспортировать PDF. Попробуйте перезагрузить страницу.');
     });
@@ -82,6 +85,21 @@ export function Stage4Summary() {
 
   return (
     <div className={styles.container}>
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          left: -10000,
+          top: -10000,
+          width: 0,
+          height: 0,
+          overflow: 'hidden',
+        }}
+      >
+        <View2D />
+      </div>
+      <View3DSnapshot />
+
       <h2 className={styles.heading}>Итоговая смета</h2>
 
       {roughItems.length > 0 && (
