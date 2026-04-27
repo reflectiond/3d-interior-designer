@@ -166,11 +166,16 @@ function FurnitureMeshes() {
         const cz = f.position.y * TILE_SIZE + dm / 2;
         const colorKey = item.color_key as keyof typeof PALETTE.furniture;
         const color = PALETTE.furniture[colorKey] ?? PALETTE.furniture.chair;
+        // F8.2.3 — scaleX={[-1, 1, 1]} mirrors around the box centre. The geometry
+        // is symmetric so visually identical pieces do not change, but asymmetric
+        // future models will reflect correctly.
         return (
-          <mesh key={f.id} position={[cx, hm / 2, cz]}>
-            <boxGeometry args={[wm, hm, dm]} />
-            <meshStandardMaterial color={color} />
-          </mesh>
+          <group key={f.id} position={[cx, hm / 2, cz]} scale={[f.mirrored ? -1 : 1, 1, 1]}>
+            <mesh>
+              <boxGeometry args={[wm, hm, dm]} />
+              <meshStandardMaterial color={color} />
+            </mesh>
+          </group>
         );
       })}
     </group>

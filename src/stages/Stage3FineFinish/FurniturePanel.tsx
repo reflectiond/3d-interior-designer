@@ -92,6 +92,16 @@ export function FurniturePanel({ onStartPlace, placingItem }: FurniturePanelProp
                         ↻
                       </button>
                     )}
+                    {item?.mirrorable && (
+                      <button
+                        className={fStyles.actionBtn}
+                        onClick={() => updateFurniture(f.id, { mirrored: !f.mirrored })}
+                        title="Отзеркалить"
+                        aria-label="Отзеркалить"
+                      >
+                        ⇋
+                      </button>
+                    )}
                     <button
                       className={fStyles.actionBtn}
                       style={{ color: PALETTE.electrical.panel }}
