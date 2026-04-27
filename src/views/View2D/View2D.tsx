@@ -258,6 +258,82 @@ export function View2D({
             />
           ))}
 
+          {/* Windows (F7.2.1) — two parallel lines either side of the wall stroke */}
+          {layout.windows.map((win) => {
+            const sx1 = win.start.x * SCALE;
+            const sy1 = (gridHeight - win.start.y) * SCALE;
+            const sx2 = win.end.x * SCALE;
+            const sy2 = (gridHeight - win.end.y) * SCALE;
+            const dx = sx2 - sx1;
+            const dy = sy2 - sy1;
+            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+            const offset = 3;
+            const nx = (-dy / len) * offset;
+            const ny = (dx / len) * offset;
+            return (
+              <React.Fragment key={`win-${win.id}`}>
+                <Line
+                  points={[sx1 + nx, sy1 + ny, sx2 + nx, sy2 + ny]}
+                  stroke={PALETTE.openings.window_frame}
+                  strokeWidth={1}
+                  listening={false}
+                />
+                <Line
+                  points={[sx1 - nx, sy1 - ny, sx2 - nx, sy2 - ny]}
+                  stroke={PALETTE.openings.window_frame}
+                  strokeWidth={1}
+                  listening={false}
+                />
+              </React.Fragment>
+            );
+          })}
+
+          {/* Door openings (F7.3.1, F7.3.2) — leaf line + swing arc.
+              Geometry computed in domain (y-up), then converted to screen. */}
+          {layout.doors.map((door) => {
+            const hingeD = door.hinge === 'start' ? door.start : door.end;
+            const otherD = door.hinge === 'start' ? door.end : door.start;
+            const dxD = otherD.x - hingeD.x;
+            const dyD = otherD.y - hingeD.y;
+            // perpendicular in domain: 90° CCW = (-dyD, dxD); swing_side='right' flips.
+            const sign = door.swing_side === 'left' ? 1 : -1;
+            const pxD = -dyD * sign;
+            const pyD = dxD * sign;
+            const leafTipD = { x: hingeD.x + pxD, y: hingeD.y + pyD };
+
+            const toScreenX = (tx: number) => tx * SCALE;
+            const toScreenY = (ty: number) => (gridHeight - ty) * SCALE;
+            const hingeS = { x: toScreenX(hingeD.x), y: toScreenY(hingeD.y) };
+            const otherS = { x: toScreenX(otherD.x), y: toScreenY(otherD.y) };
+            const leafTipS = { x: toScreenX(leafTipD.x), y: toScreenY(leafTipD.y) };
+
+            const r = Math.hypot(otherS.x - hingeS.x, otherS.y - hingeS.y);
+            // SVG arc sweep flag: y-flip between domain and screen makes the arc
+            // sweep CW in screen when CCW in domain. swing_side='left' produces
+            // sweep=0; 'right' produces sweep=1.
+            const sweepFlag = door.swing_side === 'left' ? 0 : 1;
+
+            return (
+              <React.Fragment key={`door-${door.id}`}>
+                {/* Door leaf */}
+                <Line
+                  points={[hingeS.x, hingeS.y, leafTipS.x, leafTipS.y]}
+                  stroke={PALETTE.openings.door_frame}
+                  strokeWidth={1.5}
+                  listening={false}
+                />
+                {/* Swing arc (dashed) */}
+                <Path
+                  data={`M ${leafTipS.x} ${leafTipS.y} A ${r} ${r} 0 0 ${sweepFlag} ${otherS.x} ${otherS.y}`}
+                  stroke={PALETTE.openings.door_arc}
+                  strokeWidth={1}
+                  dash={[4, 3]}
+                  listening={false}
+                />
+              </React.Fragment>
+            );
+          })}
+
           {/* Electrical panel (щиток) — rendered as a square on the wall */}
           {electricalPanel && (
             <>
