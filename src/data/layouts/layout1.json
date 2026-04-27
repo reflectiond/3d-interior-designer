@@ -92,5 +92,59 @@
   "electricalPanel": {
     "x": 15,
     "y": 3
-  }
+  },
+  "windows": [
+    {
+      "id": "win_bedroom1_north",
+      "start": { "x": 3, "y": 0 },
+      "end": { "x": 7, "y": 0 }
+    },
+    {
+      "id": "win_bedroom2_west",
+      "start": { "x": 0, "y": 22 },
+      "end": { "x": 0, "y": 26 }
+    },
+    {
+      "id": "win_kitchen_north",
+      "start": { "x": 24, "y": 0 },
+      "end": { "x": 30, "y": 0 }
+    },
+    {
+      "id": "win_living_south",
+      "start": { "x": 24, "y": 32 },
+      "end": { "x": 32, "y": 32 }
+    }
+  ],
+  "doors": [
+    {
+      "id": "door_bedroom1_corridor",
+      "start": { "x": 12, "y": 10 },
+      "end": { "x": 12, "y": 13 },
+      "swing_side": "left"
+    },
+    {
+      "id": "door_bedroom2_corridor",
+      "start": { "x": 12, "y": 16 },
+      "end": { "x": 12, "y": 19 },
+      "swing_side": "left"
+    },
+    {
+      "id": "door_bathroom_corridor",
+      "start": { "x": 14, "y": 20 },
+      "end": { "x": 17, "y": 20 },
+      "swing_side": "left"
+    },
+    {
+      "id": "door_corridor_living",
+      "start": { "x": 20, "y": 11 },
+      "end": { "x": 20, "y": 14 },
+      "swing_side": "right"
+    },
+    {
+      "id": "door_kitchen_living",
+      "start": { "x": 24, "y": 6 },
+      "end": { "x": 27, "y": 6 },
+      "swing_side": "left"
+    }
+  ]
 }
