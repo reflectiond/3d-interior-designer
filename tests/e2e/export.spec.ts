@@ -58,3 +58,26 @@ test.describe('Export — PDF', () => {
     expect(viewport.width).toBeLessThan(900);
   });
 });
+
+test.describe('Export — PNG', () => {
+  test('E2E-11: PNG export downloads a valid PNG file', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
+    await page.locator('nav[aria-label="Этапы"] button').nth(3).click();
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Сохранить как PNG' }).click();
+    const download = await downloadPromise;
+
+    const downloadPath = await download.path();
+    expect(downloadPath).not.toBeNull();
+    const buffer = await readFile(downloadPath!);
+
+    // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+    expect(buffer.length).toBeGreaterThan(1000);
+    expect(buffer[0]).toBe(0x89);
+    expect(buffer[1]).toBe(0x50);
+    expect(buffer[2]).toBe(0x4e);
+    expect(buffer[3]).toBe(0x47);
+  });
+});

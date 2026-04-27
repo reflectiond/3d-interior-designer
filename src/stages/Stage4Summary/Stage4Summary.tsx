@@ -62,9 +62,12 @@ export function Stage4Summary() {
   }, [estimate]);
 
   const handleExportPNG = useCallback(() => {
-    const canvas2D = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
-    exportPNG(canvas2D);
-  }, []);
+    const snapshot2D = capture2DSnapshot();
+    exportPNG(snapshot2D, estimate).catch((err: unknown) => {
+      console.error('PNG export failed:', err);
+      alert('Не удалось экспортировать PNG. Попробуйте перезагрузить страницу.');
+    });
+  }, [estimate]);
 
   const handleExportJSON = () => {
     exportProjectJSON(state);
