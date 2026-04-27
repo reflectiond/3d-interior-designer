@@ -214,16 +214,16 @@
 | F8.1.1 | Drag-to-move через `Konva.draggable={true}`        | 🚧     | feature/drag-to-move        |
 | F8.1.2 | Призрак под курсором с opacity                     | 🚧     | feature/drag-to-move        |
 | F8.1.3 | onDragEnd валидация и откат при невалидной позиции | 🚧     | feature/drag-to-move        |
-| F8.1.4 | F3.3.5 уточнение в спецификации                    | ⚪     | (1.4.c)                     |
-| F8.2.1 | Отзеркаливание: клавиша M + кнопка                 | ⚪     | —                           |
-| F8.2.2 | Состояние сохраняется в `mirrored: boolean`        | ⚪     | —                           |
-| F8.2.3 | 2D: Konva scaleX={-1}; 3D: group scale=[-1,1,1]    | ⚪     | —                           |
-| F8.2.4 | Пересчёт коллизий после отзеркаливания             | ⚪     | —                           |
+| F8.1.4 | F3.3.5 уточнение в спецификации                    | 🚧     | feature/furniture-mirror    |
+| F8.2.1 | Отзеркаливание: клавиша M + кнопка                 | 🚧     | feature/furniture-mirror    |
+| F8.2.2 | Состояние сохраняется в `mirrored: boolean`        | 🚧     | feature/furniture-mirror    |
+| F8.2.3 | 2D: Konva scaleX={-1}; 3D: group scale=[-1,1,1]    | 🚧     | feature/furniture-mirror    |
+| F8.2.4 | Пересчёт коллизий после отзеркаливания             | 🚧     | feature/furniture-mirror    |
 | F8.3.1 | Подсветка валидной/невалидной зоны цветом          | 🚧     | feature/placement-highlight |
 | F8.3.2 | Real-time обновление при движении курсора          | 🚧     | feature/placement-highlight |
 | F8.3.3 | F3.3.3 уточнение в спецификации                    | 🚧     | feature/placement-highlight |
 | F8.4.1 | E2E-12: drag-to-move валидно/невалидно             | ⚪     | —                           |
-| F8.4.2 | E2E: визуальный snapshot отзеркаленной мебели      | ⚪     | —                           |
+| F8.4.2 | E2E: визуальный snapshot отзеркаленной мебели      | 🚧     | feature/furniture-mirror    |
 
 ---
 

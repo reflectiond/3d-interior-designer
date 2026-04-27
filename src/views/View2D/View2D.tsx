@@ -390,11 +390,16 @@ export function View2D({
             const screenX = f.position.x * SCALE;
             const screenY = (gridHeight - f.position.y - h) * SCALE;
             const draggable = !!furnitureDrag;
+            // F8.2.3 — mirror around the group's right edge so the rect
+            // stays in the same screen footprint while the contents flip.
+            const widthPx = w * SCALE;
             return (
               <Group
                 key={`furn-${f.id}`}
                 x={screenX}
                 y={screenY}
+                scaleX={f.mirrored ? -1 : 1}
+                offsetX={f.mirrored ? widthPx : 0}
                 draggable={draggable}
                 // F8.1.2 — keep the original visually static during drag; ghost
                 // shows the candidate position separately.
