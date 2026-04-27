@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import type { Estimate } from '../domain/pricing/estimator';
+import { registerPTSans, PT_SANS_FAMILY } from './fonts/ptSans';
 
 function formatPrice(n: number): string {
   return n.toLocaleString('ru-RU') + ' ₽';
@@ -11,11 +12,13 @@ export async function exportPDF(
   canvas3DElement: HTMLCanvasElement | null,
 ) {
   const doc = new jsPDF('p', 'mm', 'a4');
+  await registerPTSans(doc);
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   const contentWidth = pageWidth - margin * 2;
 
   // Page 1: 2D Plan
+  doc.setFont(PT_SANS_FAMILY, 'bold');
   doc.setFontSize(16);
   doc.text('3D Interior Designer — План 2D', margin, 20);
 
@@ -27,6 +30,7 @@ export async function exportPDF(
       const imgHeight = imgWidth / imgAspect;
       doc.addImage(imgData, 'PNG', margin, 30, imgWidth, imgHeight);
     } catch {
+      doc.setFont(PT_SANS_FAMILY, 'normal');
       doc.setFontSize(10);
       doc.text('(2D-схема недоступна)', margin, 40);
     }
@@ -34,6 +38,7 @@ export async function exportPDF(
 
   // Page 2: 3D View
   doc.addPage();
+  doc.setFont(PT_SANS_FAMILY, 'bold');
   doc.setFontSize(16);
   doc.text('3D Interior Designer — Вид 3D', margin, 20);
 
@@ -45,6 +50,7 @@ export async function exportPDF(
       const imgHeight = imgWidth / imgAspect;
       doc.addImage(imgData, 'PNG', margin, 30, imgWidth, imgHeight);
     } catch {
+      doc.setFont(PT_SANS_FAMILY, 'normal');
       doc.setFontSize(10);
       doc.text('(3D-сцена недоступна)', margin, 40);
     }
@@ -52,6 +58,7 @@ export async function exportPDF(
 
   // Page 3: Estimate
   doc.addPage();
+  doc.setFont(PT_SANS_FAMILY, 'bold');
   doc.setFontSize(16);
   doc.text('3D Interior Designer — Смета', margin, 20);
 
@@ -74,12 +81,12 @@ export async function exportPDF(
     }
 
     doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
+    doc.setFont(PT_SANS_FAMILY, 'bold');
     doc.text(cat.title, margin, y);
     y += lineHeight + 2;
 
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont(PT_SANS_FAMILY, 'normal');
 
     for (const item of items) {
       if (y > 275) {
@@ -98,7 +105,7 @@ export async function exportPDF(
   // Total
   y += 4;
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
+  doc.setFont(PT_SANS_FAMILY, 'bold');
   doc.text(
     `Итого: ${formatPrice(estimate.totalMin)} — ${formatPrice(estimate.totalMax)}`,
     margin,
