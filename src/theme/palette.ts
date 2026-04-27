@@ -81,4 +81,12 @@ export const PALETTE = {
     invalid: '#E53935',
     ghost: '#9E9E9E',
   },
+  // v1.5.0 — windows and door openings. window_glass renders at opacity 0.5
+  // in 3D as a translucent pane; door_arc draws the swing arc in 2D.
+  openings: {
+    window_frame: '#3D5A6C',
+    window_glass: '#B3D9E6',
+    door_frame: '#6B5C45',
+    door_arc: '#888888',
+  },
 } as const;
