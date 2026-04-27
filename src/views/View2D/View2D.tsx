@@ -106,6 +106,19 @@ export function View2D({
         onClick={handleCanvasClick}
       >
         <Layer>
+          {/* Canonical z-order (F6.4.1):
+              1. Room fill        — base color per room.type
+              2. Floor covering   — Konva pattern (F6.2)
+              3. Labels           — room name + area
+              4. Walls            — internal & external outlines
+              5. Electrical panel — щиток
+              6. Heated floor     — coral overlay + heat-wave icons (F6.1)
+              7. Electrical routes — wires
+              8. Electrical points — sockets / switches
+              9. Furniture
+              10. Veranda
+              11. Ceiling icons   — must remain on top (F6.3) */}
+
           {/* Room fills */}
           {rooms.map((room) => (
             <Rect

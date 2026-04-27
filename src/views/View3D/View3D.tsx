@@ -22,6 +22,7 @@ export function View3D() {
           near: 0.1,
           far: 100,
         }}
+        gl={{ preserveDrawingBuffer: true }}
       >
         <ProjectScene />
         <OrbitControls
