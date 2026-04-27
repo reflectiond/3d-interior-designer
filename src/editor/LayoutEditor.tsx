@@ -1,47 +1,54 @@
+import { useReducer } from 'react';
 import { PALETTE } from '../theme/palette';
+import { editorReducer, initialEditorState } from './state';
+import { EditorCanvas } from './EditorCanvas';
+import { EditorSidebar } from './EditorSidebar';
 
 const EDITOR_BG = PALETTE.walls.paint;
 
 /**
  * Layout editor (F11.x).
  *
- * Skeleton shell for v1.6.0 sub-sprint 1.6.a — gating only. Drawing tools,
- * real-time validation, and JSON export land in 1.6.b / 1.6.c.
+ * v1.6.0 sub-sprint 1.6.b: drawing tools landed (Room / Panel / Window / Door).
+ * Real-time validation + JSON export → 1.6.c.
  *
- * F11.2.6: this component MUST NOT read or write the main app's localStorage
- * keys. It uses its own isolated state.
+ * F11.2.6: state lives entirely in this component's `useReducer`. No
+ * persistence, no projectStore mutation — closing the tab discards everything.
  */
 export function LayoutEditor() {
+  const [state, dispatch] = useReducer(editorReducer, initialEditorState());
+
   return (
     <div
       data-testid="layout-editor"
       style={{
         minHeight: '100vh',
-        padding: 24,
+        display: 'flex',
         background: EDITOR_BG,
         color: PALETTE.text.primary,
         fontFamily: 'system-ui, sans-serif',
       }}
     >
-      <header style={{ marginBottom: 16 }}>
-        <h1 style={{ margin: 0, fontSize: 22 }}>Редактор планировок</h1>
-        <p style={{ margin: '4px 0 0', color: PALETTE.text.secondary, fontSize: 14 }}>
-          Инструменты появятся в следующих под-спринтах v1.6.0.
-        </p>
-      </header>
+      <EditorSidebar state={state} dispatch={dispatch} />
       <main
-        data-testid="layout-editor-canvas-placeholder"
         style={{
-          minHeight: 400,
-          border: `1px dashed ${PALETTE.text.secondary}`,
-          borderRadius: 8,
+          flex: 1,
+          padding: 16,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: PALETTE.text.secondary,
+          flexDirection: 'column',
+          alignItems: 'flex-start',
+          gap: 12,
+          overflow: 'auto',
         }}
       >
-        canvas placeholder
+        <header>
+          <h1 style={{ margin: 0, fontSize: 18 }}>Редактор планировок</h1>
+          <p style={{ margin: '4px 0 0', color: PALETTE.text.secondary, fontSize: 13 }}>
+            Размер сетки {state.gridWidth}×{state.gridHeight} тайлов. Комнаты — прямоугольником,
+            окна и двери — двумя кликами вдоль грани.
+          </p>
+        </header>
+        <EditorCanvas state={state} dispatch={dispatch} />
       </main>
     </div>
   );
