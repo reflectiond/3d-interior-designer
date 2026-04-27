@@ -11,6 +11,7 @@ import type { CatalogItem } from '../../domain/furniture/placement';
 import type { Room } from '../../domain/geometry/types';
 import { registerKonvaStage } from '../../export/snapshots';
 import { getFloorPatternCanvas } from '../floorPatterns';
+import { pickCeilingIconAnchor, CEILING_ICON_SIZE_TILES } from '../ceilingIcon';
 import catalogData from '../../data/furniture-catalog.json';
 import styles from './View2D.module.css';
 
@@ -47,6 +48,7 @@ export function View2D({
     electricalPanel,
     flooring,
     floorCovering,
+    ceiling,
     electricalRoutes,
     electricalPoints,
     furniture,
@@ -352,6 +354,72 @@ export function View2D({
               dash={[8, 4]}
             />
           )}
+
+          {/* Ceiling type icons (F6.3) — top-right corner with collision avoidance.
+              Rendered last so they sit above furniture (per F6.4.1 z-order). */}
+          {rooms.map((room) => {
+            const cType = ceiling[room.id] ?? 'stretch';
+            const anchor = pickCeilingIconAnchor(room, furniture, catalogMap);
+            const sizeScreen = CEILING_ICON_SIZE_TILES * SCALE;
+            // Anchor is in tile-y-up; convert to Konva screen coordinates
+            const left = anchor.tx * SCALE;
+            const top = (gridHeight - anchor.ty - CEILING_ICON_SIZE_TILES) * SCALE;
+            const cx = left + sizeScreen / 2;
+            const cy = top + sizeScreen / 2;
+            const labelText = cType === 'stretch' ? 'Натяжной' : 'Гипсокартон';
+            const iconColor =
+              cType === 'stretch' ? PALETTE.ceiling.stretch : PALETTE.ceiling.drywall;
+            return (
+              <React.Fragment key={`ceiling-icon-${room.id}`}>
+                {cType === 'stretch' ? (
+                  <Circle
+                    x={cx}
+                    y={cy}
+                    radius={sizeScreen / 2.4}
+                    fill={iconColor}
+                    stroke={PALETTE.text.secondary}
+                    strokeWidth={1}
+                    listening={false}
+                  />
+                ) : (
+                  <>
+                    <Line
+                      points={[
+                        cx - sizeScreen / 2.4,
+                        cy - sizeScreen / 2.4,
+                        cx + sizeScreen / 2.4,
+                        cy + sizeScreen / 2.4,
+                      ]}
+                      stroke={PALETTE.text.secondary}
+                      strokeWidth={1.6}
+                      listening={false}
+                    />
+                    <Line
+                      points={[
+                        cx + sizeScreen / 2.4,
+                        cy - sizeScreen / 2.4,
+                        cx - sizeScreen / 2.4,
+                        cy + sizeScreen / 2.4,
+                      ]}
+                      stroke={PALETTE.text.secondary}
+                      strokeWidth={1.6}
+                      listening={false}
+                    />
+                  </>
+                )}
+                <Text
+                  x={left - sizeScreen}
+                  y={top + sizeScreen + 1}
+                  width={sizeScreen * 3}
+                  align="center"
+                  text={labelText}
+                  fontSize={10}
+                  fill={PALETTE.text.secondary}
+                  listening={false}
+                />
+              </React.Fragment>
+            );
+          })}
         </Layer>
       </KonvaStage>
       {interactionMode === 'electrical' && (

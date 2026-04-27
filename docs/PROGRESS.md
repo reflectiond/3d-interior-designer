@@ -168,13 +168,13 @@
 
 ### F6.3.x — Потолок
 
-| ID     | Описание                                                      | Статус | PR / Тег |
-| ------ | ------------------------------------------------------------- | ------ | -------- |
-| F6.3.1 | Иконка типа потолка в углу комнаты                            | ⚪     | —        |
-| F6.3.2 | Подпись 10 px цветом `PALETTE.text.secondary`                 | ⚪     | —        |
-| F6.3.3 | Защита от коллизий с мебелью — смещение на следующий угол     | ⚪     | —        |
-| F6.3.4 | Натяжной — `meshPhysicalMaterial roughness 0.2 clearcoat 0.5` | ⚪     | —        |
-| F6.3.5 | Гипсокартон — `meshStandardMaterial roughness 0.95`           | ⚪     | —        |
+| ID     | Описание                                                      | Статус | PR / Тег                  |
+| ------ | ------------------------------------------------------------- | ------ | ------------------------- |
+| F6.3.1 | Иконка типа потолка в углу комнаты                            | 🚧     | feature/ceiling-indicator |
+| F6.3.2 | Подпись 10 px цветом `PALETTE.text.secondary`                 | 🚧     | feature/ceiling-indicator |
+| F6.3.3 | Защита от коллизий с мебелью — смещение на следующий угол     | 🚧     | feature/ceiling-indicator |
+| F6.3.4 | Натяжной — `meshPhysicalMaterial roughness 0.2 clearcoat 0.5` | 🚧     | feature/ceiling-indicator |
+| F6.3.5 | Гипсокартон — `meshStandardMaterial roughness 0.95`           | 🚧     | feature/ceiling-indicator |
 
 ### F6.4.x — Сочетаемость пола и потолка
 
