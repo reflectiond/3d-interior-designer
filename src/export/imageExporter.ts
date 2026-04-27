@@ -1,4 +1,5 @@
 import type { Estimate } from '../domain/pricing/estimator';
+import { groupEstimateByWorkType, formatGroupQuantity } from '../domain/pricing/groupEstimate';
 import { PALETTE } from '../theme/palette';
 import { buildExportFilename } from './sanitizeFilename';
 
@@ -49,37 +50,63 @@ function drawEstimate(ctx: CanvasRenderingContext2D, estimate: Estimate) {
   ctx.font = 'bold 28px Arial, sans-serif';
   ctx.fillText('Смета', PADDING, startY);
 
-  ctx.font = '16px Arial, sans-serif';
+  // F9.2.3 — same grouping as PDF: top level work-type rows in bold, expanded
+  // detail rows in regular weight indented to the right.
+  const groups = groupEstimateByWorkType(estimate.items);
+  const groupLineHeight = 24;
+  const detailLineHeight = 20;
+  const groupGap = 8;
+  const colName = PADDING;
+  const colNameDetail = PADDING + 24;
+  const colQty = PADDING + 600;
+  const colPrice = PADDING + 900;
+  const bottomLimit = PNG_HEIGHT - PADDING - 56;
+
   let y = startY + 44;
-  const lineHeight = 22;
-  const groupGap = 12;
-  const bottomLimit = PNG_HEIGHT - PADDING - 40;
 
   for (const cat of CATEGORIES) {
-    const items = estimate.items.filter((i) => i.category === cat.key);
-    if (items.length === 0) continue;
+    const catGroups = groups.filter((g) => g.category === cat.key);
+    if (catGroups.length === 0) continue;
     if (y > bottomLimit) break;
 
     ctx.font = 'bold 18px Arial, sans-serif';
     ctx.fillText(cat.title, PADDING, y);
-    y += lineHeight + 2;
+    y += groupLineHeight + 2;
 
-    ctx.font = '15px Arial, sans-serif';
-    for (const item of items) {
+    for (const group of catGroups) {
       if (y > bottomLimit) break;
-      ctx.fillText(item.name, PADDING + 16, y);
-      ctx.fillText(item.quantity, PADDING + 600, y);
+      ctx.font = 'bold 16px Arial, sans-serif';
+      ctx.fillText(group.workType, colName, y);
+      ctx.fillText(formatGroupQuantity(group), colQty, y);
       ctx.fillText(
-        `${formatPrice(item.priceMin)} — ${formatPrice(item.priceMax)}`,
-        PADDING + 900,
+        `${formatPrice(group.totalPriceMin)} — ${formatPrice(group.totalPriceMax)}`,
+        colPrice,
         y,
       );
-      y += lineHeight;
+      y += groupLineHeight;
+
+      if (group.items.length > 1) {
+        ctx.font = '14px Arial, sans-serif';
+        ctx.fillStyle = PALETTE.text.secondary;
+        for (const item of group.items) {
+          if (y > bottomLimit) break;
+          ctx.fillText(item.name, colNameDetail, y);
+          ctx.fillText(item.quantity, colQty, y);
+          ctx.fillText(
+            `${formatPrice(item.priceMin)} — ${formatPrice(item.priceMax)}`,
+            colPrice,
+            y,
+          );
+          y += detailLineHeight;
+        }
+        ctx.fillStyle = PALETTE.text.primary;
+      }
     }
     y += groupGap;
   }
 
   ctx.font = 'bold 22px Arial, sans-serif';
+  ctx.fillStyle = PALETTE.text.primary;
   ctx.fillText(
     `Итого: ${formatPrice(estimate.totalMin)} — ${formatPrice(estimate.totalMax)}`,
     PADDING,
