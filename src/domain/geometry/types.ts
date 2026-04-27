@@ -43,6 +43,44 @@ export const LayoutVerandaSchema = z.object({
   height: z.int().min(1),
 });
 
+// --- Openings (windows / doors) — v1.5.0 ---
+//
+// Spec §3.2 originally encoded an opening as `wallId + position 0..1`, but
+// our layouts don't enumerate wall segments — walls are derived from room
+// rectangles. We instead encode the opening as an axis-aligned tile segment
+// (start, end). This is unambiguous and backward-compatible for old layouts
+// (default to empty arrays).
+//
+// Уточнено в v1.5.0.
+
+const AxisAlignedSegment = z
+  .object({ start: TileCoordSchema, end: TileCoordSchema })
+  .refine((seg) => seg.start.x === seg.end.x || seg.start.y === seg.end.y, {
+    message: 'Opening segment must be axis-aligned',
+  })
+  .refine((seg) => seg.start.x !== seg.end.x || seg.start.y !== seg.end.y, {
+    message: 'Opening segment must have non-zero length',
+  });
+
+export const WindowSchema = AxisAlignedSegment.and(
+  z.object({
+    id: z.string().min(1),
+    sill_height_m: z.number().min(0).max(3).default(0.9),
+    height_m: z.number().min(0.1).max(3).default(1.5),
+  }),
+);
+export type Window = z.infer<typeof WindowSchema>;
+
+export const DoorSchema = AxisAlignedSegment.and(
+  z.object({
+    id: z.string().min(1),
+    height_m: z.number().min(0.5).max(3).default(2.1),
+    hinge: z.enum(['start', 'end']).default('start'),
+    swing_side: z.enum(['left', 'right']).default('left'),
+  }),
+);
+export type Door = z.infer<typeof DoorSchema>;
+
 export const LayoutSchema = z.object({
   id: z.number(),
   name: z.string(),
@@ -51,6 +89,8 @@ export const LayoutSchema = z.object({
   rooms: z.array(LayoutRoomSchema).min(1),
   veranda: LayoutVerandaSchema.optional(),
   electricalPanel: TileCoordSchema,
+  windows: z.array(WindowSchema).default([]),
+  doors: z.array(DoorSchema).default([]),
 });
 export type Layout = z.infer<typeof LayoutSchema>;
 
