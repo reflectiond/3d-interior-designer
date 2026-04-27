@@ -1,5 +1,10 @@
 import { jsPDF } from 'jspdf';
 import type { Estimate } from '../domain/pricing/estimator';
+import {
+  groupEstimateByWorkType,
+  formatGroupQuantity,
+  type EstimateGroup,
+} from '../domain/pricing/groupEstimate';
 import { registerPTSans, PT_SANS_FAMILY } from './fonts/ptSans';
 import { buildExportFilename } from './sanitizeFilename';
 
@@ -86,45 +91,70 @@ export async function exportPDF(
   doc.setFontSize(HEADER_FONT_SIZE);
   doc.text('3D Interior Designer — Смета', PAGE_MARGIN_MM, HEADER_BASELINE_MM);
 
-  let y = HEADER_BASELINE_MM + 12;
-  const lineHeight = 6;
-
+  // F9.2 — render the estimate grouped by work type.
+  // F9.2.1: groups in bold, detail rows in regular weight indented to the right.
+  // F9.2.2: groups are expanded by default (we always print detail rows).
+  const groups = groupEstimateByWorkType(estimate.items);
   const categories = [
-    { key: 'rough', title: 'Черновая отделка' },
-    { key: 'fine', title: 'Чистовая отделка' },
-    { key: 'furniture', title: 'Мебель' },
-  ] as const;
+    { key: 'rough' as const, title: 'Черновая отделка' },
+    { key: 'fine' as const, title: 'Чистовая отделка' },
+    { key: 'furniture' as const, title: 'Мебель' },
+  ];
+  const lineHeight = 6;
+  const detailLineHeight = 5;
+  const detailIndentMm = 6; // ~12 pt at 72 dpi
+  const colQty = PAGE_MARGIN_MM + 100;
+  const colPrice = PAGE_MARGIN_MM + 140;
 
-  for (const cat of categories) {
-    const items = estimate.items.filter((i) => i.category === cat.key);
-    if (items.length === 0) continue;
+  let y = HEADER_BASELINE_MM + 12;
 
-    if (y > PAGE_HEIGHT_MM - 25) {
+  function ensureRoom(needed: number) {
+    if (y + needed > PAGE_HEIGHT_MM - PAGE_MARGIN_MM) {
       doc.addPage();
       y = HEADER_BASELINE_MM;
     }
+  }
 
+  function drawGroup(group: EstimateGroup) {
+    ensureRoom(lineHeight);
+    doc.setFontSize(10);
+    doc.setFont(PT_SANS_FAMILY, 'bold');
+    doc.text(group.workType, PAGE_MARGIN_MM, y);
+    doc.text(formatGroupQuantity(group), colQty, y);
+    doc.text(
+      `${formatPrice(group.totalPriceMin)} — ${formatPrice(group.totalPriceMax)}`,
+      colPrice,
+      y,
+    );
+    y += lineHeight;
+
+    // Skip detail when there's only one underlying line — the group row
+    // already says everything.
+    if (group.items.length <= 1) return;
+
+    doc.setFontSize(9);
+    doc.setFont(PT_SANS_FAMILY, 'normal');
+    for (const item of group.items) {
+      ensureRoom(detailLineHeight);
+      doc.text(item.name, PAGE_MARGIN_MM + detailIndentMm, y);
+      doc.text(item.quantity, colQty, y);
+      doc.text(`${formatPrice(item.priceMin)} — ${formatPrice(item.priceMax)}`, colPrice, y);
+      y += detailLineHeight;
+    }
+  }
+
+  for (const cat of categories) {
+    const catGroups = groups.filter((g) => g.category === cat.key);
+    if (catGroups.length === 0) continue;
+
+    ensureRoom(lineHeight + 2);
     doc.setFontSize(12);
     doc.setFont(PT_SANS_FAMILY, 'bold');
     doc.text(cat.title, PAGE_MARGIN_MM, y);
     y += lineHeight + 2;
 
-    doc.setFontSize(9);
-    doc.setFont(PT_SANS_FAMILY, 'normal');
-
-    for (const item of items) {
-      if (y > PAGE_HEIGHT_MM - PAGE_MARGIN_MM) {
-        doc.addPage();
-        y = HEADER_BASELINE_MM;
-      }
-      doc.text(item.name, PAGE_MARGIN_MM, y);
-      doc.text(item.quantity, PAGE_MARGIN_MM + 100, y);
-      doc.text(
-        `${formatPrice(item.priceMin)} — ${formatPrice(item.priceMax)}`,
-        PAGE_MARGIN_MM + 140,
-        y,
-      );
-      y += lineHeight;
+    for (const group of catGroups) {
+      drawGroup(group);
     }
 
     y += 4;

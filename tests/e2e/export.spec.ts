@@ -69,6 +69,22 @@ test.describe('Export — PDF', () => {
     const { filename } = await downloadPdf(page);
     expect(filename).toMatch(/^interior_design_layout1_\d{14}\.pdf$/);
   });
+
+  test('F9.2.1/F9.2.2: PDF estimate is grouped with detail rows expanded by default', async ({
+    page,
+  }) => {
+    const { pdf } = await downloadPdf(page);
+    const estimatePage = await pdf.getPage(3);
+    const textContent = await estimatePage.getTextContent();
+    const text = textContent.items.map((item) => ('str' in item ? item.str : '')).join(' ');
+
+    // Group title — work type without a room suffix
+    expect(text).toContain('Стяжка пола');
+    // Expanded detail row — same work type with " — RoomName" suffix
+    expect(text).toMatch(/Стяжка пола\s+—\s+/);
+    // Group titles for the rough section header
+    expect(text).toContain('Черновая отделка');
+  });
 });
 
 test.describe('Export — PNG', () => {

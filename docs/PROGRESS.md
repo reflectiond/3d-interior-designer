@@ -197,9 +197,9 @@
 | F9.1.4 | Развёрнутая детализация со сдвигом                            | 🚧     | feature/estimate-grouping |
 | F9.1.5 | Технологический порядок групп                                 | 🚧     | feature/estimate-grouping |
 | F9.1.6 | Итоговая сумма не меняется                                    | 🚧     | feature/estimate-grouping |
-| F9.2.1 | PDF: группы жирно, детализация со сдвигом                     | ⚪     | (1.3.b)                   |
-| F9.2.2 | PDF: по умолчанию все группы развёрнуты                       | ⚪     | (1.3.b)                   |
-| F9.2.3 | PNG: группировка тоже применяется                             | ⚪     | (1.3.b)                   |
+| F9.2.1 | PDF: группы жирно, детализация со сдвигом                     | 🚧     | feature/grouped-export    |
+| F9.2.2 | PDF: по умолчанию все группы развёрнуты                       | 🚧     | feature/grouped-export    |
+| F9.2.3 | PNG: группировка тоже применяется                             | 🚧     | feature/grouped-export    |
 | F9.3.1 | Unit-тест `groupEstimateByWorkType` — 5+ кейсов               | 🚧     | feature/estimate-grouping |
 | E2E-13 | Клик по группе разворачивает/сворачивает                      | 🚧     | feature/estimate-grouping |
 
