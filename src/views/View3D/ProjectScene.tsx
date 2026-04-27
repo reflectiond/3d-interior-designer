@@ -1,9 +1,12 @@
+import { useMemo } from 'react';
+import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three';
 import { useProjectStore } from '../../store/projectStore';
 import { PALETTE } from '../../theme/palette';
 import { TILE_SIZE } from '../../domain/geometry/tiles';
 import { getEffectiveSize } from '../../domain/furniture/placement';
 import type { CatalogItem } from '../../domain/furniture/placement';
-import type { Room, CeilingType, FloorType } from '../../domain/geometry/types';
+import type { Room, CeilingType, FloorType, FloorCovering } from '../../domain/geometry/types';
+import { getFloorPatternCanvas, getPatternUnitSize } from '../floorPatterns';
 import catalogData from '../../data/furniture-catalog.json';
 
 const catalogMap = new Map<string, CatalogItem>();
@@ -21,14 +24,31 @@ function ceilingColor(type: CeilingType): string {
   return type === 'drywall' ? PALETTE.ceiling.drywall : PALETTE.ceiling.stretch;
 }
 
+function useFloorTexture(covering: FloorCovering | undefined, w: number, d: number) {
+  return useMemo(() => {
+    if (!covering) return null;
+    const canvas = getFloorPatternCanvas(covering);
+    const tex = new CanvasTexture(canvas);
+    tex.wrapS = RepeatWrapping;
+    tex.wrapT = RepeatWrapping;
+    tex.colorSpace = SRGBColorSpace;
+    const { widthM, heightM } = getPatternUnitSize(covering);
+    tex.repeat.set(w / widthM, d / heightM);
+    tex.needsUpdate = true;
+    return tex;
+  }, [covering, w, d]);
+}
+
 function RoomMesh({
   room,
   ceilingType,
   flooringType,
+  floorCoveringType,
 }: {
   room: Room;
   ceilingType: CeilingType;
   flooringType: FloorType;
+  floorCoveringType: FloorCovering | undefined;
 }) {
   const w = room.rect.width * TILE_SIZE;
   const d = room.rect.height * TILE_SIZE;
@@ -39,11 +59,17 @@ function RoomMesh({
     ? { emissive: PALETTE.heated_floor.icon, emissiveIntensity: 0.08 }
     : {};
 
+  const floorTexture = useFloorTexture(floorCoveringType, w, d);
+
   return (
     <group>
       <mesh position={[cx, 0, cz]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[w, d]} />
-        <meshStandardMaterial color={roomFloorColor()} {...heatProps} />
+        {floorTexture ? (
+          <meshStandardMaterial map={floorTexture} {...heatProps} />
+        ) : (
+          <meshStandardMaterial color={roomFloorColor()} {...heatProps} />
+        )}
       </mesh>
       <mesh position={[cx, ROOM_HEIGHT, cz]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[w, d]} />
@@ -146,7 +172,7 @@ function FurnitureMeshes() {
 }
 
 export function ProjectScene() {
-  const { layout, rooms, ceiling, flooring } = useProjectStore();
+  const { layout, rooms, ceiling, flooring, floorCovering } = useProjectStore();
   if (!layout) return null;
 
   const totalW = layout.gridWidth * TILE_SIZE;
@@ -163,6 +189,7 @@ export function ProjectScene() {
           room={room}
           ceilingType={ceiling[room.id] ?? 'stretch'}
           flooringType={flooring[room.id] ?? 'screed'}
+          floorCoveringType={floorCovering[room.id]}
         />
       ))}
 
