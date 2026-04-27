@@ -89,4 +89,11 @@ export const PALETTE = {
     door_frame: '#6B5C45',
     door_arc: '#888888',
   },
+  // v1.6.0 — secret layout editor (F11.x). Used only for the editor's grid,
+  // hover previews, and selection ring. Not visible in the production app.
+  editor: {
+    grid: '#D0D0D0',
+    preview: '#90CAF9',
+    selection: '#1565C0',
+  },
 } as const;
