@@ -3,10 +3,10 @@ import type { Stage } from '../store/projectStore';
 import styles from './StageNavigator.module.css';
 
 const STAGES: { id: Stage; label: string }[] = [
-  { id: 1, label: '1. Планировка' },
-  { id: 2, label: '2. Черновая отделка' },
-  { id: 3, label: '3. Чистовая отделка' },
-  { id: 4, label: '4. Итоги' },
+  { id: 1, label: 'Планировка' },
+  { id: 2, label: 'Черновая отделка' },
+  { id: 3, label: 'Чистовая отделка' },
+  { id: 4, label: 'Итоги' },
 ];
 
 export function StageNavigator() {
