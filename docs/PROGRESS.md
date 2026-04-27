@@ -69,8 +69,8 @@
 | F4.2 | Количество + диапазон цены | ✅     | v0.4.0   |
 | F4.3 | Технологический порядок    | ✅     | v0.4.0   |
 | F4.4 | Итоговый диапазон          | ✅     | v0.4.0   |
-| F4.5 | Экспорт в PDF              | ⏳     | Sprint 5 |
-| F4.6 | Экспорт в PNG              | ⏳     | Sprint 5 |
+| F4.5 | Экспорт в PDF              | ✅     | v1.0.0   |
+| F4.6 | Экспорт в PNG              | ✅     | v1.0.0   |
 | F4.7 | Сохранение JSON            | ✅     | v0.4.0   |
 | F4.8 | Загрузка JSON с валидацией | ✅     | v0.4.0   |
 
@@ -87,12 +87,12 @@
 
 | ID    | Описание                           | Статус | PR / Тег |
 | ----- | ---------------------------------- | ------ | -------- |
-| SEC-1 | XSS через JSON-импорт              | ⚪     | —        |
-| SEC-2 | XSS через имя проекта              | ⚪     | —        |
-| SEC-3 | Clickjacking / CSP frame-ancestors | ⚪     | —        |
-| SEC-4 | localStorage tampering resilience  | ⚪     | —        |
-| SEC-5 | URL injection                      | ⚪     | —        |
-| SEC-6 | Schema injection через JSON        | ⚪     | —        |
+| SEC-1 | XSS через JSON-импорт              | ✅     | v1.0.0   |
+| SEC-2 | XSS через имя проекта              | ✅     | v1.0.0   |
+| SEC-3 | Clickjacking / CSP frame-ancestors | ✅     | v1.0.0   |
+| SEC-4 | localStorage tampering resilience  | ✅     | v1.0.0   |
+| SEC-5 | URL injection                      | ✅     | v1.0.0   |
+| SEC-6 | Schema injection через JSON        | ✅     | v1.0.0   |
 
 ## Тестирование
 
