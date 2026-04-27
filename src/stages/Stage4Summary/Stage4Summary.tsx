@@ -88,6 +88,7 @@ export function Stage4Summary() {
     wallCovering,
     electricalRoutes,
     furniture,
+    layout,
     layoutId,
     setStage,
   } = state;
@@ -105,8 +106,10 @@ export function Stage4Summary() {
         electricalRoutes,
         furniture,
         catalogMap,
+        layout?.windows ?? [],
+        layout?.doors ?? [],
       ),
-    [rooms, flooring, ceiling, floorCovering, wallCovering, electricalRoutes, furniture],
+    [rooms, flooring, ceiling, floorCovering, wallCovering, electricalRoutes, furniture, layout],
   );
 
   const allGroups = useMemo(() => groupEstimateByWorkType(estimate.items), [estimate.items]);
