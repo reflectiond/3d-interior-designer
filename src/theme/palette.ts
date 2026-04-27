@@ -61,4 +61,10 @@ export const PALETTE = {
     primary: '#333333',
     secondary: '#666666',
   },
+  // v1.2.0 — heated floor overlay (warm coral). background rendered at opacity 0.15,
+  // icon (heat waves) at opacity 0.4 so they layer above the floor fill but stay subtle.
+  heated_floor: {
+    background: '#FF8A65',
+    icon: '#E64A19',
+  },
 } as const;

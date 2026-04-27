@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Stage as KonvaStage, Layer, Rect, Text, Circle, Line } from 'react-konva';
+import { Stage as KonvaStage, Layer, Rect, Text, Circle, Line, Path } from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useProjectStore } from '../../store/projectStore';
@@ -176,22 +176,54 @@ export function View2D({
             </>
           )}
 
-          {/* Heated floor highlight */}
+          {/* Heated floor (F6.1) — filled overlay + heat-wave icons every 4 tiles */}
           {rooms
             .filter((r) => flooring[r.id] === 'screed_heated')
-            .map((room) => (
-              <Rect
-                key={`heated-${room.id}`}
-                x={room.rect.x * SCALE + 2}
-                y={(gridHeight - room.rect.y - room.rect.height) * SCALE + 2}
-                width={room.rect.width * SCALE - 4}
-                height={room.rect.height * SCALE - 4}
-                stroke={PALETTE.electrical.wire}
-                strokeWidth={2}
-                dash={[6, 3]}
-                listening={false}
-              />
-            ))}
+            .map((room) => {
+              const x = room.rect.x * SCALE;
+              const y = (gridHeight - room.rect.y - room.rect.height) * SCALE;
+              const w = room.rect.width * SCALE;
+              const h = room.rect.height * SCALE;
+              const icons: { ix: number; iy: number }[] = [];
+              // 4-tile spacing in tile space, centered at +2 tiles in each axis
+              for (let dx = 2; dx < room.rect.width; dx += 4) {
+                for (let dy = 2; dy < room.rect.height; dy += 4) {
+                  icons.push({
+                    ix: x + dx * SCALE,
+                    iy: (gridHeight - room.rect.y - dy) * SCALE,
+                  });
+                }
+              }
+              return (
+                <React.Fragment key={`heated-${room.id}`}>
+                  <Rect
+                    x={x}
+                    y={y}
+                    width={w}
+                    height={h}
+                    fill={PALETTE.heated_floor.background}
+                    opacity={0.15}
+                    listening={false}
+                  />
+                  {icons.map(({ ix, iy }, j) => (
+                    <React.Fragment key={`heat-icon-${room.id}-${j}`}>
+                      {[-6, 0, 6].map((dy) => (
+                        <Path
+                          key={dy}
+                          x={ix - 12}
+                          y={iy + dy}
+                          data="M 0 0 q 4 -3 8 0 t 8 0 t 8 0"
+                          stroke={PALETTE.heated_floor.icon}
+                          strokeWidth={1.4}
+                          opacity={0.4}
+                          listening={false}
+                        />
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </React.Fragment>
+              );
+            })}
 
           {/* Electrical routes */}
           {electricalRoutes.map((route) => {
