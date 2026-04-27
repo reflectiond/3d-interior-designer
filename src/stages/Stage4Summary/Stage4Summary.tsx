@@ -52,7 +52,10 @@ export function Stage4Summary() {
   const handleExportPDF = useCallback(() => {
     const canvas2D = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
     const canvas3D = document.querySelector('canvas[data-engine]') as HTMLCanvasElement | null;
-    exportPDF(estimate, canvas2D, canvas3D);
+    exportPDF(estimate, canvas2D, canvas3D).catch((err: unknown) => {
+      console.error('PDF export failed:', err);
+      alert('Не удалось экспортировать PDF. Попробуйте перезагрузить страницу.');
+    });
   }, [estimate]);
 
   const handleExportPNG = useCallback(() => {
