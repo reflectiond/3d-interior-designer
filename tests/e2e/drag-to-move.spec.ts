@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
-// E2E-12 (F8.4.1) — full drag-to-move round-trip. Konva's drag system listens
-// for pointer events on the .konvajs-content wrapper, but Playwright's
-// `page.mouse.*` API does not always cross Konva's drag-distance threshold
-// reliably in headless Chromium. We dispatch synthetic PointerEvents directly
-// on the wrapper, which Konva picks up deterministically.
+// E2E-12 (F8.4.1) — full drag-to-move round-trip. Playwright's synthetic
+// pointer events do not cross Konva's drag-distance threshold reliably in
+// headless Chromium, so the helper drives the drag pipeline through
+// `Konva.stages[0].find(...)` + `node.fire(...)` directly. See the
+// `konvaDragFurniture` doc comment for details.
 
 const STORE_KEY = '3d-interior-designer-project';
 
