@@ -136,5 +136,103 @@
   "electricalPanel": {
     "x": 20,
     "y": 22
-  }
+  },
+  "windows": [
+    {
+      "id": "win_bedroom2_north",
+      "start": { "x": 4, "y": 0 },
+      "end": { "x": 8, "y": 0 }
+    },
+    {
+      "id": "win_bedroom2_west",
+      "start": { "x": 0, "y": 4 },
+      "end": { "x": 0, "y": 8 }
+    },
+    {
+      "id": "win_bedroom3_west",
+      "start": { "x": 0, "y": 17 },
+      "end": { "x": 0, "y": 21 }
+    },
+    {
+      "id": "win_bedroom1_west",
+      "start": { "x": 0, "y": 29 },
+      "end": { "x": 0, "y": 33 }
+    },
+    {
+      "id": "win_corridor2_north",
+      "start": { "x": 19, "y": 0 },
+      "end": { "x": 23, "y": 0 }
+    },
+    {
+      "id": "win_kitchen_north",
+      "start": { "x": 30, "y": 0 },
+      "end": { "x": 36, "y": 0 }
+    },
+    {
+      "id": "win_kitchen_east",
+      "start": { "x": 44, "y": 4 },
+      "end": { "x": 44, "y": 8 }
+    },
+    {
+      "id": "win_living_east",
+      "start": { "x": 44, "y": 21 },
+      "end": { "x": 44, "y": 26 }
+    }
+  ],
+  "doors": [
+    {
+      "id": "door_bedroom2_corridor2",
+      "start": { "x": 16, "y": 2 },
+      "end": { "x": 16, "y": 5 },
+      "swing_side": "left"
+    },
+    {
+      "id": "door_corridor1_corridor2",
+      "start": { "x": 18, "y": 6 },
+      "end": { "x": 21, "y": 6 },
+      "swing_side": "left"
+    },
+    {
+      "id": "door_bedroom3_corridor1",
+      "start": { "x": 16, "y": 14 },
+      "end": { "x": 16, "y": 17 },
+      "swing_side": "left"
+    },
+    {
+      "id": "door_corridor1_boiler",
+      "start": { "x": 18, "y": 18 },
+      "end": { "x": 21, "y": 18 },
+      "swing_side": "right"
+    },
+    {
+      "id": "door_corridor1_kitchen",
+      "start": { "x": 27, "y": 10 },
+      "end": { "x": 27, "y": 13 },
+      "swing_side": "right"
+    },
+    {
+      "id": "door_boiler_bathroom1",
+      "start": { "x": 20, "y": 26 },
+      "end": { "x": 23, "y": 26 },
+      "swing_side": "left"
+    },
+    {
+      "id": "door_bedroom1_bathroom1",
+      "start": { "x": 16, "y": 28 },
+      "end": { "x": 16, "y": 31 },
+      "swing_side": "right"
+    },
+    {
+      "id": "door_bathroom1_wardrobe",
+      "start": { "x": 22, "y": 32 },
+      "end": { "x": 25, "y": 32 },
+      "swing_side": "left"
+    },
+    {
+      "id": "door_living_bathroom2",
+      "start": { "x": 33, "y": 31 },
+      "end": { "x": 36, "y": 31 },
+      "swing_side": "right"
+    }
+  ]
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { LayoutSchema } from '../../src/domain/geometry/types';
+import { validateNoOverlaps } from '../../src/domain/geometry/openings';
 import layout1 from '../../src/data/layouts/layout1.json';
 import layout2 from '../../src/data/layouts/layout2.json';
 import layout3 from '../../src/data/layouts/layout3.json';
@@ -60,6 +61,28 @@ describe('LayoutSchema validation', () => {
     const layout = LayoutSchema.parse(layout3);
     const totalTiles = layout.rooms.reduce((s, r) => s + r.width * r.height, 0);
     expect(totalTiles).toBe(layout.gridWidth * layout.gridHeight);
+  });
+
+  it('layout2 has at least one window and one door (F7.1.3)', () => {
+    const layout = LayoutSchema.parse(layout2);
+    expect(layout.windows.length).toBeGreaterThan(0);
+    expect(layout.doors.length).toBeGreaterThan(0);
+  });
+
+  it('layout3 has at least one window and one door (F7.1.3)', () => {
+    const layout = LayoutSchema.parse(layout3);
+    expect(layout.windows.length).toBeGreaterThan(0);
+    expect(layout.doors.length).toBeGreaterThan(0);
+  });
+
+  it('layout2 openings do not overlap (F7.1.2)', () => {
+    const layout = LayoutSchema.parse(layout2);
+    expect(validateNoOverlaps(layout.windows, layout.doors)).toEqual([]);
+  });
+
+  it('layout3 openings do not overlap (F7.1.2)', () => {
+    const layout = LayoutSchema.parse(layout3);
+    expect(validateNoOverlaps(layout.windows, layout.doors)).toEqual([]);
   });
 
   it('no room overlaps in layout1', () => {
