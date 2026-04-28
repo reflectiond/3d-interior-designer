@@ -7,6 +7,12 @@ async function gotoStage1WithLayout1(page: import('@playwright/test').Page) {
   await expect(page.locator('.konvajs-content canvas').first()).toBeVisible();
 }
 
+async function gotoStage1WithLayout(page: import('@playwright/test').Page, layoutNo: 1 | 2 | 3) {
+  await page.goto('/');
+  await page.getByRole('button', { name: new RegExp(`Выбрать Планировка ${layoutNo}`) }).click();
+  await expect(page.locator('.konvajs-content canvas').first()).toBeVisible();
+}
+
 async function readKonvaCanvas(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
     const canvas = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
@@ -58,6 +64,20 @@ test.describe('Openings — windows and doors (F7)', () => {
     const snapshot = await readKonvaCanvas(page);
     expect(snapshot).not.toBeNull();
     expect(snapshot!.length).toBeGreaterThan(1000);
+  });
+
+  test('E2E-14b: layout 2 renders openings on 2D canvas (F7.1.3)', async ({ page }) => {
+    await gotoStage1WithLayout(page, 2);
+    await page.waitForTimeout(150);
+    const arcPixels = await countDoorArcPixels(page);
+    expect(arcPixels).toBeGreaterThan(40);
+  });
+
+  test('E2E-14c: layout 3 renders openings on 2D canvas (F7.1.3)', async ({ page }) => {
+    await gotoStage1WithLayout(page, 3);
+    await page.waitForTimeout(150);
+    const arcPixels = await countDoorArcPixels(page);
+    expect(arcPixels).toBeGreaterThan(40);
   });
 
   test('F7.2.3: electrical points still place on walls that have windows', async ({ page }) => {
