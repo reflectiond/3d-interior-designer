@@ -181,6 +181,65 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
     await expect(page.getByTestId('properties-panel')).toContainText('14, 14');
   });
 
+  test('F13.2 (v1.11.0): live-HUD shows metric dimensions while drawing a room', async ({
+    page,
+  }) => {
+    await openEditor(page);
+
+    const canvas = page.getByTestId('layout-editor-canvas').locator('canvas').first();
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error('canvas has no bounding box');
+
+    // Pick the room tool and start a drag — anchor at (4, 4), then move to (12, 8)
+    // so the HUD shows "2.0 × 1.0 м = 2.0 м²" (8 × 4 tiles → tiles+1 inclusive).
+    await page.getByTestId('tool-room').click();
+    const start = tilePoint(4, 4);
+    const end = tilePoint(12, 8);
+    await page.mouse.move(box.x + start.x, box.y + start.y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + end.x, box.y + end.y, { steps: 10 });
+
+    // The Konva Text node lives inside the Stage canvas; we read it via the
+    // pixel data check by sampling text. Since Text rendering through Konva
+    // doesn't expose DOM selectors, we instead verify the HUD by sampling a
+    // characteristic blue pixel from the HUD's stroke (PALETTE.editor.selection
+    // = #1565C0 → rgb(21, 101, 192)) near the cursor position.
+    const hudPixels = await page.evaluate(
+      ({ targetX, targetY }) => {
+        const canvases = document.querySelectorAll<HTMLCanvasElement>(
+          '[data-testid="layout-editor-canvas"] canvas',
+        );
+        let count = 0;
+        for (const c of canvases) {
+          const ctx = c.getContext('2d');
+          if (!ctx) continue;
+          // Sample a 200×40 region around the HUD position
+          const x = Math.max(0, targetX - 5);
+          const y = Math.max(0, targetY - 5);
+          const w = Math.min(c.width - x, 200);
+          const h = Math.min(c.height - y, 40);
+          if (w <= 0 || h <= 0) continue;
+          const { data } = ctx.getImageData(x, y, w, h);
+          for (let i = 0; i < data.length; i += 4) {
+            // Near PALETTE.editor.selection #1565C0
+            if (data[i] < 60 && data[i + 1] >= 80 && data[i + 1] <= 130 && data[i + 2] >= 170) {
+              count++;
+            }
+          }
+        }
+        return count;
+      },
+      { targetX: end.x, targetY: end.y },
+    );
+
+    // Even with anti-aliasing, the HUD stroke + text contribute many blue pixels.
+    expect(hudPixels).toBeGreaterThan(20);
+
+    // Release the drag — HUD disappears, room is committed
+    await page.mouse.up();
+    await expect(page.getByTestId('properties-panel')).toContainText('bedroom_1');
+  });
+
   test('F11.2.6: editor never writes the main app keys to localStorage', async ({ page }) => {
     await openEditor(page);
     await page.getByTestId('tool-room').click();

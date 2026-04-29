@@ -7,6 +7,7 @@ import { findObjectAt, type EditorAction, type EditorState, type EditorTool } fr
 import { invalidObjectKeys, validateEditor } from './validation';
 import { findNearestWall, projectOntoWall, type WallSegment } from './wallSnap';
 import { MeasuredCanvas } from '../views/MeasuredCanvas';
+import { formatOpeningLength, formatRectDimensions } from './dimensionFormat';
 import type { TileCoord } from '../domain/geometry/types';
 
 const SCALE = 24;
@@ -385,9 +386,77 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
                   dash={[4, 4]}
                 />
               )}
+
+            {/* F13.2 (v1.11.0) — live-HUD with metric dimensions next to cursor */}
+            {state.tool === 'room' && roomAnchor && pointerTile && (
+              <DimensionHud
+                tx={pointerTile.x}
+                ty={pointerTile.y}
+                text={formatRectDimensions(
+                  Math.abs(pointerTile.x - roomAnchor.tile.x) + 1,
+                  Math.abs(pointerTile.y - roomAnchor.tile.y) + 1,
+                )}
+              />
+            )}
+            {(state.tool === 'window' || state.tool === 'door') &&
+              openingAnchor &&
+              openingAnchor.tool === state.tool &&
+              pointerTile &&
+              (() => {
+                const snapped = openingAnchor.wall
+                  ? projectOntoWall(pointerTile, openingAnchor.wall)
+                  : snapAxisAligned(openingAnchor.tile, pointerTile);
+                const tiles =
+                  Math.abs(snapped.x - openingAnchor.tile.x) +
+                  Math.abs(snapped.y - openingAnchor.tile.y);
+                if (tiles === 0) return null;
+                return (
+                  <DimensionHud
+                    tx={pointerTile.x}
+                    ty={pointerTile.y}
+                    text={formatOpeningLength(tiles)}
+                  />
+                );
+              })()}
           </Layer>
         </Stage>
       </MeasuredCanvas>
     </div>
+  );
+}
+
+/**
+ * F13.2.3 (v1.11.0) — floating dimension label drawn next to the cursor.
+ * Width is fixed (140 px) so the layout is stable; the Konva Text inside
+ * auto-wraps if the label runs long. Anchor is offset 16 px right and
+ * 12 px below the pointer tile so it doesn't sit underneath the cursor.
+ */
+function DimensionHud({ tx, ty, text }: { tx: number; ty: number; text: string }) {
+  const HUD_WIDTH = 140;
+  const HUD_HEIGHT = 18;
+  const x = tx * SCALE + 16;
+  const y = ty * SCALE + 12;
+  return (
+    <Group listening={false} data-testid="dimension-hud">
+      <Rect
+        x={x}
+        y={y}
+        width={HUD_WIDTH}
+        height={HUD_HEIGHT}
+        fill={PALETTE.walls.paint}
+        opacity={0.9}
+        stroke={PALETTE.editor.selection}
+        strokeWidth={1}
+        cornerRadius={3}
+      />
+      <Text
+        x={x + 6}
+        y={y + 3}
+        text={text}
+        fontSize={11}
+        fill={PALETTE.text.primary}
+        listening={false}
+      />
+    </Group>
   );
 }
