@@ -114,10 +114,26 @@ describe('pickCeilingIconAnchor', () => {
   it('respects furniture rotation when checking collision', () => {
     const room = makeRoom(0, 0, 20, 16);
     // Sofa 8×4 rotated 90° becomes 4×8 (taller). Place at (16, 8) so it occupies
-    // x[16..20], y[8..16] — overlaps the TR icon at x[19..19.6], y[15..15.6].
-    // BR (x[19..19.6], y[0.4..1]) is unaffected since y range is far below.
+    // x[16..20], y[8..16] — overlaps the TR icon. BR is unaffected since y range
+    // is far below.
     const sofa = makeFurniture(16, 8, 90);
     const a = pickCeilingIconAnchor(room, [sofa], catalogMap);
     expect(a.corner).toBe('BR');
+  });
+
+  it('F6.3.6 (v1.8.0): icon + 3×size label fits inside the room on every layout corner', () => {
+    // Smallest typical room: 4×4 tiles (1×1 m). The label width is 3 × icon_size
+    // centered on the icon, so to fit inside the room rect we need:
+    //   inset + iconSize/2 + label_half_width ≤ room_dimension / 2 from each wall
+    // i.e. inset ≥ (3 × iconSize − iconSize) / 2 = iconSize. With iconSize 0.6
+    // and inset 1.0, the slack is 0.4 tile per side.
+    const room = makeRoom(0, 0, 4, 4);
+    const a = pickCeilingIconAnchor(room, [], catalogMap);
+    const labelHalfWidth = (3 * CEILING_ICON_SIZE_TILES) / 2;
+    const iconCenterTx = a.tx + CEILING_ICON_SIZE_TILES / 2;
+    expect(iconCenterTx - labelHalfWidth).toBeGreaterThanOrEqual(room.rect.x);
+    expect(iconCenterTx + labelHalfWidth).toBeLessThanOrEqual(room.rect.x + room.rect.width);
+    expect(a.ty).toBeGreaterThanOrEqual(room.rect.y);
+    expect(a.ty + CEILING_ICON_SIZE_TILES).toBeLessThanOrEqual(room.rect.y + room.rect.height);
   });
 });
