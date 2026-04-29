@@ -143,7 +143,8 @@ export function computeEstimate(
   for (const room of rooms) {
     if (room.type === 'corridor' || room.type === 'wardrobe') continue;
     const fc = floorCovering[room.id];
-    if (!fc) continue;
+    // F3.1.3 (v1.9.0): `none` and missing entries both skip the line item.
+    if (!fc || fc === 'none') continue;
     const area = room.area;
     const priceKey = `floor_${fc}_per_m2` as keyof typeof pricing.fine_finish;
     const p = pricing.fine_finish[priceKey];
@@ -167,7 +168,8 @@ export function computeEstimate(
   for (const room of rooms) {
     if (room.type === 'corridor' || room.type === 'wardrobe') continue;
     const wc = wallCovering[room.id];
-    if (!wc) continue;
+    // F3.2.5 (v1.9.0): `none` and missing entries both skip the line item.
+    if (!wc || wc === 'none') continue;
     const wa = wallArea(room);
     const priceKey = `wall_${wc}_per_m2` as keyof typeof pricing.fine_finish;
     const p = pricing.fine_finish[priceKey];

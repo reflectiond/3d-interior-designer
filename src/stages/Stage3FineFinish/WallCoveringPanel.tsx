@@ -3,13 +3,17 @@ import { PALETTE } from '../../theme/palette';
 import type { WallCovering } from '../../domain/geometry/types';
 import styles from '../Stage2RoughFinish/SidePanel.module.css';
 
+// F3.2.5 (v1.9.0): «Без покрытия» first; default value is `none` until the
+// user picks paint or wallpaper.
 const OPTIONS: { value: WallCovering; label: string }[] = [
+  { value: 'none', label: 'Без покрытия' },
   { value: 'paint', label: 'Покраска' },
   { value: 'wallpaper', label: 'Обои' },
 ];
 
 export function WallCoveringPanel() {
   const { rooms, wallCovering, setWallCovering } = useProjectStore();
+  // TODO(v1.9.b — F12.1): drop this filter so corridor and wardrobe also pick a covering.
   const relevantRooms = rooms.filter((r) => r.type !== 'corridor' && r.type !== 'wardrobe');
 
   return (
@@ -20,7 +24,7 @@ export function WallCoveringPanel() {
       </p>
       <ul className={styles.roomList}>
         {relevantRooms.map((room) => {
-          const current = wallCovering[room.id] ?? 'paint';
+          const current = wallCovering[room.id] ?? 'none';
           return (
             <li key={room.id} className={styles.roomItem}>
               <span className={styles.roomName}>{room.name}</span>

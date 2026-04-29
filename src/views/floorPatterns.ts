@@ -1,5 +1,5 @@
 import { PALETTE } from '../theme/palette';
-import type { FloorCovering } from '../domain/geometry/types';
+import type { FloorMaterial } from '../domain/geometry/types';
 
 const PIXELS_PER_METER = 240;
 
@@ -19,7 +19,7 @@ interface PatternSpec {
   draw?: (ctx: CanvasRenderingContext2D, w: number, h: number) => void;
 }
 
-const SPECS: Record<FloorCovering, PatternSpec> = {
+const SPECS: Record<FloorMaterial, PatternSpec> = {
   // F6.2.2 (v1.8.0): instead of solid fill linoleum gets a subtle two-dot speckle so it
   // is distinguishable from "no covering" in 2D, while still reading as a smooth surface.
   linoleum: {
@@ -87,7 +87,7 @@ const SPECS: Record<FloorCovering, PatternSpec> = {
   },
 };
 
-export function getPatternUnitSize(type: FloorCovering): { widthM: number; heightM: number } {
+export function getPatternUnitSize(type: FloorMaterial): { widthM: number; heightM: number } {
   const s = SPECS[type];
   return { widthM: s.unitWidthM, heightM: s.unitHeightM };
 }
@@ -101,7 +101,7 @@ export interface FloorPatternOptions {
 }
 
 export function renderFloorPattern(
-  type: FloorCovering,
+  type: FloorMaterial,
   opts: FloorPatternOptions = {},
 ): HTMLCanvasElement {
   const spec = SPECS[type];
@@ -121,7 +121,7 @@ export function renderFloorPattern(
 const cache: Partial<Record<string, HTMLCanvasElement>> = {};
 
 export function getFloorPatternCanvas(
-  type: FloorCovering,
+  type: FloorMaterial,
   opts: FloorPatternOptions = {},
 ): HTMLCanvasElement {
   const withBg = !!opts.withBackground;

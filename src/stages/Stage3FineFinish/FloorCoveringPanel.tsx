@@ -2,7 +2,10 @@ import { useProjectStore } from '../../store/projectStore';
 import type { FloorCovering } from '../../domain/geometry/types';
 import styles from '../Stage2RoughFinish/SidePanel.module.css';
 
+// «Без покрытия» first so it shows up as the first radio in the dropdown.
+// F3.1.3 (v1.9.0): default is `none` until the user picks a material.
 const OPTIONS: { value: FloorCovering; label: string }[] = [
+  { value: 'none', label: 'Без покрытия' },
   { value: 'linoleum', label: 'Линолеум' },
   { value: 'laminate', label: 'Ламинат' },
   { value: 'tile', label: 'Плитка' },
@@ -11,6 +14,7 @@ const OPTIONS: { value: FloorCovering; label: string }[] = [
 
 export function FloorCoveringPanel() {
   const { rooms, floorCovering, setFloorCovering } = useProjectStore();
+  // TODO(v1.9.b — F12.1): drop this filter so corridor and wardrobe also pick a covering.
   const relevantRooms = rooms.filter((r) => r.type !== 'corridor' && r.type !== 'wardrobe');
 
   return (
@@ -18,7 +22,7 @@ export function FloorCoveringPanel() {
       <h3 className={styles.sectionTitle}>Покрытие пола</h3>
       <ul className={styles.roomList}>
         {relevantRooms.map((room) => {
-          const current = floorCovering[room.id] ?? 'laminate';
+          const current = floorCovering[room.id] ?? 'none';
           return (
             <li key={room.id} className={styles.roomItem}>
               <span className={styles.roomName}>
