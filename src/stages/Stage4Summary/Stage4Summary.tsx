@@ -40,16 +40,22 @@ function CategorySection({ title, groups, expanded, onToggle }: CategorySectionP
         {groups.map((g) => {
           const key = `${g.category}:${g.workType}`;
           const isOpen = !!expanded[key];
+          // F9.1.7 (v1.12.0): groups with a single line have nothing to expand
+          // — render a neutral bullet instead of the chevron, and disable the
+          // toggle so the row doesn't pretend to be interactive.
+          const expandable = g.items.length > 1;
           return (
             <li key={key} className={styles.estimateItem}>
               <button
                 type="button"
                 className={styles.estimateRow}
-                onClick={() => onToggle(key)}
-                aria-expanded={isOpen}
+                onClick={expandable ? () => onToggle(key) : undefined}
+                aria-expanded={expandable ? isOpen : undefined}
+                disabled={!expandable}
+                style={!expandable ? { cursor: 'default' } : undefined}
               >
                 <span className={styles.disclosure} aria-hidden="true">
-                  {isOpen ? '▼' : '▶'}
+                  {expandable ? (isOpen ? '▼' : '▶') : '•'}
                 </span>
                 <span className={styles.estimateName}>{g.workType}</span>
                 <span className={styles.estimateQty}>{formatGroupQuantity(g)}</span>
@@ -57,7 +63,7 @@ function CategorySection({ title, groups, expanded, onToggle }: CategorySectionP
                   {formatPrice(g.totalPriceMin)} — {formatPrice(g.totalPriceMax)}
                 </span>
               </button>
-              {isOpen && g.items.length > 1 && (
+              {isOpen && expandable && (
                 <ul className={styles.estimateDetails}>
                   {g.items.map((item, i) => (
                     <li key={`${key}-detail-${i}`} className={styles.estimateDetailRow}>
