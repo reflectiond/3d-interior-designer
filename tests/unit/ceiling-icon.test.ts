@@ -3,6 +3,7 @@ import {
   pickCeilingIconAnchor,
   CEILING_ICON_SIZE_TILES,
   CEILING_ICON_INSET_TILES,
+  CEILING_ICON_LABEL_WIDTH_FACTOR,
 } from '../../src/views/ceilingIcon';
 import type { Room, FurnitureInstance } from '../../src/domain/geometry/types';
 import type { CatalogItem } from '../../src/domain/furniture/placement';
@@ -121,15 +122,15 @@ describe('pickCeilingIconAnchor', () => {
     expect(a.corner).toBe('BR');
   });
 
-  it('F6.3.6 (v1.8.0): icon + 3×size label fits inside the room on every layout corner', () => {
-    // Smallest typical room: 4×4 tiles (1×1 m). The label width is 3 × icon_size
-    // centered on the icon, so to fit inside the room rect we need:
-    //   inset + iconSize/2 + label_half_width ≤ room_dimension / 2 from each wall
-    // i.e. inset ≥ (3 × iconSize − iconSize) / 2 = iconSize. With iconSize 0.6
-    // and inset 1.0, the slack is 0.4 tile per side.
+  it('F6.3.6 (v1.8.1): icon + LABEL_WIDTH_FACTOR×size label fits inside a 4×4-tile room', () => {
+    // Smallest typical room: 4×4 tiles (1×1 m). Label is centered on icon.
+    // For factor=4, iconSize=0.6, inset=1.0:
+    //   icon center at inset + iconSize/2 = 1.3 from each wall
+    //   label half-width = (4 × 0.6) / 2 = 1.2
+    //   slack to closest wall = 1.3 − 1.2 = 0.1 tile (~3 px)
     const room = makeRoom(0, 0, 4, 4);
     const a = pickCeilingIconAnchor(room, [], catalogMap);
-    const labelHalfWidth = (3 * CEILING_ICON_SIZE_TILES) / 2;
+    const labelHalfWidth = (CEILING_ICON_LABEL_WIDTH_FACTOR * CEILING_ICON_SIZE_TILES) / 2;
     const iconCenterTx = a.tx + CEILING_ICON_SIZE_TILES / 2;
     expect(iconCenterTx - labelHalfWidth).toBeGreaterThanOrEqual(room.rect.x);
     expect(iconCenterTx + labelHalfWidth).toBeLessThanOrEqual(room.rect.x + room.rect.width);
