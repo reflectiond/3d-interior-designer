@@ -2,9 +2,9 @@ import { useProjectStore } from '../../store/projectStore';
 import styles from './SidePanel.module.css';
 
 export function ScreedPanel() {
+  // F2.1.4 / F12.1 (v1.9.0): corridor and wardrobe pick screed type alongside the rest.
   const { rooms, flooring, setFlooring } = useProjectStore();
-
-  const relevantRooms = rooms.filter((r) => r.type !== 'corridor' && r.type !== 'wardrobe');
+  const relevantRooms = rooms;
 
   return (
     <div className={styles.section}>
