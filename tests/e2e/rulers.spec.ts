@@ -12,28 +12,34 @@ async function gotoStage1WithLayout1(page: Page) {
   await expect(page.locator('.konvajs-content canvas').first()).toBeVisible();
 }
 
-test.describe('Measurement rulers (F13.1 v1.11.0)', () => {
+test.describe('Measurement rulers (F13.1 v1.11.0+)', () => {
+  test('F13.1.6 (v1.12.0): rulers are ON by default for a fresh user', async ({ page }) => {
+    await gotoStage1WithLayout1(page);
+    // No prior localStorage value → rulers visible immediately.
+    await expect(page.getByTestId('view2d-ruler-horizontal')).toBeVisible();
+    await expect(page.getByTestId('view2d-ruler-vertical')).toBeVisible();
+  });
+
   test('F13.1.3: toggle flips state and persists to localStorage', async ({ page }) => {
     await gotoStage1WithLayout1(page);
 
-    // Default: rulers off → no SVG strips visible
+    // F13.1.6: default ON → rulers visible from the start.
+    await expect(page.getByTestId('view2d-ruler-horizontal')).toBeVisible();
+
+    // Toggle off
+    await page.getByTestId('view2d-rulers-toggle').click();
     await expect(page.getByTestId('view2d-ruler-horizontal')).toHaveCount(0);
     await expect(page.getByTestId('view2d-ruler-vertical')).toHaveCount(0);
 
-    // Toggle on
-    await page.getByTestId('view2d-rulers-toggle').click();
-    await expect(page.getByTestId('view2d-ruler-horizontal')).toBeVisible();
-    await expect(page.getByTestId('view2d-ruler-vertical')).toBeVisible();
-
-    // localStorage holds the new value (F13.1.3)
-    const stored = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
-    expect(stored).toBe('1');
-
-    // Toggle off again and the rulers disappear
-    await page.getByTestId('view2d-rulers-toggle').click();
-    await expect(page.getByTestId('view2d-ruler-horizontal')).toHaveCount(0);
+    // localStorage holds "0"
     const storedOff = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
     expect(storedOff).toBe('0');
+
+    // Toggle back on
+    await page.getByTestId('view2d-rulers-toggle').click();
+    await expect(page.getByTestId('view2d-ruler-horizontal')).toBeVisible();
+    const storedOn = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
+    expect(storedOn).toBe('1');
   });
 
   test('F13.1.2: horizontal ruler labels every metre', async ({ page }) => {

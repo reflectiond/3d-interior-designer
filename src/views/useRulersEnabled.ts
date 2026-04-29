@@ -37,9 +37,14 @@ export function useRulersEnabled(): { enabled: boolean; toggle: () => void } {
 }
 
 function readStored(): boolean {
+  // F13.1.6 (v1.12.0): rulers are ON by default for fresh users. The user's
+  // previously persisted choice still wins — toggling off and reloading keeps
+  // them off. Only the absence of any value defaults to ON.
   try {
-    return localStorage.getItem(STORAGE_KEY) === '1';
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw === null) return true;
+    return raw === '1';
   } catch {
-    return false;
+    return true;
   }
 }

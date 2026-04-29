@@ -101,6 +101,12 @@ export function Stage3FineFinish() {
         rotation: placingRotation,
         mirrored: false,
       });
+
+      // F8.6.1 (v1.12.0): single-shot — drop placement mode after a successful
+      // commit so accidental further canvas clicks don't spawn another piece.
+      // Mirrors F11.2.9 (single-shot tool) in the layout editor.
+      setPlacingItem(null);
+      setPlacingRotation(0);
     },
     [placingItem, placingRotation, rooms, furniture, addFurniture, doorBlockedTiles],
   );
