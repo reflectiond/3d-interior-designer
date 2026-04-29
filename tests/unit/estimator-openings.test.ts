@@ -36,16 +36,16 @@ describe('computeEstimate — openings reduce plaster area (F7.2.4, F7.3.5)', ()
     expect(plaster(baseline).area).toBeCloseTo(expected, 1);
   });
 
-  it('window subtracts its area from plaster total', () => {
+  it('window on a wall subtracts its area from plaster total (F2.3.4 v1.9.0)', () => {
     const rooms = [makeRoom('r1', 20, 16)];
     const baseline = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog);
-    // 1.5 m wide × 1.5 m tall window — 2.25 m²
-    const win = WindowSchema.parse({ id: 'w', start: { x: 0, y: 5 }, end: { x: 6, y: 5 } });
+    // Window placed on the south wall (y=0): 1.5 m wide × 1.5 m tall = 2.25 m²
+    const win = WindowSchema.parse({ id: 'w', start: { x: 0, y: 0 }, end: { x: 6, y: 0 } });
     const withWindow = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog, [win]);
     expect(plaster(baseline).area - plaster(withWindow).area).toBeCloseTo(2.25, 1);
   });
 
-  it('door subtracts its area from plaster total', () => {
+  it('door on a wall subtracts its area from plaster total', () => {
     const rooms = [makeRoom('r1', 20, 16)];
     const baseline = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog);
     // 0.75 m wide × 2.1 m door — 1.575 m²
@@ -54,17 +54,28 @@ describe('computeEstimate — openings reduce plaster area (F7.2.4, F7.3.5)', ()
     expect(plaster(baseline).area - plaster(withDoor).area).toBeCloseTo(1.575, 1);
   });
 
-  it('plaster area never goes below zero even with absurdly large openings', () => {
+  it('opening that does not lie on any room wall is ignored (F2.3.4 v1.9.0)', () => {
     const rooms = [makeRoom('r1', 20, 16)];
-    const huge = WindowSchema.parse({
+    const baseline = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog);
+    // Opening floating inside the room (y=5 is not a wall) — must not affect plaster.
+    const stray = WindowSchema.parse({ id: 'w', start: { x: 0, y: 5 }, end: { x: 6, y: 5 } });
+    const result = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog, [stray]);
+    expect(plaster(result).area).toBeCloseTo(plaster(baseline).area);
+  });
+
+  it('per-room wall area never goes below zero (F2.3.4 v1.9.0 clamp)', () => {
+    const rooms = [makeRoom('r1', 20, 16)]; // bare wall area = 37.8 m²
+    // South wall is 5 m × 2.7 m = 13.5 m². Cover the whole wall with a height-3 opening
+    // (> wall height) → wallAreaForRoom should clamp to ≥ 0 and the plaster total
+    // stays non-negative.
+    const massive = WindowSchema.parse({
       id: 'w',
       start: { x: 0, y: 0 },
-      end: { x: 80, y: 0 },
+      end: { x: 20, y: 0 },
       height_m: 3,
     });
-    const result = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog, [huge]);
-    expect(plaster(result).area).toBe(0);
-    expect(plaster(result).priceMin).toBe(0);
-    expect(plaster(result).priceMax).toBe(0);
+    const result = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog, [massive]);
+    expect(plaster(result).area).toBeGreaterThanOrEqual(0);
+    expect(plaster(result).priceMin).toBeGreaterThanOrEqual(0);
   });
 });

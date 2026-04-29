@@ -10,11 +10,9 @@ import type {
 } from '../geometry/types';
 import type { FurnitureInstance } from '../geometry/types';
 import { TILE_SIZE } from '../geometry/tiles';
-import { openingAreaM2 } from '../geometry/openings';
 import type { CatalogItem } from '../furniture/placement';
 import pricingData from '../../data/pricing.default.json';
-
-const ROOM_HEIGHT = 2.7;
+import { wallAreaForRoom, totalPlasterArea } from './wallArea';
 
 export interface EstimateLineItem {
   category: 'rough' | 'fine' | 'furniture';
@@ -41,14 +39,6 @@ function wireLength(routes: ElectricalRoute[]): number {
     }
   }
   return total;
-}
-
-/** Calculate wall area for a room (perimeter × height) */
-function wallArea(room: Room): number {
-  const w = room.rect.width * TILE_SIZE;
-  const h = room.rect.height * TILE_SIZE;
-  const perimeter = 2 * (w + h);
-  return perimeter * ROOM_HEIGHT;
 }
 
 export function computeEstimate(
@@ -103,15 +93,10 @@ export function computeEstimate(
   }
 
   // 3. Plaster (all rooms)
-  let totalWallArea = 0;
-  for (const room of rooms) {
-    totalWallArea += wallArea(room);
-  }
-  // F7.2.4 + F7.3.5 — windows and doors reduce the plaster surface
-  let openingAreaTotal = 0;
-  for (const win of windows) openingAreaTotal += openingAreaM2(win, TILE_SIZE);
-  for (const door of doors) openingAreaTotal += openingAreaM2(door, TILE_SIZE);
-  totalWallArea = Math.max(0, totalWallArea - openingAreaTotal);
+  // F2.3.4 (v1.9.0): use wallAreaForRoom so internal openings are subtracted
+  // from BOTH adjacent rooms — pre-1.9 the global subtraction counted each
+  // internal door only once, which over-billed plaster.
+  const totalWallArea = totalPlasterArea(rooms, windows, doors);
   items.push({
     category: 'rough',
     name: 'Штукатурка стен',
@@ -166,7 +151,8 @@ export function computeEstimate(
     const wc = wallCovering[room.id];
     // F3.2.5 (v1.9.0): `none` and missing entries both skip the line item.
     if (!wc || wc === 'none') continue;
-    const wa = wallArea(room);
+    // F3.2.7 (v1.9.0): subtract per-room openings from the covering surface.
+    const wa = wallAreaForRoom(room, windows, doors);
     const priceKey = `wall_${wc}_per_m2` as keyof typeof pricing.fine_finish;
     const p = pricing.fine_finish[priceKey];
     if (!p) continue;
