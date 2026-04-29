@@ -33,23 +33,25 @@ async function countTintedPixels(
   );
 }
 
-test.describe('Door swing block (F7.3.4)', () => {
-  test('E2E-15: hovering a chair over a door swing tile shows the invalid highlight', async ({
-    page,
-  }) => {
+test.describe('Door swing area (F7.3.4 → relaxed in v1.13.0 / F8.7)', () => {
+  test('F8.7 (v1.13.0): hovering a chair over a door swing tile is now VALID', async ({ page }) => {
     await gotoStage3Furniture(page);
 
-    // Pick a chair (allowed_rooms=null so room-type alone never rejects)
+    // Baseline red count (electrical panel + ambient) BEFORE picking a chair.
+    const baselineRed = await countTintedPixels(page, { r: 229, g: 57, b: 53 }, 50);
+
+    // Pick a chair (free placement)
     await page.getByRole('button', { name: /Стул/ }).first().click();
 
     const canvas = page.locator('.konvajs-content canvas').first();
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
 
-    // Layout 1 has door_bedroom1_corridor at x=12, y=10..13. Buffer inside
-    // bedroom_1 covers tile (11, 10..12). At SCALE=30, stage coords (11, 10)
-    // bottom-left → cursor x=11.5*30=345, y=(32-10.5)*30=645 in stage units.
-    // Canvas may be CSS-scaled; use proportions.
+    // Layout 1 has door_bedroom1_corridor at x=12, y=10..13. Pre-1.13 the
+    // buffer at (11, 10..12) made placement invalid → red highlight added a
+    // big rect of #E53935 pixels. After F8.7 (v1.13.0) door buffer no longer
+    // blocks → hovering this tile shows the GREEN valid highlight, no extra
+    // red over the baseline panel pixels.
     const stageW = 1080;
     const stageH = 960;
     const stageCx = 11.5 * 30;
@@ -59,10 +61,9 @@ test.describe('Door swing block (F7.3.4)', () => {
     await page.mouse.move(cx, cy);
     await page.waitForTimeout(150);
 
-    // PALETTE.placement_highlight.invalid = #E53935 (rgb 229, 57, 53). The
-    // highlight is a solid-stroke + opacity-0.35-fill rect; the stroke pixels
-    // along the perimeter retain near-pure red. Match those.
-    const strongRed = await countTintedPixels(page, { r: 229, g: 57, b: 53 }, 50);
-    expect(strongRed).toBeGreaterThan(20);
+    const afterRed = await countTintedPixels(page, { r: 229, g: 57, b: 53 }, 50);
+    // No extra red pixels added by hover → the door buffer no longer blocks.
+    // Allow a tiny anti-aliasing margin on top of the baseline.
+    expect(afterRed - baselineRed).toBeLessThan(50);
   });
 });

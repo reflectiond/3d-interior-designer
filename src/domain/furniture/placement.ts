@@ -91,7 +91,15 @@ export interface PlacementResult {
   reason?: string;
 }
 
-/** Full validation of furniture placement */
+/**
+ * Full validation of furniture placement.
+ *
+ * F8.7 (v1.13.0): the `allowed_rooms` filter is no longer applied — any
+ * furniture can be placed in any room. The function still requires
+ * containment (must fit inside one room) and rejects collisions with
+ * existing pieces. {@link isAllowedInRoom} stays exported for any future
+ * caller that wants opt-in advisory checks.
+ */
 export function validatePlacement(
   position: TileCoord,
   item: CatalogItem,
@@ -106,10 +114,6 @@ export function validatePlacement(
   const room = findContainingRoom(tiles, rooms);
   if (!room) {
     return { valid: false, reason: 'Мебель выходит за пределы комнаты' };
-  }
-
-  if (!isAllowedInRoom(item, room.type)) {
-    return { valid: false, reason: `${item.name} нельзя разместить в «${room.name}»` };
   }
 
   if (hasCollision(tiles, existingFurniture, catalog, excludeId)) {
