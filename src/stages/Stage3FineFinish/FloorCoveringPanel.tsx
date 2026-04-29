@@ -13,9 +13,9 @@ const OPTIONS: { value: FloorCovering; label: string }[] = [
 ];
 
 export function FloorCoveringPanel() {
+  // F3.1.4 / F12.1 (v1.9.0): corridor and wardrobe pick a floor covering alongside the rest.
   const { rooms, floorCovering, setFloorCovering } = useProjectStore();
-  // TODO(v1.9.b — F12.1): drop this filter so corridor and wardrobe also pick a covering.
-  const relevantRooms = rooms.filter((r) => r.type !== 'corridor' && r.type !== 'wardrobe');
+  const relevantRooms = rooms;
 
   return (
     <div className={styles.section}>

@@ -67,9 +67,8 @@ export function computeEstimate(
 
   // --- Rough finish ---
 
-  // 1. Screed
+  // 1. Screed (F12.2 v1.9.0: corridor and wardrobe count too)
   for (const room of rooms) {
-    if (room.type === 'corridor' || room.type === 'wardrobe') continue;
     const ft = flooring[room.id] ?? 'screed';
     const area = room.area;
     if (ft === 'screed_heated') {
@@ -121,9 +120,8 @@ export function computeEstimate(
     priceMax: Math.round(totalWallArea * pricing.rough_finish.plaster_per_m2.max),
   });
 
-  // 4. Ceiling
+  // 4. Ceiling (F12.2 v1.9.0: corridor and wardrobe count too)
   for (const room of rooms) {
-    if (room.type === 'corridor' || room.type === 'wardrobe') continue;
     const ct = ceiling[room.id] ?? 'stretch';
     const area = room.area;
     const priceKey = ct === 'drywall' ? 'ceiling_drywall_per_m2' : 'ceiling_stretch_per_m2';
@@ -139,9 +137,8 @@ export function computeEstimate(
 
   // --- Fine finish ---
 
-  // 5. Floor covering
+  // 5. Floor covering (F12.2 v1.9.0: corridor and wardrobe count too)
   for (const room of rooms) {
-    if (room.type === 'corridor' || room.type === 'wardrobe') continue;
     const fc = floorCovering[room.id];
     // F3.1.3 (v1.9.0): `none` and missing entries both skip the line item.
     if (!fc || fc === 'none') continue;
@@ -164,9 +161,8 @@ export function computeEstimate(
     });
   }
 
-  // 6. Wall covering
+  // 6. Wall covering (F12.2 v1.9.0: corridor and wardrobe count too)
   for (const room of rooms) {
-    if (room.type === 'corridor' || room.type === 'wardrobe') continue;
     const wc = wallCovering[room.id];
     // F3.2.5 (v1.9.0): `none` and missing entries both skip the line item.
     if (!wc || wc === 'none') continue;

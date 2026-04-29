@@ -12,9 +12,9 @@ const OPTIONS: { value: WallCovering; label: string }[] = [
 ];
 
 export function WallCoveringPanel() {
+  // F3.2.6 / F12.1 (v1.9.0): corridor and wardrobe pick a wall covering alongside the rest.
   const { rooms, wallCovering, setWallCovering } = useProjectStore();
-  // TODO(v1.9.b — F12.1): drop this filter so corridor and wardrobe also pick a covering.
-  const relevantRooms = rooms.filter((r) => r.type !== 'corridor' && r.type !== 'wardrobe');
+  const relevantRooms = rooms;
 
   return (
     <div className={styles.section}>

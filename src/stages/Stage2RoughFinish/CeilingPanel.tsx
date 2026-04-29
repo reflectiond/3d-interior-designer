@@ -2,9 +2,9 @@ import { useProjectStore } from '../../store/projectStore';
 import styles from './SidePanel.module.css';
 
 export function CeilingPanel() {
+  // F2.4.4 / F12.1 (v1.9.0): corridor and wardrobe pick ceiling type alongside the rest.
   const { rooms, ceiling, setCeiling } = useProjectStore();
-
-  const relevantRooms = rooms.filter((r) => r.type !== 'corridor' && r.type !== 'wardrobe');
+  const relevantRooms = rooms;
 
   return (
     <div className={styles.section}>
