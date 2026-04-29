@@ -11,7 +11,11 @@ import type { CatalogItem } from '../../domain/furniture/placement';
 import type { Room } from '../../domain/geometry/types';
 import { registerKonvaStage } from '../../export/snapshots';
 import { getFloorPatternCanvas } from '../floorPatterns';
-import { pickCeilingIconAnchor, CEILING_ICON_SIZE_TILES } from '../ceilingIcon';
+import {
+  pickCeilingIconAnchor,
+  CEILING_ICON_SIZE_TILES,
+  CEILING_ICON_LABEL_WIDTH_FACTOR,
+} from '../ceilingIcon';
 import catalogData from '../../data/furniture-catalog.json';
 import styles from './View2D.module.css';
 
@@ -598,10 +602,14 @@ export function View2D({
                   </>
                 )}
                 <Text
-                  x={left - sizeScreen}
+                  // Label box is `LABEL_WIDTH_FACTOR × iconSize` wide, centered
+                  // on the icon. wrap="none" stops Konva from breaking long
+                  // captions like «Гипсокартон» onto two lines.
+                  x={left - ((CEILING_ICON_LABEL_WIDTH_FACTOR - 1) * sizeScreen) / 2}
                   y={top + sizeScreen + 1}
-                  width={sizeScreen * 3}
+                  width={sizeScreen * CEILING_ICON_LABEL_WIDTH_FACTOR}
                   align="center"
+                  wrap="none"
                   text={labelText}
                   fontSize={10}
                   fill={PALETTE.text.secondary}

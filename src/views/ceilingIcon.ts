@@ -4,12 +4,17 @@ import { getEffectiveSize } from '../domain/furniture/placement';
 
 export const CEILING_ICON_SIZE_TILES = 0.6; // 0.15 m diameter (F6.3.1) plus padding for label
 // F6.3.6 (v1.8.0): bumped from 0.4 → 1.0 tile (= 0.25 m). The label text under
-// the icon is rendered with width 3 × icon_size (1.8 tiles) centered on the
-// icon center, so it overflows the room rectangle by (3 × iconSize − iconSize) / 2
-// = iconSize tiles on the side closest to the wall. With inset = 1.0 the
-// label and icon together stay inside the room with a small visual margin
-// (≥ (1.0 − iconSize) = 0.4 tile from the nearest wall).
+// the icon is rendered with width LABEL_WIDTH_FACTOR × icon_size (centered on
+// the icon center), so on the wall-adjacent side it extends past the icon by
+// (factor − 1) × iconSize / 2. With factor = 4, iconSize = 0.6, inset = 1.0
+// the label fits inside the smallest typical room (4×4 tiles) with ~0.1 tile
+// margin to the closest wall.
 export const CEILING_ICON_INSET_TILES = 1.0;
+// F6.3.6 (v1.8.1): bumped 3 → 4 so «Гипсокартон» (11 cyrillic chars at
+// fontSize 10 ≈ 66 px) fits in the layout box without word-wrap. View2D pairs
+// this with `wrap="none"` so an unexpectedly long label clips horizontally
+// instead of breaking onto a second line.
+export const CEILING_ICON_LABEL_WIDTH_FACTOR = 4;
 
 export type CornerName = 'TR' | 'BR' | 'BL' | 'TL';
 
