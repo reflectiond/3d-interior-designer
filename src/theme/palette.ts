@@ -69,10 +69,13 @@ export const PALETTE = {
   },
   // v1.2.0 — fine-finish floor pattern seam colors. Used for the lines that delineate
   // boards/tiles/chevrons on top of the base floor color (PALETTE.floor.<type>).
+  // v1.8.0 — added `linoleum` (speckle dots), opacity bumped from 0.3–0.5 to 0.6–0.7
+  // so the overlay-style pattern stays visible on pastel room fills (F6.2.10).
   floor_pattern_seam: {
     laminate: '#8C7355',
     tile: '#A0A0A0',
     quartz_vinyl: '#6B5C45',
+    linoleum: '#5C4F3A',
   },
   // v1.4.0 — feedback colors during furniture placement and drag-to-move.
   // valid/invalid render with opacity 0.35; ghost (drag preview) at 0.4.

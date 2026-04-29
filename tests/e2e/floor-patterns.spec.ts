@@ -7,31 +7,32 @@ async function readKonvaCanvas(page: import('@playwright/test').Page) {
   });
 }
 
-async function countTileBasePixels(page: import('@playwright/test').Page) {
+async function countNearGreyPixels(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
     const canvas = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
     if (!canvas) return -1;
     const ctx = canvas.getContext('2d');
     if (!ctx) return -1;
     const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    // PALETTE.floor.tile = #E8E8E8 (rgb 232, 232, 232). The tile pattern fills rooms
-    // with this near-white gray; nothing else in the scene uses it (room fills are
-    // pastels, walls are darker greys). Count near-#E8E8E8 pixels as proxy for
-    // tile-covered floor area.
+    // F6.2.10 (v1.8.0): tile seams blend `PALETTE.floor_pattern_seam.tile = #A0A0A0`
+    // (rgb 160,160,160) at opacity 0.7 over pastel room fills. The blended seam
+    // pixels land in roughly rgb(175–200, 175–195, 170–195) — a desaturated
+    // mid-tone that no pastel room fill produces. Count those pixels as proxy
+    // for "tile seams visible".
     let count = 0;
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
       if (
-        r >= 222 &&
-        r <= 240 &&
-        g >= 222 &&
-        g <= 240 &&
-        b >= 222 &&
-        b <= 240 &&
-        Math.abs(r - g) < 6 &&
-        Math.abs(g - b) < 6
+        r >= 170 &&
+        r <= 210 &&
+        g >= 170 &&
+        g <= 210 &&
+        b >= 165 &&
+        b <= 210 &&
+        Math.abs(r - g) < 16 &&
+        Math.abs(g - b) < 16
       ) {
         count++;
       }
@@ -40,27 +41,82 @@ async function countTileBasePixels(page: import('@playwright/test').Page) {
   });
 }
 
+async function countNearPastelPixels(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    const canvas = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
+    if (!canvas) return -1;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return -1;
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // PALETTE.rooms.* are pastel — high RGB (>= 220), warm/cool tints. Count
+    // pixels that look like ANY pastel room fill: at least one channel ≥ 240,
+    // all channels ≥ 220.
+    let count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      if (max >= 240 && min >= 220) count++;
+    }
+    return count;
+  });
+}
+
 test.describe('Floor patterns (F6.2)', () => {
-  test('E2E-17: tile covering paints near-white gray fill on the 2D plan', async ({ page }) => {
+  test('E2E-17: tile covering renders an overlay pattern on the 2D plan', async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
-    // Jump to Stage 3 via stage navigator
     await page.locator('nav[aria-label="Этапы"] button').nth(2).click();
     await expect(page.getByText('Покрытие пола')).toBeVisible();
 
-    // Snapshot before switching: room defaults are pastel, no tile gray expected
-    const beforeTileCount = await countTileBasePixels(page);
+    const beforeDataUrl = await readKonvaCanvas(page);
+    const beforeGrey = await countNearGreyPixels(page);
 
-    // Select tile for the first room
-    await page.locator('select').first().selectOption('tile');
-    await page.waitForTimeout(200);
+    // Switch every room to tile so the overlay paints across the whole plan
+    const selects = page.locator('select');
+    const total = await selects.count();
+    for (let i = 0; i < total; i++) {
+      await selects.nth(i).selectOption('tile');
+    }
+    await page.waitForTimeout(300);
 
     const afterDataUrl = await readKonvaCanvas(page);
+    // F6.2.8 (v1.8.0): the pattern is overlay-only, but it must still produce
+    // a visible change on the canvas. The room fills underneath stay (E2E-19),
+    // so the delta is small in absolute pixels — a data-URL diff is enough.
     expect(afterDataUrl).not.toBeNull();
+    expect(afterDataUrl).not.toBe(beforeDataUrl);
 
-    const afterTileCount = await countTileBasePixels(page);
-    // Switching to tile should add a substantial gray-tile fill region
-    expect(afterTileCount).toBeGreaterThan(beforeTileCount + 500);
+    // And we still expect at least *some* additional mid-grey blend pixels —
+    // empirically ~200, threshold floored at 100 to stay robust to AA jitter.
+    const afterGrey = await countNearGreyPixels(page);
+    expect(afterGrey).toBeGreaterThan(beforeGrey + 100);
+  });
+
+  test('E2E-19: laminate overlay keeps the pastel room fill visible (F6.2.8)', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
+    await page.locator('nav[aria-label="Этапы"] button').nth(2).click();
+    await expect(page.getByText('Покрытие пола')).toBeVisible();
+
+    const beforePastel = await countNearPastelPixels(page);
+    expect(beforePastel).toBeGreaterThan(0);
+
+    // Switch every room to laminate
+    const selects = page.locator('select');
+    const total = await selects.count();
+    for (let i = 0; i < total; i++) {
+      await selects.nth(i).selectOption('laminate');
+    }
+    await page.waitForTimeout(300);
+
+    const afterPastel = await countNearPastelPixels(page);
+    // With overlay patterns the pastel room fills must still occupy ≥ 70% of
+    // the pre-laminate footprint. (Pre-v1.8 the laminate base color #C9A678
+    // wiped the pastel out → ratio dropped to ~5%.)
+    expect(afterPastel).toBeGreaterThan(beforePastel * 0.7);
   });
 
   test('F6.2.x: switching covering changes the 2D plan rendering', async ({ page }) => {

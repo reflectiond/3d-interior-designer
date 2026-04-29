@@ -6,7 +6,7 @@ import { getPatternUnitSize } from '../../src/views/floorPatterns';
 // tests/e2e/floor-patterns.spec.ts where a real browser canvas is used.
 
 describe('getPatternUnitSize', () => {
-  it('linoleum unit is 0.25 × 0.25 m (1 tile, F6.2.2 — solid fill)', () => {
+  it('linoleum unit is 0.25 × 0.25 m (1 tile; F6.2.2 + F6.2.9 v1.8.0 — speckle)', () => {
     expect(getPatternUnitSize('linoleum')).toEqual({ widthM: 0.25, heightM: 0.25 });
   });
 
