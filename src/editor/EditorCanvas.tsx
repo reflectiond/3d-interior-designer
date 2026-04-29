@@ -6,6 +6,7 @@ import { PALETTE } from '../theme/palette';
 import { findObjectAt, type EditorAction, type EditorState, type EditorTool } from './state';
 import { invalidObjectKeys, validateEditor } from './validation';
 import { findNearestWall, projectOntoWall, type WallSegment } from './wallSnap';
+import { MeasuredCanvas } from '../views/MeasuredCanvas';
 import type { TileCoord } from '../domain/geometry/types';
 
 const SCALE = 24;
@@ -180,210 +181,213 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
         display: 'inline-block',
       }}
     >
-      <Stage
-        width={widthPx}
-        height={heightPx}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-      >
-        <Layer listening={false}>
-          {/* Grid */}
-          {Array.from({ length: state.gridWidth + 1 }, (_, i) => (
-            <Line
-              key={`gv-${i}`}
-              points={[i * SCALE, 0, i * SCALE, heightPx]}
-              stroke={PALETTE.editor.grid}
-              strokeWidth={1}
-            />
-          ))}
-          {Array.from({ length: state.gridHeight + 1 }, (_, j) => (
-            <Line
-              key={`gh-${j}`}
-              points={[0, j * SCALE, widthPx, j * SCALE]}
-              stroke={PALETTE.editor.grid}
-              strokeWidth={1}
-            />
-          ))}
-        </Layer>
-
-        <Layer>
-          {/* Rooms */}
-          {state.rooms.map((room) => {
-            const isSelected = state.selection?.kind === 'room' && state.selection.id === room.id;
-            const isInvalid = invalidKeys.has(`room:${room.id}`);
-            const stroke = isInvalid
-              ? PALETTE.placement_highlight.invalid
-              : isSelected
-                ? PALETTE.editor.selection
-                : PALETTE.text.primary;
-            return (
-              <Group key={room.id}>
-                <Rect
-                  x={room.x * SCALE}
-                  y={room.y * SCALE}
-                  width={room.width * SCALE}
-                  height={room.height * SCALE}
-                  fill={PALETTE.rooms[room.type] ?? PALETTE.rooms.corridor}
-                  stroke={stroke}
-                  strokeWidth={isInvalid || isSelected ? 2.5 : 1}
-                  dash={isInvalid ? [6, 4] : undefined}
-                  listening={true}
-                />
-                <Text
-                  x={room.x * SCALE + 4}
-                  y={room.y * SCALE + 4}
-                  text={`${room.name}\n${room.id}`}
-                  fontSize={11}
-                  fill={PALETTE.text.primary}
-                  listening={false}
-                />
-              </Group>
-            );
-          })}
-
-          {/* Windows */}
-          {state.windows.map((win) => {
-            const x1 = win.start.x * SCALE;
-            const y1 = win.start.y * SCALE;
-            const x2 = win.end.x * SCALE;
-            const y2 = win.end.y * SCALE;
-            const dx = x2 - x1;
-            const dy = y2 - y1;
-            const len = Math.hypot(dx, dy) || 1;
-            const offset = 3;
-            const nx = (-dy / len) * offset;
-            const ny = (dx / len) * offset;
-            const isSelected = state.selection?.kind === 'window' && state.selection.id === win.id;
-            const isInvalid = invalidKeys.has(`window:${win.id}`);
-            const stroke = isInvalid
-              ? PALETTE.placement_highlight.invalid
-              : isSelected
-                ? PALETTE.editor.selection
-                : PALETTE.openings.window_frame;
-            return (
-              <React.Fragment key={`win-${win.id}`}>
-                <Line
-                  points={[x1 + nx, y1 + ny, x2 + nx, y2 + ny]}
-                  stroke={stroke}
-                  strokeWidth={isSelected || isInvalid ? 3 : 2}
-                />
-                <Line
-                  points={[x1 - nx, y1 - ny, x2 - nx, y2 - ny]}
-                  stroke={stroke}
-                  strokeWidth={isSelected || isInvalid ? 3 : 2}
-                />
-              </React.Fragment>
-            );
-          })}
-
-          {/* Doors */}
-          {state.doors.map((door) => {
-            const hinge = door.hinge === 'start' ? door.start : door.end;
-            const other = door.hinge === 'start' ? door.end : door.start;
-            const dx = other.x - hinge.x;
-            const dy = other.y - hinge.y;
-            // perpendicular CCW; swing_side='right' flips
-            const sign = door.swing_side === 'left' ? 1 : -1;
-            const px = -dy * sign;
-            const py = dx * sign;
-            const leafTip = { x: hinge.x + px, y: hinge.y + py };
-            const hingeS = { x: hinge.x * SCALE, y: hinge.y * SCALE };
-            const otherS = { x: other.x * SCALE, y: other.y * SCALE };
-            const tipS = { x: leafTip.x * SCALE, y: leafTip.y * SCALE };
-            const r = Math.hypot(otherS.x - hingeS.x, otherS.y - hingeS.y);
-            const sweepFlag = door.swing_side === 'left' ? 1 : 0;
-            const isSelected = state.selection?.kind === 'door' && state.selection.id === door.id;
-            const isInvalid = invalidKeys.has(`door:${door.id}`);
-            const leafStroke = isInvalid
-              ? PALETTE.placement_highlight.invalid
-              : isSelected
-                ? PALETTE.editor.selection
-                : PALETTE.openings.door_frame;
-            const arcStroke = isInvalid
-              ? PALETTE.placement_highlight.invalid
-              : isSelected
-                ? PALETTE.editor.selection
-                : PALETTE.openings.door_arc;
-            return (
-              <React.Fragment key={`door-${door.id}`}>
-                <Line
-                  points={[hingeS.x, hingeS.y, tipS.x, tipS.y]}
-                  stroke={leafStroke}
-                  strokeWidth={isSelected || isInvalid ? 3 : 2}
-                />
-                <Path
-                  data={`M ${tipS.x} ${tipS.y} A ${r} ${r} 0 0 ${sweepFlag} ${otherS.x} ${otherS.y}`}
-                  stroke={arcStroke}
-                  strokeWidth={1.5}
-                  dash={[4, 3]}
-                />
-              </React.Fragment>
-            );
-          })}
-
-          {/* Electrical panel */}
-          {state.electricalPanel && (
-            <Rect
-              x={state.electricalPanel.x * SCALE + SCALE * 0.15}
-              y={state.electricalPanel.y * SCALE + SCALE * 0.15}
-              width={SCALE * 0.7}
-              height={SCALE * 0.7}
-              fill={PALETTE.electrical.panel}
-              stroke={
-                invalidKeys.has('panel')
-                  ? PALETTE.placement_highlight.invalid
-                  : state.selection?.kind === 'panel'
-                    ? PALETTE.editor.selection
-                    : PALETTE.text.primary
-              }
-              strokeWidth={state.selection?.kind === 'panel' ? 2.5 : 1}
-            />
-          )}
-        </Layer>
-
-        {/* Hover preview */}
-        <Layer listening={false}>
-          {state.tool === 'room' && roomAnchor && pointerTile && (
-            <Rect
-              x={Math.min(roomAnchor.tile.x, pointerTile.x) * SCALE}
-              y={Math.min(roomAnchor.tile.y, pointerTile.y) * SCALE}
-              width={(Math.abs(pointerTile.x - roomAnchor.tile.x) + 1) * SCALE}
-              height={(Math.abs(pointerTile.y - roomAnchor.tile.y) + 1) * SCALE}
-              fill={PALETTE.editor.preview}
-              opacity={0.3}
-              stroke={PALETTE.editor.selection}
-              strokeWidth={1.5}
-              dash={[4, 4]}
-            />
-          )}
-
-          {(state.tool === 'window' || state.tool === 'door') &&
-            openingAnchor &&
-            openingAnchor.tool === state.tool &&
-            pointerTile && (
+      <MeasuredCanvas widthPx={widthPx} heightPx={heightPx} pxPerTile={SCALE} testIdPrefix="editor">
+        <Stage
+          width={widthPx}
+          height={heightPx}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+        >
+          <Layer listening={false}>
+            {/* Grid */}
+            {Array.from({ length: state.gridWidth + 1 }, (_, i) => (
               <Line
-                points={(() => {
-                  // Preview uses the same snap rule as commit (F11.2.8) so the
-                  // dashed line tracks the wall the anchor locked onto.
-                  const snapped = openingAnchor.wall
-                    ? projectOntoWall(pointerTile, openingAnchor.wall)
-                    : snapAxisAligned(openingAnchor.tile, pointerTile);
-                  return [
-                    openingAnchor.tile.x * SCALE,
-                    openingAnchor.tile.y * SCALE,
-                    snapped.x * SCALE,
-                    snapped.y * SCALE,
-                  ];
-                })()}
+                key={`gv-${i}`}
+                points={[i * SCALE, 0, i * SCALE, heightPx]}
+                stroke={PALETTE.editor.grid}
+                strokeWidth={1}
+              />
+            ))}
+            {Array.from({ length: state.gridHeight + 1 }, (_, j) => (
+              <Line
+                key={`gh-${j}`}
+                points={[0, j * SCALE, widthPx, j * SCALE]}
+                stroke={PALETTE.editor.grid}
+                strokeWidth={1}
+              />
+            ))}
+          </Layer>
+
+          <Layer>
+            {/* Rooms */}
+            {state.rooms.map((room) => {
+              const isSelected = state.selection?.kind === 'room' && state.selection.id === room.id;
+              const isInvalid = invalidKeys.has(`room:${room.id}`);
+              const stroke = isInvalid
+                ? PALETTE.placement_highlight.invalid
+                : isSelected
+                  ? PALETTE.editor.selection
+                  : PALETTE.text.primary;
+              return (
+                <Group key={room.id}>
+                  <Rect
+                    x={room.x * SCALE}
+                    y={room.y * SCALE}
+                    width={room.width * SCALE}
+                    height={room.height * SCALE}
+                    fill={PALETTE.rooms[room.type] ?? PALETTE.rooms.corridor}
+                    stroke={stroke}
+                    strokeWidth={isInvalid || isSelected ? 2.5 : 1}
+                    dash={isInvalid ? [6, 4] : undefined}
+                    listening={true}
+                  />
+                  <Text
+                    x={room.x * SCALE + 4}
+                    y={room.y * SCALE + 4}
+                    text={`${room.name}\n${room.id}`}
+                    fontSize={11}
+                    fill={PALETTE.text.primary}
+                    listening={false}
+                  />
+                </Group>
+              );
+            })}
+
+            {/* Windows */}
+            {state.windows.map((win) => {
+              const x1 = win.start.x * SCALE;
+              const y1 = win.start.y * SCALE;
+              const x2 = win.end.x * SCALE;
+              const y2 = win.end.y * SCALE;
+              const dx = x2 - x1;
+              const dy = y2 - y1;
+              const len = Math.hypot(dx, dy) || 1;
+              const offset = 3;
+              const nx = (-dy / len) * offset;
+              const ny = (dx / len) * offset;
+              const isSelected =
+                state.selection?.kind === 'window' && state.selection.id === win.id;
+              const isInvalid = invalidKeys.has(`window:${win.id}`);
+              const stroke = isInvalid
+                ? PALETTE.placement_highlight.invalid
+                : isSelected
+                  ? PALETTE.editor.selection
+                  : PALETTE.openings.window_frame;
+              return (
+                <React.Fragment key={`win-${win.id}`}>
+                  <Line
+                    points={[x1 + nx, y1 + ny, x2 + nx, y2 + ny]}
+                    stroke={stroke}
+                    strokeWidth={isSelected || isInvalid ? 3 : 2}
+                  />
+                  <Line
+                    points={[x1 - nx, y1 - ny, x2 - nx, y2 - ny]}
+                    stroke={stroke}
+                    strokeWidth={isSelected || isInvalid ? 3 : 2}
+                  />
+                </React.Fragment>
+              );
+            })}
+
+            {/* Doors */}
+            {state.doors.map((door) => {
+              const hinge = door.hinge === 'start' ? door.start : door.end;
+              const other = door.hinge === 'start' ? door.end : door.start;
+              const dx = other.x - hinge.x;
+              const dy = other.y - hinge.y;
+              // perpendicular CCW; swing_side='right' flips
+              const sign = door.swing_side === 'left' ? 1 : -1;
+              const px = -dy * sign;
+              const py = dx * sign;
+              const leafTip = { x: hinge.x + px, y: hinge.y + py };
+              const hingeS = { x: hinge.x * SCALE, y: hinge.y * SCALE };
+              const otherS = { x: other.x * SCALE, y: other.y * SCALE };
+              const tipS = { x: leafTip.x * SCALE, y: leafTip.y * SCALE };
+              const r = Math.hypot(otherS.x - hingeS.x, otherS.y - hingeS.y);
+              const sweepFlag = door.swing_side === 'left' ? 1 : 0;
+              const isSelected = state.selection?.kind === 'door' && state.selection.id === door.id;
+              const isInvalid = invalidKeys.has(`door:${door.id}`);
+              const leafStroke = isInvalid
+                ? PALETTE.placement_highlight.invalid
+                : isSelected
+                  ? PALETTE.editor.selection
+                  : PALETTE.openings.door_frame;
+              const arcStroke = isInvalid
+                ? PALETTE.placement_highlight.invalid
+                : isSelected
+                  ? PALETTE.editor.selection
+                  : PALETTE.openings.door_arc;
+              return (
+                <React.Fragment key={`door-${door.id}`}>
+                  <Line
+                    points={[hingeS.x, hingeS.y, tipS.x, tipS.y]}
+                    stroke={leafStroke}
+                    strokeWidth={isSelected || isInvalid ? 3 : 2}
+                  />
+                  <Path
+                    data={`M ${tipS.x} ${tipS.y} A ${r} ${r} 0 0 ${sweepFlag} ${otherS.x} ${otherS.y}`}
+                    stroke={arcStroke}
+                    strokeWidth={1.5}
+                    dash={[4, 3]}
+                  />
+                </React.Fragment>
+              );
+            })}
+
+            {/* Electrical panel */}
+            {state.electricalPanel && (
+              <Rect
+                x={state.electricalPanel.x * SCALE + SCALE * 0.15}
+                y={state.electricalPanel.y * SCALE + SCALE * 0.15}
+                width={SCALE * 0.7}
+                height={SCALE * 0.7}
+                fill={PALETTE.electrical.panel}
+                stroke={
+                  invalidKeys.has('panel')
+                    ? PALETTE.placement_highlight.invalid
+                    : state.selection?.kind === 'panel'
+                      ? PALETTE.editor.selection
+                      : PALETTE.text.primary
+                }
+                strokeWidth={state.selection?.kind === 'panel' ? 2.5 : 1}
+              />
+            )}
+          </Layer>
+
+          {/* Hover preview */}
+          <Layer listening={false}>
+            {state.tool === 'room' && roomAnchor && pointerTile && (
+              <Rect
+                x={Math.min(roomAnchor.tile.x, pointerTile.x) * SCALE}
+                y={Math.min(roomAnchor.tile.y, pointerTile.y) * SCALE}
+                width={(Math.abs(pointerTile.x - roomAnchor.tile.x) + 1) * SCALE}
+                height={(Math.abs(pointerTile.y - roomAnchor.tile.y) + 1) * SCALE}
+                fill={PALETTE.editor.preview}
+                opacity={0.3}
                 stroke={PALETTE.editor.selection}
-                strokeWidth={2}
+                strokeWidth={1.5}
                 dash={[4, 4]}
               />
             )}
-        </Layer>
-      </Stage>
+
+            {(state.tool === 'window' || state.tool === 'door') &&
+              openingAnchor &&
+              openingAnchor.tool === state.tool &&
+              pointerTile && (
+                <Line
+                  points={(() => {
+                    // Preview uses the same snap rule as commit (F11.2.8) so the
+                    // dashed line tracks the wall the anchor locked onto.
+                    const snapped = openingAnchor.wall
+                      ? projectOntoWall(pointerTile, openingAnchor.wall)
+                      : snapAxisAligned(openingAnchor.tile, pointerTile);
+                    return [
+                      openingAnchor.tile.x * SCALE,
+                      openingAnchor.tile.y * SCALE,
+                      snapped.x * SCALE,
+                      snapped.y * SCALE,
+                    ];
+                  })()}
+                  stroke={PALETTE.editor.selection}
+                  strokeWidth={2}
+                  dash={[4, 4]}
+                />
+              )}
+          </Layer>
+        </Stage>
+      </MeasuredCanvas>
     </div>
   );
 }
