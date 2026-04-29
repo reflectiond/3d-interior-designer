@@ -198,7 +198,8 @@ export function View2D({
           {/* Floor coverings (F6.2) — Konva pattern fills with per-room covering */}
           {rooms.map((room) => {
             const cov = floorCovering[room.id];
-            if (!cov) return null;
+            // F3.1.3 (v1.9.0): `none` keeps the room cell bare — no pattern is drawn.
+            if (!cov || cov === 'none') return null;
             return (
               <Rect
                 key={`floor-cov-${room.id}`}

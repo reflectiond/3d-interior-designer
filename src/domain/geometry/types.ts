@@ -135,5 +135,13 @@ export type FurnitureInstance = {
 
 export type FloorType = 'screed' | 'screed_heated';
 export type CeilingType = 'stretch' | 'drywall';
-export type FloorCovering = 'linoleum' | 'laminate' | 'tile' | 'quartz_vinyl';
-export type WallCovering = 'wallpaper' | 'paint';
+
+// v1.9.0 — split material from covering choice. The pattern utilities and
+// pricing keys only know about real materials; the user-facing covering can
+// additionally be `'none'` (F3.1.3 — «Без покрытия»), in which case nothing
+// is rendered or priced for that room.
+export type FloorMaterial = 'linoleum' | 'laminate' | 'tile' | 'quartz_vinyl';
+export type FloorCovering = FloorMaterial | 'none';
+
+export type WallMaterial = 'wallpaper' | 'paint';
+export type WallCovering = WallMaterial | 'none';

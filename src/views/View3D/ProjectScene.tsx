@@ -26,7 +26,9 @@ function ceilingColor(type: CeilingType): string {
 
 function useFloorTexture(covering: FloorCovering | undefined, w: number, d: number) {
   return useMemo(() => {
-    if (!covering) return null;
+    // F3.1.3 (v1.9.0): `none` falls back to the bare screed floor in 3D, just
+    // like an unset covering.
+    if (!covering || covering === 'none') return null;
     // 3D needs the base floor color baked into the texture — no room fill renders
     // beneath the floor mesh. 2D uses the same factory without `withBackground` so
     // the pattern is overlay-only there (F6.2.8).
