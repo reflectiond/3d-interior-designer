@@ -95,7 +95,9 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
     expect(state!.electricalPoints.length).toBeGreaterThanOrEqual(5);
   });
 
-  test('E2E-4: «Унитаз» cannot be placed outside the bathroom', async ({ page }) => {
+  test('F8.7 (v1.13.0): «Унитаз» can now be placed in any room', async ({ page }) => {
+    // F8.7 inverts E2E-4 — `allowed_rooms` filter is removed, so a toilet
+    // dropped into the living room is accepted. Pre-1.13 this was rejected.
     await selectLayout1(page);
     await gotoStage3Furniture(page);
 
@@ -107,17 +109,15 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
 
-    // Click in living-room area (right side of layout 1) — toilet is bathroom-only
+    // Click in living-room area (right side of layout 1).
     await page.mouse.click(box!.x + box!.width * 0.7, box!.y + box!.height * 0.4);
-    await page.keyboard.press('Escape');
     await page.waitForTimeout(700);
 
     const state = await readState(page);
     expect(state).not.toBeNull();
-    // No toilet should have been added
     expect(
       state!.furniture.filter((f: { catalogId: string }) => f.catalogId === 'toilet'),
-    ).toHaveLength(0);
+    ).toHaveLength(1);
   });
 
   test('E2E-5: furniture cannot be placed outside any room', async ({ page }) => {

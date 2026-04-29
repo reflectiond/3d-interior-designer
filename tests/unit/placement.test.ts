@@ -188,10 +188,9 @@ describe('validatePlacement', () => {
     expect(result.reason).toContain('за пределы');
   });
 
-  it('rejects toilet in kitchen', () => {
+  it('F8.7 (v1.13.0): allows toilet in kitchen — no allowed_rooms filter', () => {
     const result = validatePlacement({ x: 21, y: 1 }, toilet, 0, rooms, [], catalogMap);
-    expect(result.valid).toBe(false);
-    expect(result.reason).toContain('нельзя разместить');
+    expect(result.valid).toBe(true);
   });
 
   it('allows toilet in bathroom', () => {
