@@ -60,6 +60,10 @@ export interface View2DProps {
   placingPreview?: PlacingPreview | null;
   /** F8.1 — when set, placed furniture is draggable; ghost follows cursor, drop validates. */
   furnitureDrag?: FurnitureDragHandlers | null;
+  /** F8.5 (v1.13.0) — id of the placed furniture currently selected on canvas. */
+  selectedFurnitureId?: string | null;
+  /** F8.5 (v1.13.0) — fired when the user clicks a placed furniture (id) or empty space (null). */
+  onSelectFurniture?: (id: string | null) => void;
 }
 
 interface DragState {
@@ -74,6 +78,8 @@ export function View2D({
   onFurniturePlace,
   placingPreview,
   furnitureDrag,
+  selectedFurnitureId,
+  onSelectFurniture,
 }: View2DProps) {
   const {
     layout,
@@ -108,7 +114,15 @@ export function View2D({
 
   const handleCanvasClick = useCallback(
     (e: KonvaEventObject<MouseEvent>) => {
-      if (interactionMode === 'none' || !layout) return;
+      if (!layout) return;
+
+      // F8.5.4 (v1.13.0): in 'none' interaction mode, click on empty canvas
+      // clears the furniture selection. Furniture Group sets cancelBubble in
+      // its own onClick so this branch never runs after a piece is clicked.
+      if (interactionMode === 'none') {
+        onSelectFurniture?.(null);
+        return;
+      }
 
       const stage = e.target.getStage();
       if (!stage) return;
@@ -132,7 +146,15 @@ export function View2D({
         onFurniturePlace(tileX, tileY);
       }
     },
-    [interactionMode, electricalPointType, layout, rooms, addElectricalPoint, onFurniturePlace],
+    [
+      interactionMode,
+      electricalPointType,
+      layout,
+      rooms,
+      addElectricalPoint,
+      onFurniturePlace,
+      onSelectFurniture,
+    ],
   );
 
   // F8.3.2 — track cursor only while placing; one tile granularity is fine, no debounce needed
@@ -481,6 +503,7 @@ export function View2D({
               // F8.2.3 — mirror around the group's right edge so the rect
               // stays in the same screen footprint while the contents flip.
               const widthPx = w * SCALE;
+              const isSelected = selectedFurnitureId === f.id;
               return (
                 <Group
                   key={`furn-${f.id}`}
@@ -492,7 +515,19 @@ export function View2D({
                   // F8.1.2 — keep the original visually static during drag; ghost
                   // shows the candidate position separately.
                   dragBoundFunc={() => ({ x: screenX, y: screenY })}
+                  // F8.5.1 (v1.13.0) — clicking selects this piece on canvas.
+                  // cancelBubble blocks the Stage onClick which would otherwise
+                  // immediately deselect via the empty-canvas branch.
+                  onClick={(e) => {
+                    e.cancelBubble = true;
+                    onSelectFurniture?.(f.id);
+                  }}
+                  onTap={(e) => {
+                    e.cancelBubble = true;
+                    onSelectFurniture?.(f.id);
+                  }}
                   onDragStart={() => {
+                    onSelectFurniture?.(f.id);
                     setDragState({ id: f.id, tx: f.position.x, ty: f.position.y });
                   }}
                   onDragMove={(e) => {
@@ -526,8 +561,9 @@ export function View2D({
                     width={w * SCALE}
                     height={h * SCALE}
                     fill={color}
-                    stroke={PALETTE.walls.external}
-                    strokeWidth={1}
+                    // F8.5.2 (v1.13.0) — selected piece gets a thick blue stroke.
+                    stroke={isSelected ? PALETTE.editor.selection : PALETTE.walls.external}
+                    strokeWidth={isSelected ? 2 : 1}
                     cornerRadius={2}
                   />
                   <Text

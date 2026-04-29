@@ -35,7 +35,10 @@ export function Stage3FineFinish() {
   const [viewMode, setViewMode] = useState<ViewMode>('2d');
   const [placingItem, setPlacingItem] = useState<CatalogItem | null>(null);
   const [placingRotation, setPlacingRotation] = useState<0 | 90 | 180 | 270>(0);
-  const { setStage, rooms, furniture, addFurniture, updateFurniture } = useProjectStore();
+  // F8.5.1 (v1.13.0) — currently selected placed furniture on canvas.
+  const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
+  const { setStage, rooms, furniture, addFurniture, updateFurniture, removeFurniture } =
+    useProjectStore();
 
   // F8.7 (v1.13.0) — placement freedom: `allowed_rooms` and door buffer
   // restrictions are removed. Containment and collision remain.
@@ -70,6 +73,8 @@ export function Stage3FineFinish() {
     setPlacingItem(item);
     setPlacingRotation(0);
     setViewMode('2d');
+    // F8.5 — picking a new piece in the catalog clears any prior selection.
+    setSelectedFurnitureId(null);
   }, []);
 
   const handleFurniturePlace = useCallback(
@@ -101,10 +106,11 @@ export function Stage3FineFinish() {
     [placingItem, placingRotation, rooms, furniture, addFurniture],
   );
 
-  // Keyboard: R to rotate, Escape to cancel
+  // Keyboard handlers split into two effects so the dependency lists stay tight.
+  // 1) Placement-mode keys: R rotates, Escape cancels.
   useEffect(() => {
+    if (!placingItem) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (!placingItem) return;
       if (e.key === 'r' || e.key === 'R') {
         setPlacingRotation((prev) => ((prev + 90) % 360) as 0 | 90 | 180 | 270);
       }
@@ -115,6 +121,75 @@ export function Stage3FineFinish() {
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [placingItem]);
+
+  // 2) F8.5.3 (v1.13.0) — selection-mode keys: R rotate, M mirror,
+  //    Delete/Backspace remove, arrow keys nudge by 1 tile (validated).
+  useEffect(() => {
+    if (placingItem || !selectedFurnitureId || activeTab !== 'furniture') return;
+    const handleKey = (e: KeyboardEvent) => {
+      // Don't grab keys when the user is typing in an input/textarea.
+      const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      const f = furniture.find((x) => x.id === selectedFurnitureId);
+      if (!f) return;
+      const item = catalogMap.get(f.catalogId);
+      if (!item) return;
+
+      if (e.key === 'r' || e.key === 'R') {
+        if (!item.rotatable) return;
+        const nextRot = ((f.rotation + 90) % 360) as 0 | 90 | 180 | 270;
+        // Validate the rotated footprint against current placement rules.
+        const tiles = getFurnitureTiles(f.position, item, nextRot);
+        const room = findContainingRoom(tiles, rooms);
+        if (!room) return;
+        const others = furniture.filter((x) => x.id !== f.id);
+        if (hasCollision(tiles, others, catalogMap)) return;
+        updateFurniture(f.id, { rotation: nextRot });
+        e.preventDefault();
+        return;
+      }
+      if (e.key === 'm' || e.key === 'M') {
+        if (!item.mirrorable) return;
+        // Mirror keeps footprint symmetric for current catalog, no validation needed.
+        updateFurniture(f.id, { mirrored: !f.mirrored });
+        e.preventDefault();
+        return;
+      }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        removeFurniture(f.id);
+        setSelectedFurnitureId(null);
+        e.preventDefault();
+        return;
+      }
+      if (e.key === 'Escape') {
+        setSelectedFurnitureId(null);
+        return;
+      }
+      const dx = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
+      const dy = e.key === 'ArrowDown' ? -1 : e.key === 'ArrowUp' ? 1 : 0;
+      if (dx === 0 && dy === 0) return;
+      // Tile y-axis is up (View2D inverts on render); Up arrow → +y in tile space.
+      const nx = f.position.x + dx;
+      const ny = f.position.y + dy;
+      const tiles = getFurnitureTiles({ x: nx, y: ny }, item, f.rotation);
+      const room = findContainingRoom(tiles, rooms);
+      if (!room) return;
+      const others = furniture.filter((x) => x.id !== f.id);
+      if (hasCollision(tiles, others, catalogMap)) return;
+      updateFurniture(f.id, { position: { x: nx, y: ny } });
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [
+    placingItem,
+    selectedFurnitureId,
+    activeTab,
+    furniture,
+    rooms,
+    updateFurniture,
+    removeFurniture,
+  ]);
 
   return (
     <div className={stageStyles.layout}>
@@ -176,6 +251,8 @@ export function Stage3FineFinish() {
                 : null
             }
             furnitureDrag={placingItem ? null : { isValid: validateMove, onCommit: commitMove }}
+            selectedFurnitureId={activeTab === 'furniture' ? selectedFurnitureId : null}
+            onSelectFurniture={activeTab === 'furniture' ? setSelectedFurnitureId : undefined}
           />
         ) : (
           <View3D />
