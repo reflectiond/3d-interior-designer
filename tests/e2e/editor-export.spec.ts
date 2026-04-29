@@ -105,8 +105,11 @@ test.describe('Layout editor — validation + export (F11.2.4, F11.2.5)', () => 
     await openEditor(page);
 
     // Two adjacent rooms, panel in one, an internal door, an external window.
+    // F11.2.9 (v1.10.0): each placement single-shots back to select, so the
+    // second room placement requires re-picking the room tool.
     await page.getByTestId('tool-room').click();
     await dragTile(page, { x: 0, y: 0 }, { x: 7, y: 11 });
+    await page.getByTestId('tool-room').click();
     await dragTile(page, { x: 8, y: 0 }, { x: 15, y: 11 });
 
     await page.getByTestId('tool-panel').click();

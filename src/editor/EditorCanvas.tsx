@@ -40,7 +40,13 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
 
   const [roomAnchor, setRoomAnchor] = useState<Anchor | null>(null);
   const [pointerTile, setPointerTile] = useState<TileCoord | null>(null);
-  const [openingFirst, setOpeningFirst] = useState<TileCoord | null>(null);
+  // F11.2.9 (v1.10.0) — anchor is paired with the tool that started it. If the
+  // user switches from window → door mid-placement, the anchor is treated as
+  // stale rather than re-used for the new tool.
+  const [openingAnchor, setOpeningAnchor] = useState<{
+    tile: TileCoord;
+    tool: 'window' | 'door';
+  } | null>(null);
 
   const handleMouseDown = useCallback(
     (e: KonvaEventObject<MouseEvent>) => {
@@ -69,29 +75,33 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
           dispatch({ type: 'set_panel', coord: tile });
           return;
         case 'window':
-        case 'door':
-          // First click sets anchor, second click commits.
-          if (openingFirst === null) {
-            setOpeningFirst(tile);
+        case 'door': {
+          // First click sets anchor, second click commits. Anchor is keyed by
+          // tool so a mid-placement switch (window → door) resets cleanly.
+          const sameToolAnchor =
+            openingAnchor && openingAnchor.tool === state.tool ? openingAnchor : null;
+          if (sameToolAnchor === null) {
+            setOpeningAnchor({ tile, tool: state.tool });
             setPointerTile(tile);
           } else {
-            const snapped = snapAxisAligned(openingFirst, tile);
-            if (snapped.x === openingFirst.x && snapped.y === openingFirst.y) {
-              setOpeningFirst(null);
+            const snapped = snapAxisAligned(sameToolAnchor.tile, tile);
+            if (snapped.x === sameToolAnchor.tile.x && snapped.y === sameToolAnchor.tile.y) {
+              setOpeningAnchor(null);
               return;
             }
-            const segment = { start: openingFirst, end: snapped };
+            const segment = { start: sameToolAnchor.tile, end: snapped };
             if (state.tool === 'window') {
               dispatch({ type: 'add_window', segment });
             } else {
               dispatch({ type: 'add_door', segment });
             }
-            setOpeningFirst(null);
+            setOpeningAnchor(null);
           }
           return;
+        }
       }
     },
-    [dispatch, state, openingFirst],
+    [dispatch, state, openingAnchor],
   );
 
   const handleMouseMove = useCallback((e: KonvaEventObject<MouseEvent>) => {
@@ -332,22 +342,25 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
             />
           )}
 
-          {(state.tool === 'window' || state.tool === 'door') && openingFirst && pointerTile && (
-            <Line
-              points={(() => {
-                const snapped = snapAxisAligned(openingFirst, pointerTile);
-                return [
-                  openingFirst.x * SCALE,
-                  openingFirst.y * SCALE,
-                  snapped.x * SCALE,
-                  snapped.y * SCALE,
-                ];
-              })()}
-              stroke={PALETTE.editor.selection}
-              strokeWidth={2}
-              dash={[4, 4]}
-            />
-          )}
+          {(state.tool === 'window' || state.tool === 'door') &&
+            openingAnchor &&
+            openingAnchor.tool === state.tool &&
+            pointerTile && (
+              <Line
+                points={(() => {
+                  const snapped = snapAxisAligned(openingAnchor.tile, pointerTile);
+                  return [
+                    openingAnchor.tile.x * SCALE,
+                    openingAnchor.tile.y * SCALE,
+                    snapped.x * SCALE,
+                    snapped.y * SCALE,
+                  ];
+                })()}
+                stroke={PALETTE.editor.selection}
+                strokeWidth={2}
+                dash={[4, 4]}
+              />
+            )}
         </Layer>
       </Stage>
     </div>

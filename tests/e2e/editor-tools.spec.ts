@@ -154,6 +154,33 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
     await expect(page.getByTestId('properties-panel')).toContainText('Объект не выбран');
   });
 
+  test('E2E-25: tool auto-resets to «select» after a successful placement (F11.2.9)', async ({
+    page,
+  }) => {
+    await openEditor(page);
+
+    // 1) Room tool — drag once to commit a room. Single-shot resets to select.
+    await page.getByTestId('tool-room').click();
+    await dragTile(page, { x: 2, y: 2 }, { x: 9, y: 9 });
+    await expect(page.getByTestId('properties-panel')).toContainText('bedroom_1');
+    // A second drag in empty space with the (now-select) tool just clears the
+    // selection — it must NOT create bedroom_2.
+    await dragTile(page, { x: 20, y: 20 }, { x: 27, y: 27 });
+    await expect(page.getByTestId('properties-panel')).toContainText('Объект не выбран');
+    await expect(page.getByTestId('properties-panel')).not.toContainText('bedroom_2');
+
+    // 2) Panel tool — single click commits, single-shot resets to select.
+    await page.getByTestId('tool-panel').click();
+    await clickTile(page, 14, 14);
+    await expect(page.getByTestId('properties-panel')).toContainText('Электрощиток');
+    // A second click on a different empty tile must NOT relocate the panel.
+    await clickTile(page, 25, 25);
+    // After the select-mode click on empty space the panel selection is cleared,
+    // but the placed panel is still on tile (14, 14) — verify by re-selecting it.
+    await clickTile(page, 14, 14);
+    await expect(page.getByTestId('properties-panel')).toContainText('14, 14');
+  });
+
   test('F11.2.6: editor never writes the main app keys to localStorage', async ({ page }) => {
     await openEditor(page);
     await page.getByTestId('tool-room').click();
