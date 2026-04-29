@@ -165,11 +165,14 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       const { rect, roomType } = action;
       const { id, name } = nextRoomFromType(state, roomType);
       const room: EditorRoom = { id, name, type: roomType, ...rect };
+      // F11.2.9 (v1.10.0) — single-shot tool: drop back to `select` so
+      // accidental further canvas clicks don't spawn another room.
       return {
         ...state,
         rooms: [...state.rooms, room],
         counters: { ...state.counters, room: state.counters.room + 1 },
         selection: { kind: 'room', id },
+        tool: 'select',
       };
     }
 
@@ -200,10 +203,12 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     }
 
     case 'set_panel':
+      // F11.2.9 — single-shot tool.
       return {
         ...state,
         electricalPanel: action.coord,
         selection: { kind: 'panel' },
+        tool: 'select',
       };
 
     case 'add_window': {
@@ -216,11 +221,13 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         sill_height_m: 0.9,
         height_m: 1.5,
       };
+      // F11.2.9 — single-shot tool.
       return {
         ...state,
         windows: [...state.windows, win],
         counters: { ...state.counters, window: n },
         selection: { kind: 'window', id },
+        tool: 'select',
       };
     }
 
@@ -241,11 +248,13 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         hinge: 'start',
         swing_side: 'left',
       };
+      // F11.2.9 — single-shot tool.
       return {
         ...state,
         doors: [...state.doors, door],
         counters: { ...state.counters, door: n },
         selection: { kind: 'door', id },
+        tool: 'select',
       };
     }
 

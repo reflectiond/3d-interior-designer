@@ -47,6 +47,59 @@ describe('editorReducer — meta + tool + grid', () => {
   });
 });
 
+describe('editorReducer — F11.2.9 single-shot tool (v1.10.0)', () => {
+  function pickTool(tool: 'room' | 'panel' | 'window' | 'door') {
+    return editorReducer(fresh(), { type: 'set_tool', tool });
+  }
+
+  it('add_room resets the tool back to select', () => {
+    const placing = pickTool('room');
+    const s = editorReducer(placing, {
+      type: 'add_room',
+      rect: { x: 0, y: 0, width: 8, height: 6 },
+      roomType: 'bedroom',
+    });
+    expect(s.tool).toBe('select');
+  });
+
+  it('set_panel resets the tool back to select', () => {
+    const placing = pickTool('panel');
+    const s = editorReducer(placing, { type: 'set_panel', coord: { x: 3, y: 3 } });
+    expect(s.tool).toBe('select');
+  });
+
+  it('add_window resets the tool back to select', () => {
+    const placing = pickTool('window');
+    const s = editorReducer(placing, {
+      type: 'add_window',
+      segment: { start: { x: 0, y: 0 }, end: { x: 4, y: 0 } },
+    });
+    expect(s.tool).toBe('select');
+  });
+
+  it('add_door resets the tool back to select', () => {
+    const placing = pickTool('door');
+    const s = editorReducer(placing, {
+      type: 'add_door',
+      segment: { start: { x: 0, y: 0 }, end: { x: 3, y: 0 } },
+    });
+    expect(s.tool).toBe('select');
+  });
+
+  it('update_room does NOT touch the tool (only placements reset)', () => {
+    let s = editorReducer(fresh(), {
+      type: 'add_room',
+      rect: { x: 0, y: 0, width: 6, height: 6 },
+      roomType: 'bedroom',
+    });
+    // After add_room tool is `select` (single-shot). Pretend the user picks
+    // `room` again — updating a room field must not flip the tool back.
+    s = editorReducer(s, { type: 'set_tool', tool: 'room' });
+    s = editorReducer(s, { type: 'update_room', id: s.rooms[0].id, patch: { name: 'X' } });
+    expect(s.tool).toBe('room');
+  });
+});
+
 describe('editorReducer — rooms', () => {
   it('add_room generates a stable id, default name, selects it', () => {
     const s = editorReducer(fresh(), {
