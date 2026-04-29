@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Stage, Layer, Rect, Line, Path, Text, Group } from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
@@ -8,9 +8,26 @@ import { invalidObjectKeys, validateEditor } from './validation';
 import { findNearestWall, projectOntoWall, type WallSegment } from './wallSnap';
 import { MeasuredCanvas } from '../views/MeasuredCanvas';
 import { formatOpeningLength, formatRectDimensions } from './dimensionFormat';
+import { TILE_SIZE } from '../domain/geometry/tiles';
 import type { TileCoord } from '../domain/geometry/types';
 
 const SCALE = 24;
+
+// F11.3 (v1.14.0) — минимальная площадь комнаты 4 м² (= 64 тайла² при TILE_SIZE = 0.25).
+// Геометрия сторон не ограничивается — допустимы 8×8, 4×16, 16×4 и др.
+export const MIN_ROOM_AREA_M2 = 4;
+const MIN_ROOM_AREA_TILES = Math.round(MIN_ROOM_AREA_M2 / (TILE_SIZE * TILE_SIZE));
+
+interface RectXYWH {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+function rectsOverlap(a: RectXYWH, b: RectXYWH): boolean {
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+}
 
 interface EditorCanvasProps {
   state: EditorState;
@@ -130,36 +147,58 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
     if (tile) setPointerTile(tile);
   }, []);
 
-  const handleMouseUp = useCallback(
-    (e: KonvaEventObject<MouseEvent>) => {
-      if (state.tool !== 'room' || roomAnchor === null) return;
-      const stage = e.target.getStage();
-      if (!stage) return;
-      const tile = tileFromStage(stage);
-      if (!tile) {
-        setRoomAnchor(null);
-        return;
-      }
-      const x = Math.min(roomAnchor.tile.x, tile.x);
-      const y = Math.min(roomAnchor.tile.y, tile.y);
-      const width = Math.abs(tile.x - roomAnchor.tile.x) + 1;
-      const height = Math.abs(tile.y - roomAnchor.tile.y) + 1;
-      if (width >= 4 && height >= 4) {
-        dispatch({
-          type: 'add_room',
-          rect: { x, y, width, height },
-          roomType: 'bedroom',
-        });
-      }
-      setRoomAnchor(null);
-    },
-    [state.tool, roomAnchor, dispatch],
-  );
+  // F11.3.4 — финализация drag-create комнаты идёт через window-level mouseup
+  // (Stage.onMouseUp нестабилен после mouseLeave). Сценарии:
+  //   * release внутри канвы → commit с валидацией (площадь + overlap);
+  //   * release снаружи канвы → cancel без commit;
+  //   * drag-out-and-back → anchor сохраняется, commit при release внутри.
+  // Для решения «inside vs outside» сравниваем clientX/Y mouseup с bounding
+  // rect Stage-канвы — это надёжнее Konva mouseenter/leave (которые могут
+  // не срабатывать при удержанной кнопке мыши). pointerTile НЕ сбрасывается
+  // на mouseLeave: preview остаётся на последней позиции, возврат курсора
+  // обновит его через mousemove.
+  const pointerTileRef = useRef<TileCoord | null>(null);
+  useEffect(() => {
+    pointerTileRef.current = pointerTile;
+  }, [pointerTile]);
 
   const handleMouseLeave = useCallback(() => {
-    setPointerTile(null);
-    if (roomAnchor !== null) setRoomAnchor(null);
-  }, [roomAnchor]);
+    // Не сбрасываем pointerTile: preview остаётся видимым.
+  }, []);
+
+  useEffect(() => {
+    if (state.tool !== 'room' || roomAnchor === null) return;
+    const onUp = (e: MouseEvent) => {
+      const canvas = document.querySelector<HTMLCanvasElement>(
+        '[data-testid="layout-editor-canvas"] canvas',
+      );
+      const tile = pointerTileRef.current;
+      let inside = false;
+      if (canvas) {
+        const r = canvas.getBoundingClientRect();
+        inside =
+          e.clientX >= r.left &&
+          e.clientX <= r.right &&
+          e.clientY >= r.top &&
+          e.clientY <= r.bottom;
+      }
+      if (inside && tile) {
+        const x = Math.min(roomAnchor.tile.x, tile.x);
+        const y = Math.min(roomAnchor.tile.y, tile.y);
+        const width = Math.abs(tile.x - roomAnchor.tile.x) + 1;
+        const height = Math.abs(tile.y - roomAnchor.tile.y) + 1;
+        const rect = { x, y, width, height };
+        const tooSmall = width * height < MIN_ROOM_AREA_TILES;
+        const overlapsExisting = state.rooms.some((r2) => rectsOverlap(rect, r2));
+        if (!tooSmall && !overlapsExisting) {
+          dispatch({ type: 'add_room', rect, roomType: 'bedroom' });
+        }
+      }
+      setRoomAnchor(null);
+    };
+    window.addEventListener('mouseup', onUp);
+    return () => window.removeEventListener('mouseup', onUp);
+  }, [state.tool, roomAnchor, state.rooms, dispatch]);
 
   // Cursor styling depends on the active tool.
   const stageStyle = useMemo<React.CSSProperties>(() => {
@@ -188,7 +227,6 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
           height={heightPx}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
         >
           <Layer listening={false}>
@@ -349,19 +387,43 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
 
           {/* Hover preview */}
           <Layer listening={false}>
-            {state.tool === 'room' && roomAnchor && pointerTile && (
-              <Rect
-                x={Math.min(roomAnchor.tile.x, pointerTile.x) * SCALE}
-                y={Math.min(roomAnchor.tile.y, pointerTile.y) * SCALE}
-                width={(Math.abs(pointerTile.x - roomAnchor.tile.x) + 1) * SCALE}
-                height={(Math.abs(pointerTile.y - roomAnchor.tile.y) + 1) * SCALE}
-                fill={PALETTE.editor.preview}
-                opacity={0.3}
-                stroke={PALETTE.editor.selection}
-                strokeWidth={1.5}
-                dash={[4, 4]}
-              />
-            )}
+            {state.tool === 'room' &&
+              roomAnchor &&
+              pointerTile &&
+              (() => {
+                const px = Math.min(roomAnchor.tile.x, pointerTile.x);
+                const py = Math.min(roomAnchor.tile.y, pointerTile.y);
+                const pw = Math.abs(pointerTile.x - roomAnchor.tile.x) + 1;
+                const ph = Math.abs(pointerTile.y - roomAnchor.tile.y) + 1;
+                const rect = { x: px, y: py, width: pw, height: ph };
+                const overlapsExisting = state.rooms.some((r) => rectsOverlap(rect, r));
+                const tooSmall = pw * ph < MIN_ROOM_AREA_TILES;
+                // Overlap → красный (приоритет, нельзя вообще создать).
+                // Слишком мала → жёлтый. Иначе → стандартная синяя обводка.
+                const stroke = overlapsExisting
+                  ? PALETTE.placement_highlight.invalid
+                  : tooSmall
+                    ? PALETTE.placement_highlight.warning
+                    : PALETTE.editor.selection;
+                const fill = overlapsExisting
+                  ? PALETTE.placement_highlight.invalid
+                  : tooSmall
+                    ? PALETTE.placement_highlight.warning
+                    : PALETTE.editor.preview;
+                return (
+                  <Rect
+                    x={px * SCALE}
+                    y={py * SCALE}
+                    width={pw * SCALE}
+                    height={ph * SCALE}
+                    fill={fill}
+                    opacity={0.3}
+                    stroke={stroke}
+                    strokeWidth={1.5}
+                    dash={[4, 4]}
+                  />
+                );
+              })()}
 
             {(state.tool === 'window' || state.tool === 'door') &&
               openingAnchor &&
@@ -387,17 +449,35 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
                 />
               )}
 
-            {/* F13.2 (v1.11.0) — live-HUD with metric dimensions next to cursor */}
-            {state.tool === 'room' && roomAnchor && pointerTile && (
-              <DimensionHud
-                tx={pointerTile.x}
-                ty={pointerTile.y}
-                text={formatRectDimensions(
-                  Math.abs(pointerTile.x - roomAnchor.tile.x) + 1,
-                  Math.abs(pointerTile.y - roomAnchor.tile.y) + 1,
-                )}
-              />
-            )}
+            {/* F13.2 (v1.11.0) — live-HUD with metric dimensions next to cursor.
+                F11.3.3 (v1.14.0) — при площади <4 м² или overlap добавляется
+                строка-предупреждение красным цветом. */}
+            {state.tool === 'room' &&
+              roomAnchor &&
+              pointerTile &&
+              (() => {
+                const pw = Math.abs(pointerTile.x - roomAnchor.tile.x) + 1;
+                const ph = Math.abs(pointerTile.y - roomAnchor.tile.y) + 1;
+                const px = Math.min(roomAnchor.tile.x, pointerTile.x);
+                const py = Math.min(roomAnchor.tile.y, pointerTile.y);
+                const overlapsExisting = state.rooms.some((r) =>
+                  rectsOverlap({ x: px, y: py, width: pw, height: ph }, r),
+                );
+                const tooSmall = pw * ph < MIN_ROOM_AREA_TILES;
+                const warning = overlapsExisting
+                  ? 'Перекрывает комнату'
+                  : tooSmall
+                    ? `Мин. ${MIN_ROOM_AREA_M2} м²`
+                    : null;
+                return (
+                  <DimensionHud
+                    tx={pointerTile.x}
+                    ty={pointerTile.y}
+                    text={formatRectDimensions(pw, ph)}
+                    warning={warning}
+                  />
+                );
+              })()}
             {(state.tool === 'window' || state.tool === 'door') &&
               openingAnchor &&
               openingAnchor.tool === state.tool &&
@@ -430,10 +510,25 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
  * Width is fixed (140 px) so the layout is stable; the Konva Text inside
  * auto-wraps if the label runs long. Anchor is offset 16 px right and
  * 12 px below the pointer tile so it doesn't sit underneath the cursor.
+ *
+ * F11.3.3 (v1.14.0) — опциональная вторая строка `warning` рисуется
+ * красным под основной (rationale: drag-create комнаты при <4 м² или
+ * overlap должен быть тихим, но визуально объяснимым).
  */
-function DimensionHud({ tx, ty, text }: { tx: number; ty: number; text: string }) {
+function DimensionHud({
+  tx,
+  ty,
+  text,
+  warning,
+}: {
+  tx: number;
+  ty: number;
+  text: string;
+  warning?: string | null;
+}) {
   const HUD_WIDTH = 140;
-  const HUD_HEIGHT = 18;
+  const ROW_HEIGHT = 18;
+  const HUD_HEIGHT = warning ? ROW_HEIGHT * 2 : ROW_HEIGHT;
   const x = tx * SCALE + 16;
   const y = ty * SCALE + 12;
   return (
@@ -445,7 +540,7 @@ function DimensionHud({ tx, ty, text }: { tx: number; ty: number; text: string }
         height={HUD_HEIGHT}
         fill={PALETTE.walls.paint}
         opacity={0.9}
-        stroke={PALETTE.editor.selection}
+        stroke={warning ? PALETTE.placement_highlight.invalid : PALETTE.editor.selection}
         strokeWidth={1}
         cornerRadius={3}
       />
@@ -457,6 +552,17 @@ function DimensionHud({ tx, ty, text }: { tx: number; ty: number; text: string }
         fill={PALETTE.text.primary}
         listening={false}
       />
+      {warning && (
+        <Text
+          x={x + 6}
+          y={y + 3 + ROW_HEIGHT}
+          text={warning}
+          fontSize={11}
+          fill={PALETTE.placement_highlight.invalid}
+          listening={false}
+          data-testid="dimension-hud-warning"
+        />
+      )}
     </Group>
   );
 }
