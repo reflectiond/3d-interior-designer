@@ -27,7 +27,10 @@ function ceilingColor(type: CeilingType): string {
 function useFloorTexture(covering: FloorCovering | undefined, w: number, d: number) {
   return useMemo(() => {
     if (!covering) return null;
-    const canvas = getFloorPatternCanvas(covering);
+    // 3D needs the base floor color baked into the texture — no room fill renders
+    // beneath the floor mesh. 2D uses the same factory without `withBackground` so
+    // the pattern is overlay-only there (F6.2.8).
+    const canvas = getFloorPatternCanvas(covering, { withBackground: true });
     const tex = new CanvasTexture(canvas);
     tex.wrapS = RepeatWrapping;
     tex.wrapT = RepeatWrapping;
