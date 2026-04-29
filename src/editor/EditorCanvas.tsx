@@ -5,6 +5,7 @@ import type { KonvaEventObject } from 'konva/lib/Node';
 import { PALETTE } from '../theme/palette';
 import { findObjectAt, type EditorAction, type EditorState, type EditorTool } from './state';
 import { invalidObjectKeys, validateEditor } from './validation';
+import { findNearestWall, projectOntoWall, type WallSegment } from './wallSnap';
 import type { TileCoord } from '../domain/geometry/types';
 
 const SCALE = 24;
@@ -43,9 +44,12 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
   // F11.2.9 (v1.10.0) — anchor is paired with the tool that started it. If the
   // user switches from window → door mid-placement, the anchor is treated as
   // stale rather than re-used for the new tool.
+  // F11.2.8 (v1.10.0) — anchor also remembers which wall it snapped to, so
+  // the second click is constrained to the same wall axis/line.
   const [openingAnchor, setOpeningAnchor] = useState<{
     tile: TileCoord;
     tool: 'window' | 'door';
+    wall: WallSegment | null;
   } | null>(null);
 
   const handleMouseDown = useCallback(
@@ -81,10 +85,23 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
           const sameToolAnchor =
             openingAnchor && openingAnchor.tool === state.tool ? openingAnchor : null;
           if (sameToolAnchor === null) {
-            setOpeningAnchor({ tile, tool: state.tool });
+            // F11.2.8: if the click lands near a room wall, snap to it and
+            // remember the wall so the second click is constrained to the
+            // same axis. With no rooms yet, fall back to the raw tile.
+            const snap = findNearestWall(tile, state.rooms);
+            const anchorTile = snap ? snap.snapped : tile;
+            setOpeningAnchor({
+              tile: anchorTile,
+              tool: state.tool,
+              wall: snap?.wall ?? null,
+            });
             setPointerTile(tile);
           } else {
-            const snapped = snapAxisAligned(sameToolAnchor.tile, tile);
+            // Second click: project onto the same wall when one was captured;
+            // otherwise free-axis snap (legacy behaviour for empty layouts).
+            const snapped = sameToolAnchor.wall
+              ? projectOntoWall(tile, sameToolAnchor.wall)
+              : snapAxisAligned(sameToolAnchor.tile, tile);
             if (snapped.x === sameToolAnchor.tile.x && snapped.y === sameToolAnchor.tile.y) {
               setOpeningAnchor(null);
               return;
@@ -348,7 +365,11 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
             pointerTile && (
               <Line
                 points={(() => {
-                  const snapped = snapAxisAligned(openingAnchor.tile, pointerTile);
+                  // Preview uses the same snap rule as commit (F11.2.8) so the
+                  // dashed line tracks the wall the anchor locked onto.
+                  const snapped = openingAnchor.wall
+                    ? projectOntoWall(pointerTile, openingAnchor.wall)
+                    : snapAxisAligned(openingAnchor.tile, pointerTile);
                   return [
                     openingAnchor.tile.x * SCALE,
                     openingAnchor.tile.y * SCALE,
