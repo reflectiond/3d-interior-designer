@@ -7,8 +7,14 @@
  */
 
 import { validateNoOverlaps } from '../domain/geometry/openings';
+import { TILE_SIZE } from '../domain/geometry/tiles';
 import type { EditorRoom, EditorState } from './state';
 import type { TileCoord } from '../domain/geometry/types';
+
+// F11.3 (v1.14.0) — минимум 4 м². При TILE_SIZE = 0.25 м это 64 тайла².
+// Геометрия сторон не ограничивается.
+export const MIN_ROOM_AREA_M2 = 4;
+const MIN_ROOM_AREA_TILES = Math.round(MIN_ROOM_AREA_M2 / (TILE_SIZE * TILE_SIZE));
 
 export type IssueRef =
   | { kind: 'room'; id: string }
@@ -84,10 +90,10 @@ export function validateEditor(state: EditorState): EditorIssue[] {
   }
 
   for (const room of state.rooms) {
-    if (room.width < 4 || room.height < 4) {
+    if (room.width * room.height < MIN_ROOM_AREA_TILES) {
       issues.push({
         id: `room-too-small-${room.id}`,
-        message: `Комната ${room.id} меньше 4×4 тайлов.`,
+        message: `Комната ${room.id} меньше ${MIN_ROOM_AREA_M2} м².`,
         refs: [{ kind: 'room', id: room.id }],
       });
     }

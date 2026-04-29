@@ -83,6 +83,9 @@ export const PALETTE = {
     valid: '#4CAF50',
     invalid: '#E53935',
     ghost: '#9E9E9E',
+    // F11.3.3 (v1.14.0) — drag-preview окраска при недостаточной площади:
+    // комната валидна по форме, но < 4 м² (≠ невалидная — overlap).
+    warning: '#FFB300',
   },
   // v1.5.0 — windows and door openings. window_glass renders at opacity 0.5
   // in 3D as a translucent pane; door_arc draws the swing arc in 2D.

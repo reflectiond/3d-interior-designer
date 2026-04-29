@@ -190,14 +190,16 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
     const box = await canvas.boundingBox();
     if (!box) throw new Error('canvas has no bounding box');
 
-    // Pick the room tool and start a drag — anchor at (4, 4), then move to (12, 8)
-    // so the HUD shows "2.0 × 1.0 м = 2.0 м²" (8 × 4 tiles → tiles+1 inclusive).
+    // F11.3 (v1.14.0): минимум 4 м² — drag 8×8 (= 4 м² ровно). Меньшие
+    // прямоугольники теперь подсвечиваются warning-цветом, не selection.
+    // HUD показывает "2.0 × 2.0 м = 4.0 м²".
     await page.getByTestId('tool-room').click();
     const start = tilePoint(4, 4);
-    const end = tilePoint(12, 8);
+    const end = tilePoint(11, 11);
     await page.mouse.move(box.x + start.x, box.y + start.y);
     await page.mouse.down();
     await page.mouse.move(box.x + end.x, box.y + end.y, { steps: 10 });
+    await page.waitForTimeout(150); // дать React+Konva отрисовать HUD
 
     // The Konva Text node lives inside the Stage canvas; we read it via the
     // pixel data check by sampling text. Since Text rendering through Konva

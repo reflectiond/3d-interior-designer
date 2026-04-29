@@ -39,6 +39,30 @@ describe('validateEditor — rooms', () => {
     expect(issues.some((i) => i.id.startsWith('rooms-overlap-'))).toBe(true);
   });
 
+  it('F11.3.1 (v1.14.0): flags a room with area below 4 m² (e.g. 4×4 = 1 m²)', () => {
+    let s = initialEditorState();
+    s = editorReducer(s, {
+      type: 'add_room',
+      rect: { x: 0, y: 0, width: 4, height: 4 },
+      roomType: 'bedroom',
+    });
+    s = editorReducer(s, { type: 'set_panel', coord: { x: 1, y: 1 } });
+    const issues = validateEditor(s);
+    expect(issues.some((i) => i.id.startsWith('room-too-small-'))).toBe(true);
+  });
+
+  it('F11.3.1 (v1.14.0): accepts a non-square room with area ≥ 4 m² (e.g. 4×16 = 4 m²)', () => {
+    let s = initialEditorState();
+    s = editorReducer(s, {
+      type: 'add_room',
+      rect: { x: 0, y: 0, width: 4, height: 16 },
+      roomType: 'bedroom',
+    });
+    s = editorReducer(s, { type: 'set_panel', coord: { x: 1, y: 1 } });
+    const issues = validateEditor(s);
+    expect(issues.some((i) => i.id.startsWith('room-too-small-'))).toBe(false);
+  });
+
   it('flags a room that exceeds grid bounds', () => {
     let s = initialEditorState();
     // gridWidth=32 by default; 30+8 = 38 → out of grid
