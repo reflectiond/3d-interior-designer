@@ -81,7 +81,10 @@ describe('exportLayout', () => {
       expect(result.layout.windows).toHaveLength(1);
       expect(result.layout.doors).toHaveLength(1);
       expect(result.layout.doors[0].hinge).toBe('start');
-      expect(result.layout.doors[0].swing_side).toBe('left');
+      // F11.2.8 (v1.10.0): swing auto-picks 'right' here — door is on the
+      // south wall y=10 of the (0,0,10,10) room, so the leaf opens INTO the
+      // room (which sits at y < 10).
+      expect(result.layout.doors[0].swing_side).toBe('right');
       expect(result.layout.doors[0].height_m).toBe(2.1);
     }
   });

@@ -53,14 +53,17 @@ test.describe('Layout editor — validation + export (F11.2.4, F11.2.5)', () => 
   test('F11.2.4: window placed off any wall is flagged in real time', async ({ page }) => {
     await openEditor(page);
     await page.getByTestId('tool-room').click();
-    await dragTile(page, { x: 2, y: 2 }, { x: 11, y: 11 });
+    // F11.2.8 (v1.10.0): wall snap is within ~3 tiles, so the room must be
+    // big enough for the test click to land in true interior — > 3 tiles
+    // from each wall.
+    await dragTile(page, { x: 2, y: 2 }, { x: 17, y: 17 });
     await page.getByTestId('tool-panel').click();
     await clickTile(page, 5, 5);
 
     await page.getByTestId('tool-window').click();
-    // Both endpoints inside the room interior — not on a wall
-    await clickTile(page, 4, 6);
-    await clickTile(page, 8, 6);
+    // Both endpoints in the deep interior — beyond WALL_SNAP_RADIUS from any wall.
+    await clickTile(page, 9, 9);
+    await clickTile(page, 12, 9);
 
     await expect(page.getByTestId('validation-panel')).toContainText('не лежит на стене');
     await expect(page.getByTestId('export-json')).toBeDisabled();

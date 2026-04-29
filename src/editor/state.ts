@@ -1,4 +1,5 @@
 import type { TileCoord, RoomType } from '../domain/geometry/types';
+import { pickDoorSwingSide } from './wallSnap';
 
 /**
  * Layout editor state machine (F11.2.x).
@@ -240,13 +241,17 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'add_door': {
       const n = state.counters.door + 1;
       const id = `door_${n}`;
+      // F11.2.8 (v1.10.0) — auto-pick swing_side so the leaf opens INTO an
+      // adjacent room. Falls back to 'left' on internal doors with rooms on
+      // both sides; user can still flip via the dropdown.
+      const swing = pickDoorSwingSide(action.segment, state.rooms);
       const door: EditorDoor = {
         id,
         start: action.segment.start,
         end: action.segment.end,
         height_m: 2.1,
         hinge: 'start',
-        swing_side: 'left',
+        swing_side: swing,
       };
       // F11.2.9 — single-shot tool.
       return {
