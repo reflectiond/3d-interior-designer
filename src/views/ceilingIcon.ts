@@ -3,7 +3,13 @@ import type { CatalogItem } from '../domain/furniture/placement';
 import { getEffectiveSize } from '../domain/furniture/placement';
 
 export const CEILING_ICON_SIZE_TILES = 0.6; // 0.15 m diameter (F6.3.1) plus padding for label
-export const CEILING_ICON_INSET_TILES = 0.4;
+// F6.3.6 (v1.8.0): bumped from 0.4 → 1.0 tile (= 0.25 m). The label text under
+// the icon is rendered with width 3 × icon_size (1.8 tiles) centered on the
+// icon center, so it overflows the room rectangle by (3 × iconSize − iconSize) / 2
+// = iconSize tiles on the side closest to the wall. With inset = 1.0 the
+// label and icon together stay inside the room with a small visual margin
+// (≥ (1.0 − iconSize) = 0.4 tile from the nearest wall).
+export const CEILING_ICON_INSET_TILES = 1.0;
 
 export type CornerName = 'TR' | 'BR' | 'BL' | 'TL';
 
