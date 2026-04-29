@@ -83,7 +83,7 @@ describe('editorReducer — rooms', () => {
     expect(s.counters.room).toBe(2);
   });
 
-  it('update_room patches type and name', () => {
+  it('update_room patches type and rebuilds id (F11.2.7 v1.10.0)', () => {
     let s = editorReducer(fresh(), {
       type: 'add_room',
       rect: { x: 0, y: 0, width: 10, height: 8 },
@@ -91,8 +91,63 @@ describe('editorReducer — rooms', () => {
     });
     s = editorReducer(s, { type: 'update_room', id: 'bedroom_1', patch: { type: 'kitchen' } });
     expect(s.rooms[0].type).toBe('kitchen');
-    // id is stable even after a type change
-    expect(s.rooms[0].id).toBe('bedroom_1');
+    // F11.2.7: id follows the new type so the `<type>_<n>` invariant holds.
+    expect(s.rooms[0].id).toBe('kitchen_1');
+    // Default name auto-renames when the user hadn't customised it.
+    expect(s.rooms[0].name).toBe('Кухня 1');
+  });
+
+  it('update_room — id pickup deduplicates against existing rooms (F11.2.7)', () => {
+    // Two existing kitchens leaves _3 as the first free index.
+    let s = editorReducer(fresh(), {
+      type: 'add_room',
+      rect: { x: 0, y: 0, width: 6, height: 6 },
+      roomType: 'kitchen',
+    });
+    s = editorReducer(s, {
+      type: 'add_room',
+      rect: { x: 6, y: 0, width: 6, height: 6 },
+      roomType: 'kitchen',
+    });
+    s = editorReducer(s, {
+      type: 'add_room',
+      rect: { x: 0, y: 6, width: 6, height: 6 },
+      roomType: 'bedroom',
+    });
+    // Counters are shared across types, so the third room is `bedroom_3`.
+    const bedroomId = s.rooms[2].id;
+    expect(bedroomId).toBe('bedroom_3');
+    s = editorReducer(s, { type: 'update_room', id: bedroomId, patch: { type: 'kitchen' } });
+    // Three kitchens, all with unique ids — _3 is the next free slot.
+    const kitchens = s.rooms.filter((r) => r.type === 'kitchen');
+    expect(kitchens.map((r) => r.id).sort()).toEqual(['kitchen_1', 'kitchen_2', 'kitchen_3']);
+  });
+
+  it('update_room — keeps a custom name across type change (F11.2.7)', () => {
+    let s = editorReducer(fresh(), {
+      type: 'add_room',
+      rect: { x: 0, y: 0, width: 6, height: 6 },
+      roomType: 'bedroom',
+    });
+    s = editorReducer(s, {
+      type: 'update_room',
+      id: 'bedroom_1',
+      patch: { name: 'Уютная комната' },
+    });
+    s = editorReducer(s, { type: 'update_room', id: 'bedroom_1', patch: { type: 'kitchen' } });
+    expect(s.rooms[0].id).toBe('kitchen_1');
+    expect(s.rooms[0].name).toBe('Уютная комната');
+  });
+
+  it('update_room — selection follows the renamed id (F11.2.7)', () => {
+    let s = editorReducer(fresh(), {
+      type: 'add_room',
+      rect: { x: 0, y: 0, width: 6, height: 6 },
+      roomType: 'bedroom',
+    });
+    expect(s.selection).toEqual({ kind: 'room', id: 'bedroom_1' });
+    s = editorReducer(s, { type: 'update_room', id: 'bedroom_1', patch: { type: 'kitchen' } });
+    expect(s.selection).toEqual({ kind: 'room', id: 'kitchen_1' });
   });
 });
 

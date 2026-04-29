@@ -123,6 +123,23 @@ function nextRoomFromType(state: EditorState, roomType: RoomType): { id: string;
   return { id: `${roomType}_${n}`, name: `${ROOM_NAMES[roomType]} ${n}` };
 }
 
+/**
+ * F11.2.7 (v1.10.0) — when a room's type changes the id is rebuilt to keep the
+ * `<type>_<n>` invariant that the rest of the codebase relies on (e.g.
+ * `rooms.filter(r => r.type === 'bathroom')` is sometimes paired with
+ * "id starts with `bathroom_`" assumptions). The new index is the smallest
+ * positive integer that produces a unique id within the existing rooms.
+ */
+function nextIdForType(rooms: EditorRoom[], roomType: RoomType, excludeId: string): string {
+  const used = new Set(rooms.filter((r) => r.id !== excludeId).map((r) => r.id));
+  for (let n = 1; n < 10_000; n++) {
+    const candidate = `${roomType}_${n}`;
+    if (!used.has(candidate)) return candidate;
+  }
+  // Practically unreachable — 10k rooms is far beyond any layout.
+  return `${roomType}_${Date.now()}`;
+}
+
 export function editorReducer(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
     case 'reset':
@@ -156,11 +173,31 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       };
     }
 
-    case 'update_room':
-      return {
-        ...state,
-        rooms: state.rooms.map((r) => (r.id === action.id ? { ...r, ...action.patch } : r)),
-      };
+    case 'update_room': {
+      // F11.2.7: type change → regenerate id so the prefix matches the new type.
+      const target = state.rooms.find((r) => r.id === action.id);
+      if (!target) return state;
+      const typeChanged = action.patch.type !== undefined && action.patch.type !== target.type;
+      const newType = action.patch.type ?? target.type;
+      const newId = typeChanged ? nextIdForType(state.rooms, newType, target.id) : target.id;
+      // Default-rename when the user hasn't customised the name yet (matches the
+      // auto-generated name from the previous type).
+      const oldDefaultName = `${ROOM_NAMES[target.type]} ${target.id.split('_').pop()}`;
+      const renaming =
+        action.patch.name === undefined && typeChanged && target.name === oldDefaultName;
+      const nextName = renaming
+        ? `${ROOM_NAMES[newType]} ${newId.split('_').pop()}`
+        : (action.patch.name ?? target.name);
+      const updatedRooms = state.rooms.map((r) =>
+        r.id === target.id ? { ...r, ...action.patch, id: newId, name: nextName } : r,
+      );
+      // Keep selection pointing at the renamed room.
+      const nextSelection: EditorSelection =
+        state.selection?.kind === 'room' && state.selection.id === target.id
+          ? { kind: 'room', id: newId }
+          : state.selection;
+      return { ...state, rooms: updatedRooms, selection: nextSelection };
+    }
 
     case 'set_panel':
       return {
