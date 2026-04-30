@@ -37,6 +37,15 @@ export const PALETTE = {
     kitchen_column: '#D4C4A8',
     toilet: '#FFFFFF',
     sink: '#FFFFFF',
+    // F15.b2 (v1.16.0) — расширение каталога: ванна, душ, стеллаж, журнальный
+    // столик, односпальная кровать, кресло. Цвета — для box-fallback'а;
+    // glTF Kenney покажет свои натуральные тона.
+    bathtub: '#F0F0F0',
+    shower: '#E0E8EE',
+    bookshelf: '#8B6F4D',
+    coffee_table: '#7A6648',
+    bed_single: '#A98A6B',
+    armchair: '#7C4A4A',
   },
   // Electrical elements
   electrical: {

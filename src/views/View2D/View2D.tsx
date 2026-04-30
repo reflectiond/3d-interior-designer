@@ -1,5 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Stage as KonvaStage, Layer, Rect, Text, Circle, Line, Path, Group } from 'react-konva';
+import {
+  Stage as KonvaStage,
+  Layer,
+  Rect,
+  Text,
+  Circle,
+  Line,
+  Path,
+  Group,
+  Image as KonvaImage,
+} from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { useProjectStore } from '../../store/projectStore';
@@ -12,6 +22,7 @@ import type { Room } from '../../domain/geometry/types';
 import { registerKonvaStage } from '../../export/snapshots';
 import { getFloorPatternCanvas } from '../floorPatterns';
 import { MeasuredCanvas } from '../MeasuredCanvas';
+import { useLazyImage } from '../useLazyImage';
 import {
   pickCeilingIconAnchor,
   CEILING_ICON_SIZE_TILES,
@@ -30,6 +41,52 @@ const PATTERN_SCALE = SCALE / 60;
 const catalogMap = new Map<string, CatalogItem>();
 for (const item of catalogData as CatalogItem[]) {
   catalogMap.set(item.id, item);
+}
+
+/**
+ * F15.2 (v1.16.0) — рендер мебели на 2D-канве. Если у предмета каталога
+ * есть `sprite2d` URL, грузим PNG через `useLazyImage` и рендерим Konva
+ * `<Image>`. Пока спрайт грузится или если ошибка — fallback `<Rect>`
+ * с цветом по `color_key`. Этот fallback гарантирует, что отсутствие
+ * ассета или неудачная загрузка не ломают сцену.
+ */
+function FurnitureSpriteOrRect({
+  spriteUrl,
+  width,
+  height,
+  color,
+  stroke,
+  strokeWidth,
+}: {
+  spriteUrl: string | undefined;
+  width: number;
+  height: number;
+  color: string;
+  stroke: string;
+  strokeWidth: number;
+}) {
+  const image = useLazyImage(spriteUrl);
+  if (image) {
+    return (
+      <KonvaImage
+        image={image}
+        width={width}
+        height={height}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+      />
+    );
+  }
+  return (
+    <Rect
+      width={width}
+      height={height}
+      fill={color}
+      stroke={stroke}
+      strokeWidth={strokeWidth}
+      cornerRadius={2}
+    />
+  );
 }
 
 function roomColor(type: Room['type']): string {
@@ -557,14 +614,13 @@ export function View2D({
                     setDragState(null);
                   }}
                 >
-                  <Rect
+                  <FurnitureSpriteOrRect
+                    spriteUrl={item.sprite2d}
                     width={w * SCALE}
                     height={h * SCALE}
-                    fill={color}
-                    // F8.5.2 (v1.13.0) — selected piece gets a thick blue stroke.
+                    color={color}
                     stroke={isSelected ? PALETTE.editor.selection : PALETTE.walls.external}
                     strokeWidth={isSelected ? 2 : 1}
-                    cornerRadius={2}
                   />
                   <Text
                     x={2}

@@ -81,6 +81,7 @@ export function View3DSnapshot() {
     >
       <Canvas
         frameloop="demand"
+        // Камера на +Z; Z-инверсия делается в ProjectScene по tile.y.
         camera={{
           position: [totalW / 2, totalW * 0.8, totalD + totalW * 0.5],
           fov: 50,

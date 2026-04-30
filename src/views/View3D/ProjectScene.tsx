@@ -8,6 +8,7 @@ import type { CatalogItem } from '../../domain/furniture/placement';
 import type { Room, CeilingType, FloorType, FloorCovering } from '../../domain/geometry/types';
 import { getFloorPatternCanvas, getPatternUnitSize } from '../floorPatterns';
 import { buildWallGeometry, holesForWall, Z_OFFSET_INTO_ROOM } from './wallOpenings';
+import { FurnitureModel } from './FurnitureModel';
 import catalogData from '../../data/furniture-catalog.json';
 
 const catalogMap = new Map<string, CatalogItem>();
@@ -261,23 +262,44 @@ function FurnitureMeshes() {
       {furniture.map((f) => {
         const item = catalogMap.get(f.catalogId);
         if (!item) return null;
-        const { w, h } = getEffectiveSize(item, f.rotation);
-        const wm = w * TILE_SIZE;
-        const dm = h * TILE_SIZE;
+        // F15.fix2 (v1.16.0) — поворот мебели в 3D:
+        //   1) `getEffectiveSize` swap'ит w/h для post-rotation footprint —
+        //      используем для ПОЗИЦИОНИРОВАНИЯ (чтобы центр group попал в
+        //      нужное место согласно тайл-координатам).
+        //   2) FurnitureModel получает ОРИГИНАЛЬНЫЕ размеры — модель
+        //      масштабируется к натуральной ориентации, без растяжения.
+        //   3) Y-rotation на wrapper group крутит модель вокруг её центра.
+        // До этого фикса (1.16.b) поворот в 2D приводил к растяжению модели
+        // в 3D (вместо реального вращения), а ротация в 3D-режиме «улетала»
+        // из-за пересчёта cx/cz по эффективному (поменянному) размеру.
+        const eff = getEffectiveSize(item, f.rotation);
+        const effWm = eff.w * TILE_SIZE;
+        const effDm = eff.h * TILE_SIZE;
+        const origWm = item.size_tiles.w * TILE_SIZE;
+        const origDm = item.size_tiles.h * TILE_SIZE;
         const hm = item.height_m;
-        const cx = f.position.x * TILE_SIZE + wm / 2;
-        const cz = f.position.y * TILE_SIZE + dm / 2;
+        const cx = f.position.x * TILE_SIZE + effWm / 2;
+        const cz = f.position.y * TILE_SIZE + effDm / 2;
         const colorKey = item.color_key as keyof typeof PALETTE.furniture;
         const color = PALETTE.furniture[colorKey] ?? PALETTE.furniture.chair;
-        // F8.2.3 — scaleX={[-1, 1, 1]} mirrors around the box centre. The geometry
-        // is symmetric so visually identical pieces do not change, but asymmetric
-        // future models will reflect correctly.
+        // f.rotation в градусах (0/90/180/270); three.js Y-rotation
+        // положительная = CCW from above. Знак «+» подобран эмпирически
+        // под сцену с Z-mirror group (см. ProjectScene). Если визуально
+        // окажется зеркальным — поменять на «−».
+        const rotY = (f.rotation * Math.PI) / 180;
         return (
-          <group key={f.id} position={[cx, hm / 2, cz]} scale={[f.mirrored ? -1 : 1, 1, 1]}>
-            <mesh>
-              <boxGeometry args={[wm, hm, dm]} />
-              <meshStandardMaterial color={color} />
-            </mesh>
+          <group key={f.id} position={[cx, hm / 2, cz]}>
+            <group scale={[f.mirrored ? -1 : 1, 1, 1]}>
+              <group rotation={[0, rotY, 0]}>
+                <FurnitureModel
+                  widthM={origWm}
+                  heightM={hm}
+                  depthM={origDm}
+                  color={color}
+                  model3d={item.model3d}
+                />
+              </group>
+            </group>
           </group>
         );
       })}
@@ -297,28 +319,43 @@ export function ProjectScene() {
       <ambientLight intensity={0.6} />
       <directionalLight position={[totalW, 10, totalD]} intensity={0.8} />
 
-      {rooms.map((room) => (
-        <RoomMesh
-          key={room.id}
-          room={room}
-          ceilingType={ceiling[room.id] ?? 'stretch'}
-          flooringType={flooring[room.id] ?? 'screed'}
-          floorCoveringType={floorCovering[room.id]}
-        />
-      ))}
+      {/* F15.fix (v1.16.0) — Z-mirror всей сцены для совпадения с 2D-планом.
+          View2D инвертирует Y (top of canvas = high tile.y), а стандартная
+          three.js камера (на +Z, looking -Z) показывает high world.z как
+          near=BOTTOM. Чтобы сторонам света совпасть, мирорим Z через
+          `scale={[1,1,-1]} position={[0,0,totalD]}` — мапит tile.y=0 в
+          world.z=totalD (near camera, BOTTOM 3D = BOTTOM 2D), а
+          tile.y=gridHeight в world.z=0 (far, TOP). X не трогаем — он уже
+          совпадает (low tile.x = LEFT в обоих видах).
 
-      {rooms.map((room) => (
-        <WallMeshes key={`wall-${room.id}`} room={room} />
-      ))}
+          three.js при отрицательном determinant матрицы автоматически
+          инвертирует gl.frontFace, поэтому face culling и нормали
+          лайтинга работают корректно для FrontSide-материалов (Kenney
+          glTF). Стены/потолок/пол с side={2} (DoubleSide) индифферентны. */}
+      <group position={[0, 0, totalD]} scale={[1, 1, -1]}>
+        {rooms.map((room) => (
+          <RoomMesh
+            key={room.id}
+            room={room}
+            ceilingType={ceiling[room.id] ?? 'stretch'}
+            flooringType={flooring[room.id] ?? 'screed'}
+            floorCoveringType={floorCovering[room.id]}
+          />
+        ))}
 
-      {/* F7.5 (v1.15.0) — стены теперь несут вырезы под проёмы (см.
-          buildWallGeometry в wallOpenings.ts). Двери — это пустые проёмы
-          (никаких mesh), окна — стеклянная плоскость со смещением ε
-          внутрь комнаты, чтобы избежать z-fighting со стеной. */}
-      <WindowMeshes />
+        {rooms.map((room) => (
+          <WallMeshes key={`wall-${room.id}`} room={room} />
+        ))}
 
-      <WireSegments />
-      <FurnitureMeshes />
+        {/* F7.5 (v1.15.0) — стены теперь несут вырезы под проёмы (см.
+            buildWallGeometry в wallOpenings.ts). Двери — это пустые проёмы
+            (никаких mesh), окна — стеклянная плоскость со смещением ε
+            внутрь комнаты, чтобы избежать z-fighting со стеной. */}
+        <WindowMeshes />
+
+        <WireSegments />
+        <FurnitureMeshes />
+      </group>
     </>
   );
 }
