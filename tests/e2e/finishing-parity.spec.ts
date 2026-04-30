@@ -84,9 +84,11 @@ test.describe('Finishing visualization — z-order & cross-view parity (F6.4)', 
     const hue2D = await dominantFloorHue(page, '.konvajs-content canvas');
     expect(hue2D).not.toBeNull();
 
-    // Switch to 3D and let R3F initialize + render the first frame
+    // Switch to 3D and wait for the first-frame signal (F7.6.1).
+    // Replaces the prior 800-ms blind wait — Firefox sometimes hadn't drawn
+    // a frame by then, leading to flaky `hue3D === null`.
     await page.getByText('Посмотреть в 3D').click();
-    await page.waitForTimeout(800);
+    await page.waitForSelector('[data-testid="view3d"][data-3d-ready="1"]');
 
     const hue3D = await dominantFloorHue(page, 'canvas[data-engine], canvas');
     expect(hue3D).not.toBeNull();

@@ -12,6 +12,11 @@ async function gotoStage4(page: import('@playwright/test').Page) {
 async function downloadPdf(page: import('@playwright/test').Page) {
   await gotoStage4(page);
 
+  // F7.6.3 (v1.15.0) — дождаться флага готовности офскрин 3D-канвы перед
+  // экспортом. Иначе в Firefox первый `gl.render()` иногда не успевал к
+  // `toDataURL`, и страница 3D в PDF получалась без изображения (F10.2.1 flake).
+  await page.waitForSelector('[data-testid="view3d-snapshot"][data-3d-ready="1"]');
+
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Сохранить как PDF' }).click();
   const download = await downloadPromise;
