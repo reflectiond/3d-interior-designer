@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 async function gotoStage3Furniture(page: import('@playwright/test').Page) {
+  // viewport-fixed layout (v1.17.0) ограничивает канву окном; нужен запас по
+  // высоте чтобы pixel-сэмплинг ловил заметную область превью.
+  await page.setViewportSize({ width: 1280, height: 1300 });
   await page.goto('/');
   await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
   await page.locator('nav[aria-label="Этапы"] button').nth(2).click();
@@ -64,23 +67,25 @@ test.describe('Placement highlight (F8.3)', () => {
     expect(Math.max(greenish, redish)).toBeGreaterThan(80);
   });
 
-  test('moving cursor over external wall area shows red invalid highlight', async ({ page }) => {
+  test('moving cursor over canvas shows placement highlight (green or red)', async ({ page }) => {
+    // F8.7 (v1.13.0): allowed_rooms убран — туалет теперь валиден в любой
+    // комнате. Тест переформулирован: hover preview ВСЕГДА показывает
+    // подсветку (зелёную если в комнате, красную если на стене/снаружи).
     await gotoStage3Furniture(page);
 
-    // «Унитаз» — restricted to bathroom; placing in living room is invalid.
     const toiletBtn = page.getByRole('button', { name: /Унитаз/ }).first();
     await toiletBtn.click();
 
     const canvas = page.locator('.konvajs-content canvas').first();
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
-    // Move around the canvas to hit a non-bathroom region
     const x = box!.x + box!.width * 0.5;
     const y = box!.y + box!.height * 0.5;
     await page.mouse.move(x, y);
     await page.waitForTimeout(150);
 
+    const greenish = await countTintedPixels(page, { r: 130, g: 215, b: 130 });
     const redish = await countTintedPixels(page, { r: 215, g: 130, b: 130 });
-    expect(redish).toBeGreaterThan(50);
+    expect(Math.max(greenish, redish)).toBeGreaterThan(50);
   });
 });

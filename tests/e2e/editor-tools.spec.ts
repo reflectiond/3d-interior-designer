@@ -4,6 +4,9 @@ import type { Page } from '@playwright/test';
 const TOKEN = 'dev-only-token-replace-in-prod';
 
 async function openEditor(page: Page) {
+  // viewport-fixed (v1.17.0) — большая высота нужна для канвы редактора 32×32
+  // тайла × 24 px/tile = 768 px, плюс UI вокруг.
+  await page.setViewportSize({ width: 1280, height: 1300 });
   await page.goto(`/?editor=1&token=${TOKEN}`);
   await expect(page.getByTestId('layout-editor')).toBeVisible();
   await expect(page.getByTestId('layout-editor-canvas')).toBeVisible();

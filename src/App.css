@@ -1,5 +1,11 @@
 .app {
-  min-height: 100vh;
+  /* Sprint 22 (v1.17.0): viewport-fixed layout. Раньше был `min-height: 100vh`
+     — содержимое (особенно длинная боковая панель Stage 3 после расширения
+     каталога мебели) могло расти выше окна и заставлять document скроллить
+     всю страницу, унося канву из видимой области. С `height: 100vh` весь
+     UI вмещается в окно; внутренние секции (`.app-main`, `.panel`) скроллят
+     своё содержимое самостоятельно. */
+  height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -22,6 +28,9 @@
   display: flex;
   flex-direction: column;
   overflow: auto;
+  /* Без `min-height: 0` flex-child не может стать меньше своего content-size,
+     что ломает viewport-fixed схему — `.layout` Stage 3 вылазит наружу. */
+  min-height: 0;
 }
 
 .app-placeholder {
