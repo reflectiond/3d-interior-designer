@@ -8,6 +8,7 @@ import type { CatalogItem } from '../../domain/furniture/placement';
 import type { Room, CeilingType, FloorType, FloorCovering } from '../../domain/geometry/types';
 import { getFloorPatternCanvas, getPatternUnitSize } from '../floorPatterns';
 import { buildWallGeometry, holesForWall, Z_OFFSET_INTO_ROOM } from './wallOpenings';
+import { FurnitureModel } from './FurnitureModel';
 import catalogData from '../../data/furniture-catalog.json';
 
 const catalogMap = new Map<string, CatalogItem>();
@@ -272,12 +273,18 @@ function FurnitureMeshes() {
         // F8.2.3 — scaleX={[-1, 1, 1]} mirrors around the box centre. The geometry
         // is symmetric so visually identical pieces do not change, but asymmetric
         // future models will reflect correctly.
+        // F15.3 (v1.16.0) — `<FurnitureModel>` рисует glTF-модель из
+        // item.model3d.url через Suspense; пока модель грузится или
+        // если её нет — fallback на box-геометрию (старое поведение).
         return (
           <group key={f.id} position={[cx, hm / 2, cz]} scale={[f.mirrored ? -1 : 1, 1, 1]}>
-            <mesh>
-              <boxGeometry args={[wm, hm, dm]} />
-              <meshStandardMaterial color={color} />
-            </mesh>
+            <FurnitureModel
+              widthM={wm}
+              heightM={hm}
+              depthM={dm}
+              color={color}
+              model3d={item.model3d}
+            />
           </group>
         );
       })}

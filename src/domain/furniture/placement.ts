@@ -11,6 +11,22 @@ export interface CatalogItem {
   mirrorable: boolean;
   price_min: number;
   price_max: number;
+  /**
+   * F15.1 (v1.16.0) — опциональные ассеты:
+   * - `sprite2d`: путь к PNG-спрайту (обычно top-down view), который
+   *   рендерится на 2D-канве вместо цветного Rect. Lazy `<img>`-load с
+   *   фолбэком на текущий цветной Rect (F15.2).
+   * - `model3d.url`: glTF/GLB модель для 3D-сцены. `useGLTF` lazy +
+   *   Suspense с `<Box>`-фолбэком (F15.3).
+   * - `model3d.rotation` (опц.): доп. вращение Y в радианах для
+   *   модели (если её axis-up в файле не Y).
+   * - `model3d.scaleY` (опц.): вертикальный scale для подгонки модели
+   *   под `height_m` каталога (если модель не в метрах).
+   *
+   * Все ассеты должны быть CC0 / CC-BY (см. LICENSES.md).
+   */
+  sprite2d?: string;
+  model3d?: { url: string; rotation?: number; scaleY?: number };
 }
 
 /** Get effective width/height after rotation */
