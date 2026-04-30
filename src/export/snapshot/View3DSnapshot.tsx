@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { useProjectStore } from '../../store/projectStore';
 import { TILE_SIZE } from '../../domain/geometry/tiles';
 import { ProjectScene } from '../../views/View3D/ProjectScene';
@@ -9,44 +9,49 @@ const SNAPSHOT_WIDTH = 1200;
 const SNAPSHOT_HEIGHT = 900;
 
 /**
- * F7.6.1 (v1.15.0) — двух-частный сигнал готовности офскрин 3D-канвы:
+ * F7.6.1 (v1.15.0) — после mount'а R3F-канвы:
  *
- *  1) `HandleRegistrar` регистрирует gl/scene/camera в синглтон и вызывает
- *     `invalidate()` — это просит R3F (`frameloop="demand"`) отрисовать
- *     один кадр.
- *  2) `FirstFrameSignal` слушает `useFrame` и сигналит родителю после
- *     первого реального рендера. К этому моменту WebGL framebuffer
- *     гарантированно содержит пиксели, а `gl.domElement.toDataURL()` в
- *     `capture3DSnapshot()` отдаёт непустой PNG.
+ *  1) Регистрируем gl/scene/camera в синглтон.
+ *  2) Через два `requestAnimationFrame` вызываем `gl.render(scene, camera)`
+ *     и сигналим родителю готовность.
  *
- * Раньше использовался `frameloop="never"` + ручной `gl.render()` в
- * useEffect. В Firefox+headless это давало flake'и: иногда useEffect
- * срабатывал до того, как WebGL контекст был полностью инициализирован,
- * и первый кадр оставался прозрачным.
+ * Двойной rAF нужен потому, что в Firefox+headless WebGL context для
+ * offscreen-канвы (`left: -10000`) инициализируется лениво — первый rAF
+ * даёт браузеру layout, второй гарантирует, что WebGL готов отрисовать.
+ *
+ * Раньше использовался `frameloop="never"` + синхронный `gl.render()` в
+ * useEffect — в Firefox это давало пустой framebuffer (флаг `data-3d-ready`
+ * выставлялся, но `toDataURL()` отдавал прозрачный PNG). Затем пробовали
+ * `frameloop="demand"` + `useFrame`-сигнал — в Firefox `useFrame` не
+ * срабатывал (invalidate-ed кадр уходил до того, как FirstFrameSignal
+ * подписывался). Текущий подход объединяет всё в одном месте.
  */
-function HandleRegistrar() {
+function HandleRegistrar({ onReady }: { onReady: () => void }) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
-  const invalidate = useThree((s) => s.invalidate);
 
   useEffect(() => {
     registerR3FHandles({ gl, scene, camera });
-    invalidate();
-    return () => registerR3FHandles(null);
-  }, [gl, scene, camera, invalidate]);
+    let cancelled = false;
+    requestAnimationFrame(() => {
+      if (cancelled) return;
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        try {
+          gl.render(scene, camera);
+        } catch (err) {
+          console.warn('[F7.6] first gl.render() threw:', err);
+        }
+        onReady();
+      });
+    });
+    return () => {
+      cancelled = true;
+      registerR3FHandles(null);
+    };
+  }, [gl, scene, camera, onReady]);
 
-  return null;
-}
-
-function FirstFrameSignal({ onReady }: { onReady: () => void }) {
-  const [signaled, setSignaled] = useState(false);
-  useFrame(() => {
-    if (!signaled) {
-      setSignaled(true);
-      onReady();
-    }
-  });
   return null;
 }
 
@@ -85,8 +90,7 @@ export function View3DSnapshot() {
         gl={{ preserveDrawingBuffer: true, antialias: true }}
         style={{ width: SNAPSHOT_WIDTH, height: SNAPSHOT_HEIGHT }}
       >
-        <HandleRegistrar />
-        <FirstFrameSignal onReady={() => setReady(true)} />
+        <HandleRegistrar onReady={() => setReady(true)} />
         <ProjectScene />
       </Canvas>
     </div>
