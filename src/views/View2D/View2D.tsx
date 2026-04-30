@@ -632,14 +632,16 @@ export function View2D({
                   {(() => {
                     const fw = w * SCALE;
                     const fh = h * SCALE;
+                    // Mapping подобран эмпирически под направление лицевой
+                    // стороны Kenney-моделей в 3D-сцене после Z-mirror.
                     const triPositions: Record<
                       0 | 90 | 180 | 270,
                       { x: number; y: number; rotation: number }
                     > = {
-                      0: { x: fw / 2, y: fh - 6, rotation: 180 },
-                      90: { x: 6, y: fh / 2, rotation: 270 },
-                      180: { x: fw / 2, y: 6, rotation: 0 },
-                      270: { x: fw - 6, y: fh / 2, rotation: 90 },
+                      0: { x: fw / 2, y: 6, rotation: 0 },
+                      90: { x: fw - 6, y: fh / 2, rotation: 90 },
+                      180: { x: fw / 2, y: fh - 6, rotation: 180 },
+                      270: { x: 6, y: fh / 2, rotation: 270 },
                     };
                     const tp = triPositions[f.rotation];
                     return (
