@@ -9,6 +9,7 @@ import {
   Path,
   Group,
   Image as KonvaImage,
+  RegularPolygon,
 } from 'react-konva';
 import type Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
@@ -622,6 +623,41 @@ export function View2D({
                     stroke={isSelected ? PALETTE.editor.selection : PALETTE.walls.external}
                     strokeWidth={isSelected ? 2 : 1}
                   />
+                  {/* F8.5-fix2 (v1.17.0) — визуальный индикатор «передней»
+                      стороны: треугольник, который вращается с f.rotation
+                      (90° шаг) и зеркалится через scaleX группы.
+                      Без индикатора rotation квадратной мебели был
+                      незаметен в 2D, и пользователь думал, что R не
+                      работает. */}
+                  {(() => {
+                    const fw = w * SCALE;
+                    const fh = h * SCALE;
+                    // Mapping подобран эмпирически под направление лицевой
+                    // стороны Kenney-моделей в 3D-сцене после Z-mirror.
+                    const triPositions: Record<
+                      0 | 90 | 180 | 270,
+                      { x: number; y: number; rotation: number }
+                    > = {
+                      0: { x: fw / 2, y: 6, rotation: 0 },
+                      90: { x: fw - 6, y: fh / 2, rotation: 90 },
+                      180: { x: fw / 2, y: fh - 6, rotation: 180 },
+                      270: { x: 6, y: fh / 2, rotation: 270 },
+                    };
+                    const tp = triPositions[f.rotation];
+                    return (
+                      <RegularPolygon
+                        sides={3}
+                        radius={5}
+                        x={tp.x}
+                        y={tp.y}
+                        rotation={tp.rotation}
+                        fill="rgba(255,255,255,0.9)"
+                        stroke="rgba(0,0,0,0.6)"
+                        strokeWidth={0.5}
+                        listening={false}
+                      />
+                    );
+                  })()}
                   <Text
                     x={2}
                     y={2}

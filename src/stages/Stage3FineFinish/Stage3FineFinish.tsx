@@ -108,10 +108,14 @@ export function Stage3FineFinish() {
 
   // Keyboard handlers split into two effects so the dependency lists stay tight.
   // 1) Placement-mode keys: R rotates, Escape cancels.
+  // F8.5.3-fix (v1.17.0): используем `e.code` вместо `e.key` для буквенных
+  // клавиш — `e.key` зависит от раскладки (русская К на физической R дает
+  // `e.key === 'к'`, не `'R'`). Стрелки/Delete/Escape остаются на `e.key`,
+  // т.к. они layout-independent.
   useEffect(() => {
     if (!placingItem) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'r' || e.key === 'R') {
+      if (e.code === 'KeyR') {
         setPlacingRotation((prev) => ((prev + 90) % 360) as 0 | 90 | 180 | 270);
       }
       if (e.key === 'Escape') {
@@ -135,20 +139,30 @@ export function Stage3FineFinish() {
       const item = catalogMap.get(f.catalogId);
       if (!item) return;
 
-      if (e.key === 'r' || e.key === 'R') {
+      if (e.code === 'KeyR') {
         if (!item.rotatable) return;
         const nextRot = ((f.rotation + 90) % 360) as 0 | 90 | 180 | 270;
-        // Validate the rotated footprint against current placement rules.
-        const tiles = getFurnitureTiles(f.position, item, nextRot);
+        // F8.5.3-fix (v1.17.0): вращаем вокруг центра footprint'а.
+        // Раньше использовалась `f.position` (bottom-left), что для
+        // асимметричных предметов (6×3 → 3×6) приводило к тому, что
+        // повёрнутый предмет выходил за границы комнаты в одну
+        // сторону, и `findContainingRoom` возвращал null → silent fail.
+        const oldEff = getEffectiveSize(item, f.rotation);
+        const newEff = getEffectiveSize(item, nextRot);
+        const newPos = {
+          x: f.position.x + Math.round((oldEff.w - newEff.w) / 2),
+          y: f.position.y + Math.round((oldEff.h - newEff.h) / 2),
+        };
+        const tiles = getFurnitureTiles(newPos, item, nextRot);
         const room = findContainingRoom(tiles, rooms);
         if (!room) return;
         const others = furniture.filter((x) => x.id !== f.id);
         if (hasCollision(tiles, others, catalogMap)) return;
-        updateFurniture(f.id, { rotation: nextRot });
+        updateFurniture(f.id, { rotation: nextRot, position: newPos });
         e.preventDefault();
         return;
       }
-      if (e.key === 'm' || e.key === 'M') {
+      if (e.code === 'KeyM') {
         if (!item.mirrorable) return;
         // Mirror keeps footprint symmetric for current catalog, no validation needed.
         updateFurniture(f.id, { mirrored: !f.mirrored });
@@ -255,7 +269,10 @@ export function Stage3FineFinish() {
             onSelectFurniture={activeTab === 'furniture' ? setSelectedFurnitureId : undefined}
           />
         ) : (
-          <View3D />
+          <View3D
+            selectedFurnitureId={activeTab === 'furniture' ? selectedFurnitureId : null}
+            onSelectFurniture={activeTab === 'furniture' ? setSelectedFurnitureId : undefined}
+          />
         )}
         <div className={stageStyles.actions}>
           <button className={stageStyles.backBtn} onClick={() => setStage(2)}>

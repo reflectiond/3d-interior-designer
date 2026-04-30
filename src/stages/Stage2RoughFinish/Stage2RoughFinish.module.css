@@ -17,6 +17,8 @@
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+  /* Та же причина что и .viewToggle — не схлопываться flex-родителем. */
+  flex-shrink: 0;
 }
 
 .backBtn,
@@ -54,16 +56,30 @@
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 1rem;
+  /* Sprint 22 fix: viewport-fixed layout (App.css `height: 100vh`) делает
+     `.canvas` flex column'ом ограниченным по высоте. Без flex-shrink:0
+     родитель схлопывал toggle-bar в недостаточную высоту, обрезая текст. */
+  flex-shrink: 0;
 }
 
 .toggleBtn {
+  /* Sprint 22 fix: явные размеры, чтобы 2D / 3D кнопки имели одинаковую
+     высоту и не «прыгали» при смене состояния. Раньше `transition: all`
+     анимировал background и т.д., что в Chrome давало визуальный jank
+     (текст с descender'ами выглядел обрезанным снизу). */
+  box-sizing: border-box;
   padding: 0.5rem 1.25rem;
+  min-height: 36px;
+  line-height: 1.4;
   border: none;
   background: #f5f5f5;
   font-size: 0.9rem;
+  font-family: inherit;
   cursor: pointer;
   color: #666;
-  transition: all 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .toggleBtn:hover {

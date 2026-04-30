@@ -254,7 +254,13 @@ function computeOpeningOffset(
   return Z_OFFSET_INTO_ROOM;
 }
 
-function FurnitureMeshes() {
+function FurnitureMeshes({
+  selectedId,
+  onSelect,
+}: {
+  selectedId?: string | null;
+  onSelect?: (id: string | null) => void;
+}) {
   const { furniture } = useProjectStore();
 
   return (
@@ -282,13 +288,17 @@ function FurnitureMeshes() {
         const cz = f.position.y * TILE_SIZE + effDm / 2;
         const colorKey = item.color_key as keyof typeof PALETTE.furniture;
         const color = PALETTE.furniture[colorKey] ?? PALETTE.furniture.chair;
-        // f.rotation в градусах (0/90/180/270); three.js Y-rotation
-        // положительная = CCW from above. Знак «+» подобран эмпирически
-        // под сцену с Z-mirror group (см. ProjectScene). Если визуально
-        // окажется зеркальным — поменять на «−».
         const rotY = (f.rotation * Math.PI) / 180;
+        const isSelected = selectedId === f.id;
         return (
-          <group key={f.id} position={[cx, hm / 2, cz]}>
+          <group
+            key={f.id}
+            position={[cx, hm / 2, cz]}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect?.(f.id);
+            }}
+          >
             <group scale={[f.mirrored ? -1 : 1, 1, 1]}>
               <group rotation={[0, rotY, 0]}>
                 <FurnitureModel
@@ -300,6 +310,15 @@ function FurnitureMeshes() {
                 />
               </group>
             </group>
+            {/* F15.D (v1.17.0) — wireframe-куб вокруг выделенного предмета.
+                Размер совпадает с post-rotation footprint'ом, чуть приподнят
+                над полом для видимости. */}
+            {isSelected && (
+              <mesh>
+                <boxGeometry args={[effWm, hm, effDm]} />
+                <meshBasicMaterial color={PALETTE.editor.selection} wireframe />
+              </mesh>
+            )}
           </group>
         );
       })}
@@ -307,7 +326,13 @@ function FurnitureMeshes() {
   );
 }
 
-export function ProjectScene() {
+export function ProjectScene({
+  selectedFurnitureId,
+  onSelectFurniture,
+}: {
+  selectedFurnitureId?: string | null;
+  onSelectFurniture?: (id: string | null) => void;
+} = {}) {
   const { layout, rooms, ceiling, flooring, floorCovering } = useProjectStore();
   if (!layout) return null;
 
@@ -354,7 +379,7 @@ export function ProjectScene() {
         <WindowMeshes />
 
         <WireSegments />
-        <FurnitureMeshes />
+        <FurnitureMeshes selectedId={selectedFurnitureId} onSelect={onSelectFurniture} />
       </group>
     </>
   );
