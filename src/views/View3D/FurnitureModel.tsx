@@ -43,9 +43,12 @@ interface GltfProps extends BoxProps {
 function GltfModel({ url, widthM, heightM, depthM, rotation = 0, scaleY }: GltfProps) {
   const gltf = useGLTF(url);
   const cloned = useMemo(() => gltf.scene.clone(true), [gltf]);
-  // Auto-scale: вписать bbox модели в (widthM, heightM, depthM). Подсчёт
-  // bbox происходит ОДИН раз на mount (useMemo + dep на cloned).
-  const { sx, sy, sz, cy } = useMemo(() => {
+  // Auto-scale + auto-center: вписать bbox модели в (widthM, heightM, depthM)
+  // и сдвинуть так, чтобы она занимала ровно тот footprint, который ожидается
+  // по `size_tiles` каталога. Kenney-модели могут иметь local origin в любом
+  // углу bbox; без X/Z-центрирования они визуально смещены от позиции,
+  // указанной в 2D-плане.
+  const { sx, sy, sz, ox, oy, oz } = useMemo(() => {
     const bbox = new Box3().setFromObject(cloned);
     const size = new Vector3();
     bbox.getSize(size);
@@ -53,16 +56,21 @@ function GltfModel({ url, widthM, heightM, depthM, rotation = 0, scaleY }: GltfP
     const sx = widthM / Math.max(size.x, eps);
     const sy = scaleY ?? heightM / Math.max(size.y, eps);
     const sz = depthM / Math.max(size.z, eps);
-    // После скейла bbox.min.y * sy — низ модели; смещаем модель так,
-    // чтобы её низ касался y=0 локальной системы (которая уже у пола
-    // комнаты после group position[cx, hm/2, cz]).
-    const cy = -(bbox.min.y * sy) - heightM / 2;
-    return { sx, sy, sz, cy };
+    // Parent group (см. ProjectScene) уже расположена на (cx, heightM/2, cz):
+    // её локальный (0,0,0) — это центр footprint'а на высоте heightM/2.
+    // Мы хотим, чтобы:
+    //   - центр bbox по X совпадал с локальным X=0 → ox = -bbox.center.x * sx
+    //   - низ bbox по Y был на полу (мир Y=0) → oy = -bbox.min.y*sy - heightM/2
+    //   - центр bbox по Z совпадал с локальным Z=0 → oz = -bbox.center.z * sz
+    const ox = -((bbox.min.x + bbox.max.x) / 2) * sx;
+    const oy = -bbox.min.y * sy - heightM / 2;
+    const oz = -((bbox.min.z + bbox.max.z) / 2) * sz;
+    return { sx, sy, sz, ox, oy, oz };
   }, [cloned, widthM, heightM, depthM, scaleY]);
   return (
     <primitive
       object={cloned}
-      position={[0, cy, 0]}
+      position={[ox, oy, oz]}
       rotation={[0, rotation, 0]}
       scale={[sx, sy, sz]}
     />
