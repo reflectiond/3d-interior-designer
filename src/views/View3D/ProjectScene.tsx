@@ -304,28 +304,43 @@ export function ProjectScene() {
       <ambientLight intensity={0.6} />
       <directionalLight position={[totalW, 10, totalD]} intensity={0.8} />
 
-      {rooms.map((room) => (
-        <RoomMesh
-          key={room.id}
-          room={room}
-          ceilingType={ceiling[room.id] ?? 'stretch'}
-          flooringType={flooring[room.id] ?? 'screed'}
-          floorCoveringType={floorCovering[room.id]}
-        />
-      ))}
+      {/* F15.fix (v1.16.0) — Z-mirror всей сцены для совпадения с 2D-планом.
+          View2D инвертирует Y (top of canvas = high tile.y), а стандартная
+          three.js камера (на +Z, looking -Z) показывает high world.z как
+          near=BOTTOM. Чтобы сторонам света совпасть, мирорим Z через
+          `scale={[1,1,-1]} position={[0,0,totalD]}` — мапит tile.y=0 в
+          world.z=totalD (near camera, BOTTOM 3D = BOTTOM 2D), а
+          tile.y=gridHeight в world.z=0 (far, TOP). X не трогаем — он уже
+          совпадает (low tile.x = LEFT в обоих видах).
 
-      {rooms.map((room) => (
-        <WallMeshes key={`wall-${room.id}`} room={room} />
-      ))}
+          three.js при отрицательном determinant матрицы автоматически
+          инвертирует gl.frontFace, поэтому face culling и нормали
+          лайтинга работают корректно для FrontSide-материалов (Kenney
+          glTF). Стены/потолок/пол с side={2} (DoubleSide) индифферентны. */}
+      <group position={[0, 0, totalD]} scale={[1, 1, -1]}>
+        {rooms.map((room) => (
+          <RoomMesh
+            key={room.id}
+            room={room}
+            ceilingType={ceiling[room.id] ?? 'stretch'}
+            flooringType={flooring[room.id] ?? 'screed'}
+            floorCoveringType={floorCovering[room.id]}
+          />
+        ))}
 
-      {/* F7.5 (v1.15.0) — стены теперь несут вырезы под проёмы (см.
-          buildWallGeometry в wallOpenings.ts). Двери — это пустые проёмы
-          (никаких mesh), окна — стеклянная плоскость со смещением ε
-          внутрь комнаты, чтобы избежать z-fighting со стеной. */}
-      <WindowMeshes />
+        {rooms.map((room) => (
+          <WallMeshes key={`wall-${room.id}`} room={room} />
+        ))}
 
-      <WireSegments />
-      <FurnitureMeshes />
+        {/* F7.5 (v1.15.0) — стены теперь несут вырезы под проёмы (см.
+            buildWallGeometry в wallOpenings.ts). Двери — это пустые проёмы
+            (никаких mesh), окна — стеклянная плоскость со смещением ε
+            внутрь комнаты, чтобы избежать z-fighting со стеной. */}
+        <WindowMeshes />
+
+        <WireSegments />
+        <FurnitureMeshes />
+      </group>
     </>
   );
 }

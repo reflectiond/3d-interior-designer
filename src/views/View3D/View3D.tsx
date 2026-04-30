@@ -40,13 +40,13 @@ export function View3D() {
   return (
     <div className={styles.container} data-testid="view3d" data-3d-ready={ready ? '1' : '0'}>
       <Canvas
-        // Камера на стороне отрицательного Z — это сторона, которая в 2D
-        // соответствует ВЕРХУ экрана (View2D инвертирует Y: high tile.y →
-        // top of canvas, а в three.js сцене high tile.y = high Z). Чтобы
-        // 3D-вид совпадал с 2D-планом «по сторонам света», камера должна
-        // смотреть с Z<0 в сторону Z+.
+        // Камера на стороне +Z (стандарт three.js: смотрит на -Z, X+ —
+        // вправо). Совпадение по «сторонам света» с 2D достигается тем,
+        // что в `ProjectScene` все Z-координаты считаются как
+        // `(gridHeight - tile.y) * TILE_SIZE`: high tile.y (north на
+        // 2D-плане) → low world.z (далеко от камеры) → ВЕРХ экрана.
         camera={{
-          position: [totalW / 2, totalW * 0.8, -totalW * 0.5],
+          position: [totalW / 2, totalW * 0.8, totalD + totalW * 0.5],
           fov: 50,
           near: 0.1,
           far: 100,

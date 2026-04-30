@@ -61,6 +61,7 @@ export function View3DSnapshot() {
   if (!layout) return null;
 
   const totalW = layout.gridWidth * TILE_SIZE;
+  const totalD = layout.gridHeight * TILE_SIZE;
 
   return (
     <div
@@ -80,11 +81,9 @@ export function View3DSnapshot() {
     >
       <Canvas
         frameloop="demand"
-        // F15.4-fix (v1.16.0): камера на отрицательной стороне Z, чтобы
-        // 3D-вид совпадал с 2D-планом по сторонам света (View2D
-        // инвертирует Y; см. View3D.tsx комментарий).
+        // Камера на +Z; Z-инверсия делается в ProjectScene по tile.y.
         camera={{
-          position: [totalW / 2, totalW * 0.8, -totalW * 0.5],
+          position: [totalW / 2, totalW * 0.8, totalD + totalW * 0.5],
           fov: 50,
           near: 0.1,
           far: 100,
