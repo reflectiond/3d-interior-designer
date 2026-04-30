@@ -262,29 +262,44 @@ function FurnitureMeshes() {
       {furniture.map((f) => {
         const item = catalogMap.get(f.catalogId);
         if (!item) return null;
-        const { w, h } = getEffectiveSize(item, f.rotation);
-        const wm = w * TILE_SIZE;
-        const dm = h * TILE_SIZE;
+        // F15.fix2 (v1.16.0) — поворот мебели в 3D:
+        //   1) `getEffectiveSize` swap'ит w/h для post-rotation footprint —
+        //      используем для ПОЗИЦИОНИРОВАНИЯ (чтобы центр group попал в
+        //      нужное место согласно тайл-координатам).
+        //   2) FurnitureModel получает ОРИГИНАЛЬНЫЕ размеры — модель
+        //      масштабируется к натуральной ориентации, без растяжения.
+        //   3) Y-rotation на wrapper group крутит модель вокруг её центра.
+        // До этого фикса (1.16.b) поворот в 2D приводил к растяжению модели
+        // в 3D (вместо реального вращения), а ротация в 3D-режиме «улетала»
+        // из-за пересчёта cx/cz по эффективному (поменянному) размеру.
+        const eff = getEffectiveSize(item, f.rotation);
+        const effWm = eff.w * TILE_SIZE;
+        const effDm = eff.h * TILE_SIZE;
+        const origWm = item.size_tiles.w * TILE_SIZE;
+        const origDm = item.size_tiles.h * TILE_SIZE;
         const hm = item.height_m;
-        const cx = f.position.x * TILE_SIZE + wm / 2;
-        const cz = f.position.y * TILE_SIZE + dm / 2;
+        const cx = f.position.x * TILE_SIZE + effWm / 2;
+        const cz = f.position.y * TILE_SIZE + effDm / 2;
         const colorKey = item.color_key as keyof typeof PALETTE.furniture;
         const color = PALETTE.furniture[colorKey] ?? PALETTE.furniture.chair;
-        // F8.2.3 — scaleX={[-1, 1, 1]} mirrors around the box centre. The geometry
-        // is symmetric so visually identical pieces do not change, but asymmetric
-        // future models will reflect correctly.
-        // F15.3 (v1.16.0) — `<FurnitureModel>` рисует glTF-модель из
-        // item.model3d.url через Suspense; пока модель грузится или
-        // если её нет — fallback на box-геометрию (старое поведение).
+        // f.rotation в градусах (0/90/180/270); three.js Y-rotation
+        // положительная = CCW from above. Знак «+» подобран эмпирически
+        // под сцену с Z-mirror group (см. ProjectScene). Если визуально
+        // окажется зеркальным — поменять на «−».
+        const rotY = (f.rotation * Math.PI) / 180;
         return (
-          <group key={f.id} position={[cx, hm / 2, cz]} scale={[f.mirrored ? -1 : 1, 1, 1]}>
-            <FurnitureModel
-              widthM={wm}
-              heightM={hm}
-              depthM={dm}
-              color={color}
-              model3d={item.model3d}
-            />
+          <group key={f.id} position={[cx, hm / 2, cz]}>
+            <group scale={[f.mirrored ? -1 : 1, 1, 1]}>
+              <group rotation={[0, rotY, 0]}>
+                <FurnitureModel
+                  widthM={origWm}
+                  heightM={hm}
+                  depthM={origDm}
+                  color={color}
+                  model3d={item.model3d}
+                />
+              </group>
+            </group>
           </group>
         );
       })}
