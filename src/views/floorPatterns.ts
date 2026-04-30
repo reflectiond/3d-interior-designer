@@ -10,18 +10,18 @@ function pxFromM(m: number): number {
 interface PatternSpec {
   unitWidthM: number;
   unitHeightM: number;
-  /** Base color used only when {@link renderFloorPattern} is called with `withBackground=true`
-   *  (the 3D path — see {@link getFloorPatternCanvas}). For 2D the canvas stays transparent
-   *  and the seams overlay the room fill (F6.2.8). */
+  /** Базовый цвет используется только когда {@link renderFloorPattern} вызван с
+   *  `withBackground=true` (3D-путь, см. {@link getFloorPatternCanvas}). Для 2D
+   *  канва остаётся прозрачной, а швы накладываются поверх заливки комнаты (F6.2.8). */
   fillColor: string;
-  /** Decorative pass painted on top of (optional) base fill. Stroke style and opacity are
-   *  set by the caller; opacity values follow F6.2.10 (0.6–0.7). */
+  /** Декоративный проход поверх (опциональной) базовой заливки. Стиль обводки и
+   *  прозрачность задаёт вызывающий код; значения opacity — по F6.2.10 (0.6–0.7). */
   draw?: (ctx: CanvasRenderingContext2D, w: number, h: number) => void;
 }
 
 const SPECS: Record<FloorMaterial, PatternSpec> = {
-  // F6.2.2 (v1.8.0): instead of solid fill linoleum gets a subtle two-dot speckle so it
-  // is distinguishable from "no covering" in 2D, while still reading as a smooth surface.
+  // F6.2.2 (v1.8.0): вместо сплошной заливки линолеум получает мягкие две точки —
+  // так он отличим от «без покрытия» в 2D, но всё ещё читается как гладкая поверхность.
   linoleum: {
     unitWidthM: 0.25,
     unitHeightM: 0.25,
@@ -30,12 +30,12 @@ const SPECS: Record<FloorMaterial, PatternSpec> = {
       ctx.fillStyle = PALETTE.floor_pattern_seam.linoleum;
       ctx.globalAlpha = 0.6;
       const dot = Math.max(2, Math.round(w * 0.04));
-      // Two deterministic dots inside the unit, positioned so they tile cleanly
+      // Две детерминированные точки внутри юнита, расположены так, чтобы плитка стыковалась чисто
       ctx.fillRect(Math.round(w * 0.25) - dot / 2, Math.round(h * 0.4) - dot / 2, dot, dot);
       ctx.fillRect(Math.round(w * 0.7) - dot / 2, Math.round(h * 0.75) - dot / 2, dot, dot);
     },
   },
-  // F6.2.3 — long boards 1.0 × 0.25 m, seam at right edge and bottom edge of unit
+  // F6.2.3 — длинные доски 1.0 × 0.25 м, шов по правому и нижнему краю юнита
   laminate: {
     unitWidthM: 1.0,
     unitHeightM: 0.25,
@@ -52,7 +52,7 @@ const SPECS: Record<FloorMaterial, PatternSpec> = {
       ctx.stroke();
     },
   },
-  // F6.2.4 — square grid 0.5 × 0.5 m
+  // F6.2.4 — квадратная сетка 0.5 × 0.5 м
   tile: {
     unitWidthM: 0.5,
     unitHeightM: 0.5,
@@ -69,7 +69,7 @@ const SPECS: Record<FloorMaterial, PatternSpec> = {
       ctx.stroke();
     },
   },
-  // F6.2.5 — chevron, 0.6 × 0.6 m unit with V-shape pointing up
+  // F6.2.5 — ёлочка, юнит 0.6 × 0.6 м с V-образной формой, направленной вверх
   quartz_vinyl: {
     unitWidthM: 0.6,
     unitHeightM: 0.6,
@@ -93,10 +93,10 @@ export function getPatternUnitSize(type: FloorMaterial): { widthM: number; heigh
 }
 
 export interface FloorPatternOptions {
-  /** When true, the unit canvas is filled with the base floor color first; the seams are
-   *  drawn on top. Used by the 3D scene where the floor mesh has no other source of color.
-   *  When false (default — F6.2.8), the canvas stays transparent so seams overlay
-   *  whatever is rendered beneath the pattern Rect (the pastel room fill in 2D). */
+  /** Если true — канва юнита сначала заливается базовым цветом пола, затем поверх
+   *  рисуются швы. Используется в 3D-сцене, где у меша пола нет другого источника цвета.
+   *  Если false (по умолчанию — F6.2.8), канва остаётся прозрачной, и швы накладываются
+   *  на то, что отрисовано под Rect'ом узора (пастельная заливка комнаты в 2D). */
   withBackground?: boolean;
 }
 

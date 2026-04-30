@@ -38,7 +38,7 @@ describe('tiles utilities', () => {
 
   describe('tilesArea', () => {
     it('converts tile count to m²', () => {
-      expect(tilesArea(16)).toBe(1.0); // 16 tiles = 1 m²
+      expect(tilesArea(16)).toBe(1.0); // 16 тайлов = 1 м²
       expect(tilesArea(0)).toBe(0);
       expect(tilesArea(160)).toBe(10.0);
     });

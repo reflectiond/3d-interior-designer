@@ -43,7 +43,7 @@ interface GltfProps extends BoxProps {
 function GltfModel({ url, widthM, heightM, depthM, rotation = 0, scaleY }: GltfProps) {
   const gltf = useGLTF(url);
   const cloned = useMemo(() => gltf.scene.clone(true), [gltf]);
-  // Auto-scale + auto-center: вписать bbox модели в (widthM, heightM, depthM)
+  // Авто-масштаб + авто-центрирование: вписать bbox модели в (widthM, heightM, depthM)
   // и сдвинуть так, чтобы она занимала ровно тот footprint, который ожидается
   // по `size_tiles` каталога. Kenney-модели могут иметь local origin в любом
   // углу bbox; без X/Z-центрирования они визуально смещены от позиции,
@@ -56,11 +56,11 @@ function GltfModel({ url, widthM, heightM, depthM, rotation = 0, scaleY }: GltfP
     const sx = widthM / Math.max(size.x, eps);
     const sy = scaleY ?? heightM / Math.max(size.y, eps);
     const sz = depthM / Math.max(size.z, eps);
-    // Parent group (см. ProjectScene) уже расположена на (cx, heightM/2, cz):
-    // её локальный (0,0,0) — это центр footprint'а на высоте heightM/2.
-    // Мы хотим, чтобы:
+    // Родительский group (см. ProjectScene) уже расположен на (cx, heightM/2, cz):
+    // её локальный (0,0,0) — центр footprint'а на высоте heightM/2.
+    // Хотим, чтобы:
     //   - центр bbox по X совпадал с локальным X=0 → ox = -bbox.center.x * sx
-    //   - низ bbox по Y был на полу (мир Y=0) → oy = -bbox.min.y*sy - heightM/2
+    //   - низ bbox по Y был на полу (world Y=0) → oy = -bbox.min.y*sy - heightM/2
     //   - центр bbox по Z совпадал с локальным Z=0 → oz = -bbox.center.z * sz
     const ox = -((bbox.min.x + bbox.max.x) / 2) * sx;
     const oy = -bbox.min.y * sy - heightM / 2;

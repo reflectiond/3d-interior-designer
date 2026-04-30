@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 async function gotoStage1WithLayout1(page: import('@playwright/test').Page) {
   await page.goto('/');
   await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
-  // Wait for the 2D canvas to mount
+  // Ждём, пока смонтируется 2D-канва
   await expect(page.locator('.konvajs-content canvas').first()).toBeVisible();
 }
 
@@ -21,12 +21,12 @@ async function readKonvaCanvas(page: import('@playwright/test').Page) {
 }
 
 /**
- * Counts pixels that look like the door arc / window frame ink. Both colors
- * are dark mid-greys with a slight cool tint:
+ * Считает пиксели, похожие на «чернила» дуги двери / рамы окна. Все три цвета —
+ * тёмно-средне-серые с лёгким холодным оттенком:
  *   PALETTE.openings.door_arc      = #888888
  *   PALETTE.openings.window_frame  = #3D5A6C
  *   PALETTE.openings.door_frame    = #6B5C45
- * We collect any near-#888 pixel, which the door arc dashes paint plenty of.
+ * Собираем любой пиксель около-#888, которых пунктир дуги двери даёт в избытке.
  */
 async function countDoorArcPixels(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
@@ -40,7 +40,7 @@ async function countDoorArcPixels(page: import('@playwright/test').Page) {
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
-      // Near-#888 (mid grey) — door arc / leaf
+      // Около-#888 (средне-серый) — дуга двери / створка
       if (r >= 110 && r <= 160 && Math.abs(r - g) < 14 && Math.abs(g - b) < 14) {
         count++;
       }
@@ -54,13 +54,13 @@ test.describe('Openings — windows and doors (F7)', () => {
     await gotoStage1WithLayout1(page);
     await page.waitForTimeout(150);
 
-    // The bare layout 1 has 4 windows (frame lines) and 5 doors (arcs + leaves)
-    // — door_arc dashes paint plenty of mid-grey pixels that no other layer
-    // produces in this scene. Without openings the count is well under 10.
+    // В голой layout 1 есть 4 окна (линии рам) и 5 дверей (дуги + створки) —
+    // пунктир door_arc даёт много средне-серых пикселей, которых не даёт ни один
+    // другой слой в этой сцене. Без проёмов счёт стабильно ниже 10.
     const arcPixels = await countDoorArcPixels(page);
     expect(arcPixels).toBeGreaterThan(40);
 
-    // Snapshot must be a valid data URL (canvas didn't crash)
+    // Снапшот должен быть валидным data URL (канва не упала)
     const snapshot = await readKonvaCanvas(page);
     expect(snapshot).not.toBeNull();
     expect(snapshot!.length).toBeGreaterThan(1000);
@@ -85,18 +85,18 @@ test.describe('Openings — windows and doors (F7)', () => {
     await page.getByText('Далее →').click();
     await expect(page.getByText('Стяжка пола')).toBeVisible();
 
-    // Tab to electrical
+    // Переходим на вкладку электрики
     await page.getByRole('button', { name: 'Электрика' }).click();
-    // Click on the canvas at a point that maps to inside-the-bedroom near the
-    // window — the BFS pathfinder must still reach it.
+    // Кликаем по точке канвы, которая мапится внутрь спальни рядом с окном —
+    // BFS-pathfinder должен до неё добраться.
     const canvas = page.locator('.konvajs-content canvas').first();
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
-    // bedroom_1 north wall has a window at x=3..7. Click inside bedroom_1 near it.
+    // На северной стене bedroom_1 есть окно на x=3..7. Кликаем внутри bedroom_1 рядом с ним.
     await page.mouse.click(box!.x + box!.width * 0.13, box!.y + box!.height * 0.05);
     await page.waitForTimeout(200);
 
-    // Canvas still renders (electrical add did not throw)
+    // Канва всё ещё рендерится (добавление электроточки не упало)
     const snapshot = await readKonvaCanvas(page);
     expect(snapshot).not.toBeNull();
   });

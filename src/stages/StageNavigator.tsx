@@ -13,7 +13,7 @@ export function StageNavigator() {
   const { currentStage, setStage, layoutId } = useProjectStore();
 
   const handleClick = (stage: Stage) => {
-    // Can go back freely, forward only if layout is selected
+    // Назад можно свободно, вперёд — только если выбрана планировка
     if (stage <= currentStage || (stage > currentStage && layoutId !== null)) {
       setStage(stage);
     }

@@ -14,14 +14,14 @@ test.describe('Ceiling type indicator (F6.3)', () => {
     await page.getByText('Далее →').click();
     await expect(page.getByText('Стяжка пола')).toBeVisible();
 
-    // Open ceiling tab
+    // Открываем вкладку «Потолок»
     await page.getByRole('button', { name: 'Потолок' }).click();
     await expect(page.getByRole('heading', { name: 'Потолок' })).toBeVisible();
 
     const stretchSnapshot = await readKonvaCanvas(page);
     expect(stretchSnapshot).not.toBeNull();
 
-    // Flip the first room to drywall
+    // Переключаем первую комнату на гипсокартон
     await page.getByRole('radio', { name: 'Гипсокартон' }).first().check();
     await page.waitForTimeout(200);
 

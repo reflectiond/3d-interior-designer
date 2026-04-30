@@ -3,8 +3,8 @@ import { validateEditor, invalidObjectKeys } from '../../src/editor/validation';
 import { editorReducer, initialEditorState, type EditorState } from '../../src/editor/state';
 
 function build(): EditorState {
-  // A minimum-valid layout: 1 bedroom 8×8 covering [0..8, 0..8] with a panel
-  // inside, no openings, on a 32×32 grid.
+  // Минимально валидная планировка: одна спальня 8×8, занимающая [0..8, 0..8],
+  // щит внутри, без проёмов, на сетке 32×32.
   let s = initialEditorState();
   s = editorReducer(s, {
     type: 'add_room',
@@ -65,7 +65,7 @@ describe('validateEditor — rooms', () => {
 
   it('flags a room that exceeds grid bounds', () => {
     let s = initialEditorState();
-    // gridWidth=32 by default; 30+8 = 38 → out of grid
+    // gridWidth=32 по умолчанию; 30+8 = 38 → за пределами сетки
     s = editorReducer(s, {
       type: 'add_room',
       rect: { x: 30, y: 0, width: 8, height: 8 },

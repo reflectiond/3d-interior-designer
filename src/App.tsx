@@ -14,7 +14,7 @@ function App() {
   const { currentStage, layoutId } = state;
   const restored = useRef(false);
 
-  // Restore from localStorage on first mount
+  // Восстанавливаем состояние из localStorage при первом монтировании
   useEffect(() => {
     if (!restored.current) {
       restored.current = true;
@@ -22,7 +22,7 @@ function App() {
     }
   }, []);
 
-  // Autosave to localStorage (debounced 500ms)
+  // Автосохранение в localStorage (debounce 500 мс)
   useEffect(() => {
     const timer = setTimeout(() => {
       saveToLocalStorage(state);

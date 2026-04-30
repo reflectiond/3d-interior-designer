@@ -5,9 +5,9 @@ import App from './App.tsx';
 import { isEditorAuthorized } from './editor/access';
 import { LayoutEditor } from './editor/LayoutEditor';
 
-// F11.1.1–F11.1.4: gate the editor behind `?editor=1&token=<TOKEN>`. When the
-// token is missing or wrong, the user sees the regular app — no UI hint that
-// the editor exists.
+// F11.1.1–F11.1.4: редактор открыт только по `?editor=1&token=<TOKEN>`. Если
+// токен отсутствует или неправильный, пользователь видит обычное приложение —
+// никаких UI-подсказок о существовании редактора.
 const editorOn = isEditorAuthorized(
   window.location.search,
   import.meta.env.VITE_LAYOUT_EDITOR_TOKEN,

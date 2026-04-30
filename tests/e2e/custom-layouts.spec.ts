@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 // F14 (v1.14.0) — пользовательские планировки: импорт JSON через UI на
 // Stage 1, persistence в localStorage, отображение наравне со встроенными,
-// удаление через крестик.
+// удаление крестиком.
 
 const layout1Path = resolve(process.cwd(), 'src/data/layouts/layout1.json');
 const layout1Json = readFileSync(layout1Path, 'utf8');

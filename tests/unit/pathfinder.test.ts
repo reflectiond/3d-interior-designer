@@ -23,7 +23,7 @@ describe('bfsPath', () => {
     const grid = makeGrid(5, 5);
     const path = bfsPath({ x: 0, y: 0 }, { x: 4, y: 0 }, grid);
     expect(path).not.toBeNull();
-    // Manhattan distance is 4, so path length is 5 (including both endpoints)
+    // Манхэттенское расстояние равно 4, поэтому длина пути — 5 (с обеими концевыми точками)
     expect(path!.length).toBe(5);
     expect(path![0]).toEqual({ x: 0, y: 0 });
     expect(path![4]).toEqual({ x: 4, y: 0 });
@@ -31,13 +31,13 @@ describe('bfsPath', () => {
 
   it('routes around obstacles', () => {
     const grid = makeGrid(5, 5);
-    // Block the direct path at y=0
+    // Блокируем прямой путь по y=0
     grid.delete('1,0');
     grid.delete('2,0');
     grid.delete('3,0');
     const path = bfsPath({ x: 0, y: 0 }, { x: 4, y: 0 }, grid);
     expect(path).not.toBeNull();
-    // Path must go around, so longer than 5
+    // Путь должен идти в обход, поэтому длиннее 5
     expect(path!.length).toBeGreaterThan(5);
     expect(path![0]).toEqual({ x: 0, y: 0 });
     expect(path![path!.length - 1]).toEqual({ x: 4, y: 0 });
@@ -45,7 +45,7 @@ describe('bfsPath', () => {
 
   it('returns null when target is unreachable', () => {
     const grid = makeGrid(5, 5);
-    // Create a wall separating left from right
+    // Создаём стену, отделяющую левую часть от правой
     for (let y = 0; y < 5; y++) {
       grid.delete(`2,${y}`);
     }
@@ -74,7 +74,7 @@ describe('bfsPath', () => {
     for (let i = 1; i < path!.length; i++) {
       const dx = Math.abs(path![i].x - path![i - 1].x);
       const dy = Math.abs(path![i].y - path![i - 1].y);
-      expect(dx + dy).toBe(1); // Exactly one step in one direction
+      expect(dx + dy).toBe(1); // Ровно один шаг в одном направлении
     }
   });
 });
@@ -100,7 +100,7 @@ describe('computeRoutes', () => {
     expect(routes).toHaveLength(1);
     expect(routes[0].pointId).toBe('p1');
     expect(routes[0].path.length).toBeGreaterThan(0);
-    expect(routes[0].path[0]).toEqual({ x: 5, y: 0 }); // starts at point
+    expect(routes[0].path[0]).toEqual({ x: 5, y: 0 }); // начинается в точке
   });
 
   it('routes to panel position directly', () => {
@@ -124,13 +124,13 @@ describe('computeRoutes', () => {
       ],
     });
     expect(routes).toHaveLength(2);
-    // Both should have valid paths
+    // Обе должны иметь валидные пути
     expect(routes[0].path.length).toBeGreaterThan(0);
     expect(routes[1].path.length).toBeGreaterThan(0);
   });
 
   it('shares wiring — farther point reuses tree from closer point', () => {
-    const grid = makeGrid(10, 1); // narrow corridor
+    const grid = makeGrid(10, 1); // узкий коридор
     const routes = computeRoutes({
       ceilingTiles: grid,
       panelPos: { x: 0, y: 0 },
@@ -139,17 +139,17 @@ describe('computeRoutes', () => {
         { id: 'p2', tile: { x: 5, y: 0 } },
       ],
     });
-    // p2 (closer to panel) is routed first: path from 5 to 0 = 6 tiles
-    // p1 (farther) then routes from 9 to the tree (which already has 0..5) = 5 tiles
+    // p2 (ближе к щиту) маршрутизируется первой: путь от 5 до 0 = 6 тайлов
+    // p1 (дальше) затем маршрутизируется от 9 к дереву (где уже есть 0..5) = 5 тайлов
     const p1Route = routes.find((r) => r.pointId === 'p1')!;
     const p2Route = routes.find((r) => r.pointId === 'p2')!;
     expect(p2Route.path.length).toBe(6); // 5 → 0
-    expect(p1Route.path.length).toBeLessThanOrEqual(5); // 9 → 5 (reuse tree)
+    expect(p1Route.path.length).toBeLessThanOrEqual(5); // 9 → 5 (переиспользование дерева)
   });
 
   it('handles point deletion and recompute', () => {
     const grid = makeGrid(10, 10);
-    // Route with 5 points
+    // Маршрут на 5 точек
     const allPoints = [
       { id: 'p1', tile: { x: 3, y: 0 } as TileCoord },
       { id: 'p2', tile: { x: 6, y: 0 } as TileCoord },
@@ -164,7 +164,7 @@ describe('computeRoutes', () => {
     });
     expect(routes1).toHaveLength(5);
 
-    // Remove point 3 and recompute
+    // Удаляем третью точку и пересчитываем
     const reducedPoints = allPoints.filter((p) => p.id !== 'p3');
     const routes2 = computeRoutes({
       ceilingTiles: grid,

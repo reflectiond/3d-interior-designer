@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
 
-// All sampling/HSV math runs inside page.evaluate so it sees the real DOM canvases.
-// We pass a small helper bundle as the second arg.
+// Вся математика семплинга/HSV выполняется внутри page.evaluate, чтобы видеть реальные DOM-канвы.
+// Маленький бандл-помощник передаём вторым аргументом.
 
-// Picks the dominant hue from a canvas: RGB → HSV per pixel, drop near-grayscale
-// (walls, ceiling, room labels) and very dark/very bright (text, highlights),
-// then count remaining pixels into 10° hue bins and return the bin centre with
-// the highest count. This isolates the floor-covering hue from background noise.
+// Берёт доминирующий hue с канвы: RGB → HSV по пикселям, отбрасываем около-серое
+// (стены, потолок, подписи комнат) и очень тёмное/очень светлое (текст, блики),
+// затем считаем оставшиеся пиксели в 10°-бины hue и возвращаем центр бина с
+// максимальным счётом. Так выделяется hue напольного покрытия из фонового шума.
 async function dominantFloorHue(
   page: import('@playwright/test').Page,
   selector: string,
@@ -31,7 +31,7 @@ async function dominantFloorHue(
       const b = data[i + 2];
       const max = Math.max(r, g, b);
       const min = Math.min(r, g, b);
-      // Skip near-grayscale (saturation guard) and extreme value pixels
+      // Пропускаем почти-серые (saturation guard) и пиксели с экстремальной яркостью
       if (max - min < 20) continue;
       if (max < 60 || max > 245) continue;
       const d = max - min;
@@ -76,34 +76,34 @@ test.describe('Finishing visualization — z-order & cross-view parity (F6.4)', 
     await page.goto('/');
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
 
-    // Stage 3: floor covering tab
+    // Stage 3: вкладка покрытия пола
     await page.locator('nav[aria-label="Этапы"] button').nth(2).click();
     await expect(page.getByText('Покрытие пола')).toBeVisible();
 
-    // Set every visible room to quartz_vinyl so the floor covers most of the
-    // sampling area on both views and the dominant color is the floor color.
+    // Ставим quartz_vinyl на все видимые комнаты, чтобы пол покрывал большую часть
+    // области семплинга на обоих представлениях и доминирующий цвет был цветом пола.
     const selects = await page.locator('select').all();
     for (const s of selects) {
       await s.selectOption('quartz_vinyl');
     }
     await page.waitForTimeout(250);
 
-    // Dominant hue from the 2D Konva canvas — pattern fills + room pastels are filtered
-    // out by saturation guard, leaving the warm-brown quartz-vinyl base.
+    // Доминирующий hue с 2D Konva-канвы — pattern-fill'ы и пастельные заливки комнат
+    // отфильтрованы saturation guard'ом, остаётся тёплый коричневый quartz-vinyl.
     const hue2D = await dominantFloorHue(page, '.konvajs-content canvas');
     expect(hue2D).not.toBeNull();
 
-    // Switch to 3D and wait for the first-frame signal (F7.6.1).
-    // Replaces the prior 800-ms blind wait — Firefox sometimes hadn't drawn
-    // a frame by then, leading to flaky `hue3D === null`.
+    // Переключаемся в 3D и ждём сигнала первого кадра (F7.6.1).
+    // Заменяет прежнее «слепое» ожидание 800 мс — Firefox иногда не успевал
+    // нарисовать кадр к этому моменту, и `hue3D === null` флакалось.
     await page.getByText('Посмотреть в 3D').click();
     await page.waitForSelector('[data-testid="view3d"][data-3d-ready="1"]');
 
     const hue3D = await dominantFloorHue(page, 'canvas[data-engine], canvas');
     expect(hue3D).not.toBeNull();
 
-    // Quartz-vinyl base #8B7355 is hue ≈ 33° (warm brown). Spec F6.2.7 allows
-    // ≤ 15° drift between Konva and Three.js renders.
+    // База quartz-vinyl #8B7355 — hue ≈ 33° (тёплый коричневый). Спека F6.2.7 допускает
+    // дрифт ≤ 15° между рендерами Konva и Three.js.
     expect(hueDelta(hue2D!, hue3D!)).toBeLessThanOrEqual(15);
   });
 
@@ -113,21 +113,21 @@ test.describe('Finishing visualization — z-order & cross-view parity (F6.4)', 
     await page.goto('/');
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
 
-    // Stage 2 — turn on heated floor for the first room
+    // Stage 2 — включаем тёплый пол для первой комнаты
     await page.getByText('Далее →').click();
     await expect(page.getByText('Стяжка пола')).toBeVisible();
     await page.getByRole('radio', { name: 'Тёплый пол' }).first().check();
-    // Switch ceiling type to drywall on the first room
+    // Переключаем тип потолка на гипсокартон в первой комнате
     await page.getByRole('button', { name: 'Потолок' }).click();
     await page.getByRole('radio', { name: 'Гипсокартон' }).first().check();
 
-    // Stage 3 — set tile covering for the first room
+    // Stage 3 — ставим плиточное покрытие в первой комнате
     await page.locator('nav[aria-label="Этапы"] button').nth(2).click();
     await expect(page.getByText('Покрытие пола')).toBeVisible();
     await page.locator('select').first().selectOption('tile');
     await page.waitForTimeout(200);
 
-    // Canvas still renders (non-empty) and the tile color is present
+    // Канва всё ещё рендерится (не пустая), и цвет плитки присутствует
     const tilePixels = await page.evaluate(() => {
       const canvas = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
       if (!canvas) return -1;
@@ -143,8 +143,8 @@ test.describe('Finishing visualization — z-order & cross-view parity (F6.4)', 
       }
       return count;
     });
-    // The room here is a smaller bedroom and ceiling icon + heat overlay shave off
-    // some tile-color pixels — 150+ is a stable threshold.
+    // Здесь комната — небольшая спальня, иконка потолка и оверлей тёплого пола
+    // съедают часть пикселей цвета плитки — 150+ это устойчивый порог.
     expect(tilePixels).toBeGreaterThan(150);
   });
 });

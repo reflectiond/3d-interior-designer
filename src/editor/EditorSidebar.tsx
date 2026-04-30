@@ -394,7 +394,7 @@ function SelectionEditor({ state, dispatch }: EditorSidebarProps) {
     );
   }
 
-  // door
+  // дверь
   const door = state.doors.find((d) => d.id === sel.id);
   if (!door) return null;
   return (

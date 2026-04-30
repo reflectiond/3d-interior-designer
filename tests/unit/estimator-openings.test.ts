@@ -30,16 +30,16 @@ function plaster(estimate: ReturnType<typeof computeEstimate>): {
 
 describe('computeEstimate — openings reduce plaster area (F7.2.4, F7.3.5)', () => {
   it('plaster area equals room perimeter × height when there are no openings', () => {
-    const rooms = [makeRoom('r1', 20, 16)]; // 5 × 4 m
+    const rooms = [makeRoom('r1', 20, 16)]; // 5 × 4 м
     const baseline = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog);
-    const expected = 2 * (5 + 4) * 2.7; // perimeter × height
+    const expected = 2 * (5 + 4) * 2.7; // периметр × высота
     expect(plaster(baseline).area).toBeCloseTo(expected, 1);
   });
 
   it('window on a wall subtracts its area from plaster total (F2.3.4 v1.9.0)', () => {
     const rooms = [makeRoom('r1', 20, 16)];
     const baseline = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog);
-    // Window placed on the south wall (y=0): 1.5 m wide × 1.5 m tall = 2.25 m²
+    // Окно на южной стене (y=0): 1.5 м шир. × 1.5 м выс. = 2.25 м²
     const win = WindowSchema.parse({ id: 'w', start: { x: 0, y: 0 }, end: { x: 6, y: 0 } });
     const withWindow = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog, [win]);
     expect(plaster(baseline).area - plaster(withWindow).area).toBeCloseTo(2.25, 1);
@@ -48,7 +48,7 @@ describe('computeEstimate — openings reduce plaster area (F7.2.4, F7.3.5)', ()
   it('door on a wall subtracts its area from plaster total', () => {
     const rooms = [makeRoom('r1', 20, 16)];
     const baseline = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog);
-    // 0.75 m wide × 2.1 m door — 1.575 m²
+    // дверь 0.75 м шир. × 2.1 м — 1.575 м²
     const door = DoorSchema.parse({ id: 'd', start: { x: 0, y: 0 }, end: { x: 3, y: 0 } });
     const withDoor = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog, [], [door]);
     expect(plaster(baseline).area - plaster(withDoor).area).toBeCloseTo(1.575, 1);
@@ -57,17 +57,17 @@ describe('computeEstimate — openings reduce plaster area (F7.2.4, F7.3.5)', ()
   it('opening that does not lie on any room wall is ignored (F2.3.4 v1.9.0)', () => {
     const rooms = [makeRoom('r1', 20, 16)];
     const baseline = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog);
-    // Opening floating inside the room (y=5 is not a wall) — must not affect plaster.
+    // Проём «плавает» внутри комнаты (y=5 — не стена) — на штукатурку влиять не должен.
     const stray = WindowSchema.parse({ id: 'w', start: { x: 0, y: 5 }, end: { x: 6, y: 5 } });
     const result = computeEstimate(rooms, {}, {}, {}, {}, [], [], emptyCatalog, [stray]);
     expect(plaster(result).area).toBeCloseTo(plaster(baseline).area);
   });
 
   it('per-room wall area never goes below zero (F2.3.4 v1.9.0 clamp)', () => {
-    const rooms = [makeRoom('r1', 20, 16)]; // bare wall area = 37.8 m²
-    // South wall is 5 m × 2.7 m = 13.5 m². Cover the whole wall with a height-3 opening
-    // (> wall height) → wallAreaForRoom should clamp to ≥ 0 and the plaster total
-    // stays non-negative.
+    const rooms = [makeRoom('r1', 20, 16)]; // голая площадь стен = 37.8 м²
+    // Южная стена 5 м × 2.7 м = 13.5 м². Покрываем всю стену проёмом высотой 3 м
+    // (> высоты стены) → wallAreaForRoom должна clamp'ить до ≥ 0, а итоговая
+    // штукатурка должна оставаться неотрицательной.
     const massive = WindowSchema.parse({
       id: 'w',
       start: { x: 0, y: 0 },

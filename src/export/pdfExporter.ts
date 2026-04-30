@@ -30,14 +30,16 @@ function fitImage(naturalAspect: number, maxWidth: number, maxHeight: number) {
 }
 
 function getDataUrlAspect(dataUrl: string): number {
-  // jsPDF embeds the image at exact pixel ratio when w*h are specified.
-  // We do not need actual decoded pixel dims here — caller supplies a square-ish snapshot
-  // via Konva.Stage.toDataURL or R3F gl.domElement.toDataURL. Default to canvas-typical 4:3.
-  // For deterministic sizing we read width/height from base64 PNG header (8-byte signature + IHDR).
+  // jsPDF встраивает изображение с точным пиксельным соотношением, когда заданы w*h.
+  // Реальные декодированные размеры здесь не нужны — caller отдаёт примерно квадратный
+  // снапшот через Konva.Stage.toDataURL или R3F gl.domElement.toDataURL. По умолчанию
+  // используем canvas-типичные 4:3.
+  // Для детерминированных размеров читаем width/height прямо из заголовка base64 PNG
+  // (8-байтная сигнатура + IHDR).
   if (!dataUrl.startsWith('data:image/png;base64,')) return 4 / 3;
   const b64 = dataUrl.slice('data:image/png;base64,'.length, 'data:image/png;base64,'.length + 64);
   const bin = atob(b64);
-  // PNG IHDR width is at offset 16..19, height at 20..23 (big-endian uint32)
+  // PNG IHDR width лежит по смещению 16..19, height — 20..23 (big-endian uint32)
   const u = (i: number) =>
     (bin.charCodeAt(i) << 24) |
     (bin.charCodeAt(i + 1) << 16) |
@@ -78,22 +80,22 @@ export async function exportPDF(
   const doc = new jsPDF('l', 'mm', 'a4');
   await registerPTSans(doc);
 
-  // Page 1: 2D Plan
+  // Страница 1: план 2D
   drawImagePage(doc, '3D Interior Designer — План 2D', snapshot2D, '(2D-схема недоступна)');
 
-  // Page 2: 3D View
+  // Страница 2: вид 3D
   doc.addPage();
   drawImagePage(doc, '3D Interior Designer — Вид 3D', snapshot3D, '(3D-сцена недоступна)');
 
-  // Page 3: Estimate
+  // Страница 3: смета
   doc.addPage();
   doc.setFont(PT_SANS_FAMILY, 'bold');
   doc.setFontSize(HEADER_FONT_SIZE);
   doc.text('3D Interior Designer — Смета', PAGE_MARGIN_MM, HEADER_BASELINE_MM);
 
-  // F9.2 — render the estimate grouped by work type.
-  // F9.2.1: groups in bold, detail rows in regular weight indented to the right.
-  // F9.2.2: groups are expanded by default (we always print detail rows).
+  // F9.2 — рендерим смету, сгруппированную по типу работ.
+  // F9.2.1: группы — жирным, строки-детали — обычным начертанием с отступом вправо.
+  // F9.2.2: группы развёрнуты по умолчанию (всегда печатаем строки-детали).
   const groups = groupEstimateByWorkType(estimate.items);
   const categories = [
     { key: 'rough' as const, title: 'Черновая отделка' },
@@ -102,7 +104,7 @@ export async function exportPDF(
   ];
   const lineHeight = 6;
   const detailLineHeight = 5;
-  const detailIndentMm = 6; // ~12 pt at 72 dpi
+  const detailIndentMm = 6; // ~12 pt при 72 dpi
   const colQty = PAGE_MARGIN_MM + 100;
   const colPrice = PAGE_MARGIN_MM + 140;
 
@@ -128,8 +130,8 @@ export async function exportPDF(
     );
     y += lineHeight;
 
-    // Skip detail when there's only one underlying line — the group row
-    // already says everything.
+    // Если внутри группы всего одна строка — детали не печатаем,
+    // строка-группа уже всё описывает.
     if (group.items.length <= 1) return;
 
     doc.setFontSize(9);
@@ -160,7 +162,7 @@ export async function exportPDF(
     y += 4;
   }
 
-  // Total
+  // Итог
   y += 4;
   doc.setFontSize(12);
   doc.setFont(PT_SANS_FAMILY, 'bold');

@@ -26,7 +26,7 @@ export function Stage2RoughFinish() {
   const [pointType, setPointType] = useState<'socket' | 'switch'>('socket');
   const { setStage } = useProjectStore();
 
-  // Auto-recompute BFS routes when electrical points change
+  // Автоматически пересчитываем BFS-маршруты при изменении электроточек
   useElectricalRoutes();
 
   return (

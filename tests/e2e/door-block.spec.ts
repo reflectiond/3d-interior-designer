@@ -37,21 +37,21 @@ test.describe('Door swing area (F7.3.4 → relaxed in v1.13.0 / F8.7)', () => {
   test('F8.7 (v1.13.0): hovering a chair over a door swing tile is now VALID', async ({ page }) => {
     await gotoStage3Furniture(page);
 
-    // Baseline red count (electrical panel + ambient) BEFORE picking a chair.
+    // Базовый счёт красных пикселей (электрощит + фон) ДО выбора стула.
     const baselineRed = await countTintedPixels(page, { r: 229, g: 57, b: 53 }, 50);
 
-    // Pick a chair (free placement)
+    // Берём стул (свободное размещение)
     await page.getByRole('button', { name: /Стул/ }).first().click();
 
     const canvas = page.locator('.konvajs-content canvas').first();
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
 
-    // Layout 1 has door_bedroom1_corridor at x=12, y=10..13. Pre-1.13 the
-    // buffer at (11, 10..12) made placement invalid → red highlight added a
-    // big rect of #E53935 pixels. After F8.7 (v1.13.0) door buffer no longer
-    // blocks → hovering this tile shows the GREEN valid highlight, no extra
-    // red over the baseline panel pixels.
+    // В Layout 1 есть door_bedroom1_corridor на x=12, y=10..13. До 1.13
+    // буфер в (11, 10..12) делал размещение invalid → красная подсветка
+    // добавляла большой прямоугольник пикселей #E53935. После F8.7 (v1.13.0)
+    // буфер у двери больше не блокирует → hover по этому тайлу показывает
+    // ЗЕЛЁНУЮ valid-подсветку, дополнительного красного поверх baseline нет.
     const stageW = 1080;
     const stageH = 960;
     const stageCx = 11.5 * 30;
@@ -62,8 +62,8 @@ test.describe('Door swing area (F7.3.4 → relaxed in v1.13.0 / F8.7)', () => {
     await page.waitForTimeout(150);
 
     const afterRed = await countTintedPixels(page, { r: 229, g: 57, b: 53 }, 50);
-    // No extra red pixels added by hover → the door buffer no longer blocks.
-    // Allow a tiny anti-aliasing margin on top of the baseline.
+    // Никаких дополнительных красных пикселей от hover'а → буфер у двери больше
+    // не блокирует. Допускаем небольшой anti-aliasing-зазор поверх baseline'а.
     expect(afterRed - baselineRed).toBeLessThan(50);
   });
 });

@@ -50,8 +50,8 @@ function drawEstimate(ctx: CanvasRenderingContext2D, estimate: Estimate) {
   ctx.font = 'bold 28px Arial, sans-serif';
   ctx.fillText('Смета', PADDING, startY);
 
-  // F9.2.3 — same grouping as PDF: top level work-type rows in bold, expanded
-  // detail rows in regular weight indented to the right.
+  // F9.2.3 — та же группировка, что и в PDF: верхние строки work-type — жирным,
+  // развёрнутые детали — обычным начертанием с отступом вправо.
   const groups = groupEstimateByWorkType(estimate.items);
   const groupLineHeight = 24;
   const detailLineHeight = 20;

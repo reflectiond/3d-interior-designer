@@ -6,7 +6,7 @@ export function sanitizeFilename(raw: string, fallback = 'untitled'): string {
 }
 
 export function timestampStamp(date: Date = new Date()): string {
-  // ISO without separators, second precision: e.g. 20260427120530
+  // ISO без разделителей, точность до секунды: например, 20260427120530
   return date
     .toISOString()
     .replace(/[^0-9]/g, '')

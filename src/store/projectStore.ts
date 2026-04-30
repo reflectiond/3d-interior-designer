@@ -17,23 +17,23 @@ import { layoutToRooms } from '../domain/geometry/tiles';
 export type Stage = 1 | 2 | 3 | 4;
 
 export interface ProjectState {
-  // Meta
+  // Метаданные
   layoutId: 1 | 2 | 3 | null;
   currentStage: Stage;
 
-  // From layout
+  // Из планировки
   layout: Layout | null;
   rooms: Room[];
   walls: WallSegment[];
   electricalPanel: TileCoord | null;
 
-  // Stage 2: rough finish
+  // Stage 2: черновая отделка
   flooring: Record<string, FloorType>;
   ceiling: Record<string, CeilingType>;
   electricalPoints: ElectricalPoint[];
   electricalRoutes: ElectricalRoute[];
 
-  // Stage 3: fine finish
+  // Stage 3: чистовая отделка
   floorCovering: Record<string, FloorCovering>;
   wallCovering: Record<string, WallCovering>;
   furniture: FurnitureInstance[];
@@ -91,7 +91,7 @@ export const useProjectStore = create<ProjectState>()((set) => ({
       electricalPanel: layout.electricalPanel,
       flooring,
       ceiling,
-      // Reset dependent stages
+      // Сбрасываем зависимые этапы
       electricalPoints: [],
       electricalRoutes: [],
       floorCovering: {},

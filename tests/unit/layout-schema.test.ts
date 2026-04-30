@@ -31,12 +31,23 @@ describe('LayoutSchema validation', () => {
     expect(() => LayoutSchema.parse(bad)).toThrow();
   });
 
-  it('rejects room with width < 4 tiles', () => {
+  it('rejects degenerate room with width < 2 tiles', () => {
+    // F11.3 (v1.14.0): per-side минимум опущен до 2 (из 4), чтобы не
+    // блокировать 4×16 и подобные узкие, но валидные по площади (4 м²)
+    // комнаты. width=1 остаётся отвергнутым как вырожденный случай.
     const bad = {
+      ...layout1,
+      rooms: [{ ...layout1.rooms[0], width: 1 }],
+    };
+    expect(() => LayoutSchema.parse(bad)).toThrow();
+  });
+
+  it('accepts narrow but non-degenerate room (width=2)', () => {
+    const ok = {
       ...layout1,
       rooms: [{ ...layout1.rooms[0], width: 2 }],
     };
-    expect(() => LayoutSchema.parse(bad)).toThrow();
+    expect(() => LayoutSchema.parse(ok)).not.toThrow();
   });
 
   it('rejects missing electricalPanel', () => {

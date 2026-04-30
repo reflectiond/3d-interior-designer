@@ -64,7 +64,7 @@ export function LayoutCard({ layout, isSelected, onSelect, isCustom, onDelete }:
   );
 }
 
-/** Tiny SVG preview of the layout */
+/** Маленькое SVG-превью планировки. */
 function MiniMap({ layout }: { layout: Layout }) {
   const { gridWidth, gridHeight } = layout;
   const scale = 4;

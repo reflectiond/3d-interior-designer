@@ -1,9 +1,9 @@
 /**
- * JSON export from the editor (F11.2.5).
+ * JSON-экспорт из редактора (F11.2.5).
  *
- * Serializes editor state into a candidate `Layout` shape, validates it
- * with the same `LayoutSchema` the main app uses, and on success returns
- * a pretty-printed JSON string ready for download.
+ * Сериализует состояние редактора в кандидатный `Layout`, валидирует его
+ * той же `LayoutSchema`, что использует основное приложение, и при успехе
+ * возвращает форматированную JSON-строку, готовую к скачиванию.
  */
 
 import { LayoutSchema, type Layout } from '../domain/geometry/types';
@@ -63,8 +63,8 @@ export function exportLayout(state: EditorState): ExportResult {
 }
 
 /**
- * Browser-side: trigger the file download. Kept separate from `exportLayout`
- * so the pure logic is testable without DOM mocks.
+ * Браузерная часть: инициирует скачивание файла. Вынесено отдельно от `exportLayout`,
+ * чтобы чистая логика тестировалась без DOM-моков.
  */
 export function downloadJsonFile(json: string, filename: string): void {
   const blob = new Blob([json], { type: 'application/json' });
@@ -75,6 +75,6 @@ export function downloadJsonFile(json: string, filename: string): void {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  // Revoke after a tick so the click has time to dispatch.
+  // Отзываем URL на следующем tick, чтобы click успел отработать.
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }

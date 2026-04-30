@@ -40,9 +40,9 @@ function CategorySection({ title, groups, expanded, onToggle }: CategorySectionP
         {groups.map((g) => {
           const key = `${g.category}:${g.workType}`;
           const isOpen = !!expanded[key];
-          // F9.1.7 (v1.12.0): groups with a single line have nothing to expand
-          // — render a neutral bullet instead of the chevron, and disable the
-          // toggle so the row doesn't pretend to be interactive.
+          // F9.1.7 (v1.12.0): группам с единственной строкой нечего разворачивать
+          // — рисуем нейтральный bullet вместо стрелки и отключаем toggle, чтобы
+          // строка не притворялась интерактивной.
           const expandable = g.items.length > 1;
           return (
             <li key={key} className={styles.estimateItem}>

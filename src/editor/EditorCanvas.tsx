@@ -60,11 +60,11 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
 
   const [roomAnchor, setRoomAnchor] = useState<Anchor | null>(null);
   const [pointerTile, setPointerTile] = useState<TileCoord | null>(null);
-  // F11.2.9 (v1.10.0) — anchor is paired with the tool that started it. If the
-  // user switches from window → door mid-placement, the anchor is treated as
-  // stale rather than re-used for the new tool.
-  // F11.2.8 (v1.10.0) — anchor also remembers which wall it snapped to, so
-  // the second click is constrained to the same wall axis/line.
+  // F11.2.9 (v1.10.0) — anchor связан с инструментом, который его создал. Если
+  // пользователь в процессе размещения переключился window → door, anchor считается
+  // устаревшим и не переиспользуется для нового инструмента.
+  // F11.2.8 (v1.10.0) — anchor также помнит, к какой стене он привязался, чтобы
+  // второй клик был ограничен той же осью/линией стены.
   const [openingAnchor, setOpeningAnchor] = useState<{
     tile: TileCoord;
     tool: 'window' | 'door';
@@ -78,7 +78,7 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
       const tile = tileFromStage(stage);
       if (!tile) return;
 
-      // Shift+click is always "delete topmost at this tile" — works in any tool.
+      // Shift+клик всегда «удалить верхний объект под тайлом» — работает в любом инструменте.
       if (e.evt.shiftKey) {
         dispatch({ type: 'delete_at', tile });
         return;
@@ -99,14 +99,15 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
           return;
         case 'window':
         case 'door': {
-          // First click sets anchor, second click commits. Anchor is keyed by
-          // tool so a mid-placement switch (window → door) resets cleanly.
+          // Первый клик ставит anchor, второй коммитит. Anchor привязан к
+          // инструменту, чтобы переключение window → door в середине размещения
+          // корректно сбрасывалось.
           const sameToolAnchor =
             openingAnchor && openingAnchor.tool === state.tool ? openingAnchor : null;
           if (sameToolAnchor === null) {
-            // F11.2.8: if the click lands near a room wall, snap to it and
-            // remember the wall so the second click is constrained to the
-            // same axis. With no rooms yet, fall back to the raw tile.
+            // F11.2.8: если клик попал рядом со стеной комнаты — привязываемся к ней
+            // и запоминаем стену, чтобы второй клик был ограничен той же осью.
+            // Если комнат пока нет — откатываемся на сырой тайл.
             const snap = findNearestWall(tile, state.rooms);
             const anchorTile = snap ? snap.snapped : tile;
             setOpeningAnchor({
@@ -116,8 +117,8 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
             });
             setPointerTile(tile);
           } else {
-            // Second click: project onto the same wall when one was captured;
-            // otherwise free-axis snap (legacy behaviour for empty layouts).
+            // Второй клик: проецируем на ту же стену, если она была захвачена;
+            // иначе free-axis snap (легаси-поведение для пустых планировок).
             const snapped = sameToolAnchor.wall
               ? projectOntoWall(tile, sameToolAnchor.wall)
               : snapAxisAligned(sameToolAnchor.tile, tile);
@@ -200,7 +201,7 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
     return () => window.removeEventListener('mouseup', onUp);
   }, [state.tool, roomAnchor, state.rooms, dispatch]);
 
-  // Cursor styling depends on the active tool.
+  // Стиль курсора зависит от активного инструмента.
   const stageStyle = useMemo<React.CSSProperties>(() => {
     const map: Record<EditorTool, string> = {
       select: 'default',
@@ -230,7 +231,7 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
           onMouseLeave={handleMouseLeave}
         >
           <Layer listening={false}>
-            {/* Grid */}
+            {/* Сетка */}
             {Array.from({ length: state.gridWidth + 1 }, (_, i) => (
               <Line
                 key={`gv-${i}`}
@@ -250,7 +251,7 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
           </Layer>
 
           <Layer>
-            {/* Rooms */}
+            {/* Комнаты */}
             {state.rooms.map((room) => {
               const isSelected = state.selection?.kind === 'room' && state.selection.id === room.id;
               const isInvalid = invalidKeys.has(`room:${room.id}`);
@@ -284,7 +285,7 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
               );
             })}
 
-            {/* Windows */}
+            {/* Окна */}
             {state.windows.map((win) => {
               const x1 = win.start.x * SCALE;
               const y1 = win.start.y * SCALE;
@@ -320,13 +321,13 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
               );
             })}
 
-            {/* Doors */}
+            {/* Двери */}
             {state.doors.map((door) => {
               const hinge = door.hinge === 'start' ? door.start : door.end;
               const other = door.hinge === 'start' ? door.end : door.start;
               const dx = other.x - hinge.x;
               const dy = other.y - hinge.y;
-              // perpendicular CCW; swing_side='right' flips
+              // перпендикуляр CCW; swing_side='right' переворачивает направление
               const sign = door.swing_side === 'left' ? 1 : -1;
               const px = -dy * sign;
               const py = dx * sign;
@@ -365,7 +366,7 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
               );
             })}
 
-            {/* Electrical panel */}
+            {/* Электрощит */}
             {state.electricalPanel && (
               <Rect
                 x={state.electricalPanel.x * SCALE + SCALE * 0.15}
@@ -385,7 +386,7 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
             )}
           </Layer>
 
-          {/* Hover preview */}
+          {/* Hover-превью */}
           <Layer listening={false}>
             {state.tool === 'room' &&
               roomAnchor &&
@@ -431,8 +432,8 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
               pointerTile && (
                 <Line
                   points={(() => {
-                    // Preview uses the same snap rule as commit (F11.2.8) so the
-                    // dashed line tracks the wall the anchor locked onto.
+                    // Превью использует то же правило snap'а, что и commit (F11.2.8),
+                    // чтобы пунктирная линия шла по стене, к которой привязан anchor.
                     const snapped = openingAnchor.wall
                       ? projectOntoWall(pointerTile, openingAnchor.wall)
                       : snapAxisAligned(openingAnchor.tile, pointerTile);
@@ -506,10 +507,10 @@ export function EditorCanvas({ state, dispatch }: EditorCanvasProps) {
 }
 
 /**
- * F13.2.3 (v1.11.0) — floating dimension label drawn next to the cursor.
- * Width is fixed (140 px) so the layout is stable; the Konva Text inside
- * auto-wraps if the label runs long. Anchor is offset 16 px right and
- * 12 px below the pointer tile so it doesn't sit underneath the cursor.
+ * F13.2.3 (v1.11.0) — плавающая подпись с размерами рядом с курсором.
+ * Ширина фиксирована (140 px), чтобы layout был стабилен; Konva Text внутри
+ * автоматически переносит длинные строки. Anchor сдвинут на 16 px вправо и
+ * 12 px вниз от тайла указателя, чтобы не лежать под курсором.
  *
  * F11.3.3 (v1.14.0) — опциональная вторая строка `warning` рисуется
  * красным под основной (rationale: drag-create комнаты при <4 м² или

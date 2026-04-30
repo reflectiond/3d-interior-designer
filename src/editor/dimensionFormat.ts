@@ -1,29 +1,29 @@
 import { TILE_SIZE } from '../domain/geometry/tiles';
 
 /**
- * F13.2.4 (v1.11.0) — formatting helpers for the live-HUD shown next to the
- * cursor while drawing in the layout editor.
+ * F13.2.4 (v1.11.0) — хелперы форматирования для live-HUD, отображаемого рядом с
+ * курсором при рисовании в редакторе планировок.
  *
- * Tile-coordinates (tx, ty, w, h) come from the editor's drag/click flow.
- * Conversion to metres uses {@link TILE_SIZE} = 0.25.
+ * Координаты тайлов (tx, ty, w, h) поступают из drag/click-флоу редактора.
+ * Перевод в метры идёт через {@link TILE_SIZE} = 0.25.
  */
 
-/** Format a single tile-length as "N.N м" (1 decimal place). */
+/** Форматирует длину в тайлах как «N.N м» (один знак после запятой). */
 export function formatLength(tiles: number): string {
   const m = tiles * TILE_SIZE;
   return `${m.toFixed(1)} м`;
 }
 
-/** Format an area as "A.A м²" (1 decimal place). */
+/** Форматирует площадь как «A.A м²» (один знак после запятой). */
 export function formatArea(tilesArea: number): string {
   const m2 = tilesArea * TILE_SIZE * TILE_SIZE;
   return `${m2.toFixed(1)} м²`;
 }
 
 /**
- * Format a "W × H = A м²" label for a rectangular footprint, e.g. while
- * drag-creating a room. `widthTiles` and `heightTiles` are inclusive
- * dimensions in tiles (`Math.abs(end.x - start.x) + 1` etc.).
+ * Форматирует подпись «W × H = A м²» для прямоугольного контура, например при
+ * drag-создании комнаты. `widthTiles` и `heightTiles` — включительные размеры
+ * в тайлах (`Math.abs(end.x - start.x) + 1` и т. п.).
  */
 export function formatRectDimensions(widthTiles: number, heightTiles: number): string {
   const w = (widthTiles * TILE_SIZE).toFixed(1);
@@ -32,7 +32,7 @@ export function formatRectDimensions(widthTiles: number, heightTiles: number): s
   return `${w} × ${h} м = ${area} м²`;
 }
 
-/** Format an opening segment length: "L = N.N м". */
+/** Форматирует длину сегмента проёма: «L = N.N м». */
 export function formatOpeningLength(tiles: number): string {
   return `L = ${formatLength(tiles)}`;
 }

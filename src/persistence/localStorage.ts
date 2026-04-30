@@ -29,7 +29,7 @@ export function saveToLocalStorage(state: ProjectState) {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {
-    // Silently fail — SEC-4: localStorage may be unavailable or full
+    // Молча игнорируем — SEC-4: localStorage может быть недоступен или переполнен
   }
 }
 
@@ -38,7 +38,7 @@ export function restoreFromLocalStorage(): boolean {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return false;
 
-    // SEC-4: validate JSON structure before using
+    // SEC-4: проверяем структуру JSON до использования
     const data = JSON.parse(raw);
     if (
       typeof data !== 'object' ||
@@ -82,11 +82,11 @@ export function restoreFromLocalStorage(): boolean {
 
     return true;
   } catch {
-    // SEC-4: corrupted data — start fresh, don't crash
+    // SEC-4: данные повреждены — начинаем с чистого состояния, не падаем
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {
-      // localStorage completely broken — ignore
+      // localStorage окончательно сломан — игнорируем
     }
     return false;
   }

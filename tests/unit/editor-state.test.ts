@@ -92,8 +92,9 @@ describe('editorReducer — F11.2.9 single-shot tool (v1.10.0)', () => {
       rect: { x: 0, y: 0, width: 6, height: 6 },
       roomType: 'bedroom',
     });
-    // After add_room tool is `select` (single-shot). Pretend the user picks
-    // `room` again — updating a room field must not flip the tool back.
+    // После add_room инструмент уже `select` (single-shot). Представим, что
+    // пользователь снова выбрал `room` — обновление поля комнаты не должно
+    // переключать инструмент.
     s = editorReducer(s, { type: 'set_tool', tool: 'room' });
     s = editorReducer(s, { type: 'update_room', id: s.rooms[0].id, patch: { name: 'X' } });
     expect(s.tool).toBe('room');
@@ -144,14 +145,14 @@ describe('editorReducer — rooms', () => {
     });
     s = editorReducer(s, { type: 'update_room', id: 'bedroom_1', patch: { type: 'kitchen' } });
     expect(s.rooms[0].type).toBe('kitchen');
-    // F11.2.7: id follows the new type so the `<type>_<n>` invariant holds.
+    // F11.2.7: id следует за новым типом, инвариант `<type>_<n>` сохраняется.
     expect(s.rooms[0].id).toBe('kitchen_1');
-    // Default name auto-renames when the user hadn't customised it.
+    // Имя по умолчанию авто-переименовывается, если пользователь не менял его вручную.
     expect(s.rooms[0].name).toBe('Кухня 1');
   });
 
   it('update_room — id pickup deduplicates against existing rooms (F11.2.7)', () => {
-    // Two existing kitchens leaves _3 as the first free index.
+    // Две существующие кухни оставляют _3 первым свободным индексом.
     let s = editorReducer(fresh(), {
       type: 'add_room',
       rect: { x: 0, y: 0, width: 6, height: 6 },
@@ -167,11 +168,11 @@ describe('editorReducer — rooms', () => {
       rect: { x: 0, y: 6, width: 6, height: 6 },
       roomType: 'bedroom',
     });
-    // Counters are shared across types, so the third room is `bedroom_3`.
+    // Счётчики общие для всех типов, поэтому третья комната — `bedroom_3`.
     const bedroomId = s.rooms[2].id;
     expect(bedroomId).toBe('bedroom_3');
     s = editorReducer(s, { type: 'update_room', id: bedroomId, patch: { type: 'kitchen' } });
-    // Three kitchens, all with unique ids — _3 is the next free slot.
+    // Три кухни, все с уникальными id — _3 — следующий свободный слот.
     const kitchens = s.rooms.filter((r) => r.type === 'kitchen');
     expect(kitchens.map((r) => r.id).sort()).toEqual(['kitchen_1', 'kitchen_2', 'kitchen_3']);
   });
@@ -304,8 +305,8 @@ describe('editorReducer — selection + delete', () => {
       roomType: 'bedroom',
     });
     s = editorReducer(s, { type: 'set_panel', coord: { x: 4, y: 4 } });
-    // Selection is on the panel after set_panel, but delete_at on a non-panel
-    // tile should remove the room without disturbing the panel.
+    // После set_panel selection стоит на щите, но delete_at по тайлу, не
+    // принадлежащему щиту, должен удалить комнату, не трогая щит.
     s = editorReducer(s, { type: 'delete_at', tile: { x: 6, y: 6 } });
     expect(s.rooms).toEqual([]);
     expect(s.electricalPanel).toEqual({ x: 4, y: 4 });
@@ -343,7 +344,7 @@ describe('findObjectAt — picking priority', () => {
       rect: { x: 0, y: 0, width: 10, height: 8 },
       roomType: 'bedroom',
     });
-    // x in [0,10), y in [0,8) — so (10,5) is just outside.
+    // x в [0,10), y в [0,8) — поэтому (10,5) уже снаружи.
     expect(findObjectAt(s, { x: 10, y: 5 })).toBeNull();
   });
 

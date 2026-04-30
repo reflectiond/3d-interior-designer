@@ -14,9 +14,9 @@ async function countHeatedPixels(page: import('@playwright/test').Page) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return -1;
     const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    // PALETTE.heated_floor.icon = #E64A19 → rgb(230, 74, 25). At opacity 0.4 over a
-    // pastel room fill, the resulting pixels are warm red-orange. Count pixels that
-    // sit in that hue band: red dominant, green and blue distinctly low.
+    // PALETTE.heated_floor.icon = #E64A19 → rgb(230, 74, 25). При opacity 0.4 поверх
+    // пастельной заливки получаются тёплые красно-оранжевые пиксели. Считаем пиксели
+    // в этом hue-диапазоне: красный доминирует, зелёный и синий заметно ниже.
     let count = 0;
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
@@ -38,24 +38,24 @@ test.describe('Heated floor (F6.1)', () => {
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
     await page.getByText('Далее →').click();
 
-    // Wait for Stage 2 to be ready
+    // Ждём готовности Stage 2
     await expect(page.getByText('Стяжка пола')).toBeVisible();
 
     const before = await readKonvaCanvas(page);
     expect(before).not.toBeNull();
 
-    // Activate heated floor for the first room
+    // Включаем тёплый пол для первой комнаты
     const heatedRadios = page.getByRole('radio', { name: 'Тёплый пол' });
     await heatedRadios.first().check();
 
-    // Allow Konva re-render
+    // Даём Konva re-render
     await page.waitForTimeout(200);
 
     const after = await readKonvaCanvas(page);
     expect(after).not.toBeNull();
     expect(after).not.toBe(before);
 
-    // Heat icons in the affected room should produce a non-trivial number of warm pixels
+    // Иконки тепла в активированной комнате должны дать заметное число тёплых пикселей
     const heatedPixelCount = await countHeatedPixels(page);
     expect(heatedPixelCount).toBeGreaterThan(20);
   });

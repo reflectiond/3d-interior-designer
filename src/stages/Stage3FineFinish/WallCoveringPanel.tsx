@@ -3,8 +3,8 @@ import { PALETTE } from '../../theme/palette';
 import type { WallCovering } from '../../domain/geometry/types';
 import styles from '../Stage2RoughFinish/SidePanel.module.css';
 
-// F3.2.5 (v1.9.0): «Без покрытия» first; default value is `none` until the
-// user picks paint or wallpaper.
+// F3.2.5 (v1.9.0): «Без покрытия» первым; значение по умолчанию `none`,
+// пока пользователь не выберет краску или обои.
 const OPTIONS: { value: WallCovering; label: string }[] = [
   { value: 'none', label: 'Без покрытия' },
   { value: 'paint', label: 'Покраска' },
@@ -12,7 +12,7 @@ const OPTIONS: { value: WallCovering; label: string }[] = [
 ];
 
 export function WallCoveringPanel() {
-  // F3.2.6 / F12.1 (v1.9.0): corridor and wardrobe pick a wall covering alongside the rest.
+  // F3.2.6 / F12.1 (v1.9.0): коридор и гардеробная выбирают покрытие стен наравне с остальными.
   const { rooms, wallCovering, setWallCovering } = useProjectStore();
   const relevantRooms = rooms;
 

@@ -7,8 +7,8 @@ import layout1 from '../../src/data/layouts/layout1.json';
 import layout2 from '../../src/data/layouts/layout2.json';
 import layout3 from '../../src/data/layouts/layout3.json';
 
-// F12.2 / F12.4 (v1.9.0) — corridor and wardrobe must show up in the
-// estimator output now that they're no longer filtered from the panels.
+// F12.2 / F12.4 (v1.9.0) — коридор и гардеробная теперь должны попадать в
+// вывод сметы, поскольку их перестали фильтровать в панелях.
 
 const TILE_AREA_M2 = 0.0625;
 

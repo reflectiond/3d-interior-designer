@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 
-// E2E-21 (v1.9.0, F3.1.3 + F3.2.5) — «Без покрытия» is the default for both
-// floor and wall covering. With nothing touched on Stage 3, the Stage 4
-// estimate must not list any fine-finish floor or wall items.
+// E2E-21 (v1.9.0, F3.1.3 + F3.2.5) — «Без покрытия» — значение по умолчанию
+// и для пола, и для стен. Если на Stage 3 ничего не трогать, в смете на Stage 4
+// не должно быть ни одной строки чистовой отделки пола или стен.
 
 async function gotoStage4(page: Page) {
   await page.goto('/');
@@ -15,36 +15,36 @@ test.describe('Optional fine finish — «Без покрытия» по умо�
   test('E2E-21: untouched Stage 3 → estimate has no floor/wall covering rows', async ({ page }) => {
     await gotoStage4(page);
 
-    // The «Чистовая отделка» section should be absent OR exist only for furniture-type
-    // groups (we never enter Stage 3 → no furniture either, so the section should not
-    // render at all).
+    // Раздел «Чистовая отделка» должен отсутствовать ИЛИ существовать только для
+    // furniture-групп (мы вообще не заходим на Stage 3 → мебели тоже нет, так что
+    // раздел не должен рендериться).
     await expect(page.getByRole('heading', { name: 'Чистовая отделка' })).toHaveCount(0);
 
-    // Stage 4 lists each work-type group; with all rooms on `none` no
-    // floor/wall covering group should appear at all.
+    // Stage 4 перечисляет группы по типу работ; со всеми комнатами на `none`
+    // ни одной группы покрытий пола или стен появиться не должно.
     const fineLabels = ['Линолеум', 'Ламинат', 'Плитка', 'Кварцвинил', 'Покраска', 'Обои'];
     for (const label of fineLabels) {
       const occurences = await page.getByText(label, { exact: false }).count();
       expect(occurences, `unexpected fine-finish entry for ${label}`).toBe(0);
     }
 
-    // Rough finish must still appear (it's mandatory)
+    // Черновая отделка должна остаться (она обязательная)
     await expect(page.getByRole('heading', { name: 'Черновая отделка' })).toBeVisible();
   });
 
   test('E2E-21b: switching one room back to laminate brings the fine-finish row back', async ({
     page,
   }) => {
-    // Start at Stage 3 → Покрытие пола
+    // Начинаем на Stage 3 → «Покрытие пола»
     await page.goto('/');
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
     await page.locator('nav[aria-label="Этапы"] button').nth(2).click();
     await expect(page.getByText('Покрытие пола')).toBeVisible();
 
-    // Default is «Без покрытия» (`none`); pick laminate for the first room
+    // По умолчанию «Без покрытия» (`none`); выбираем ламинат для первой комнаты
     await page.locator('select').first().selectOption('laminate');
 
-    // Hop to Stage 4 and verify the laminate group is now in the «Чистовая отделка» section
+    // Переходим на Stage 4 и проверяем, что группа «Ламинат» появилась в разделе «Чистовая отделка»
     await page.locator('nav[aria-label="Этапы"] button').nth(3).click();
     await expect(page.getByRole('heading', { name: 'Чистовая отделка' })).toBeVisible();
     await expect(page.getByText('Ламинат').first()).toBeVisible();

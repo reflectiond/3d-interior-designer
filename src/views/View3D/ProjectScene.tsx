@@ -28,12 +28,12 @@ function ceilingColor(type: CeilingType): string {
 
 function useFloorTexture(covering: FloorCovering | undefined, w: number, d: number) {
   return useMemo(() => {
-    // F3.1.3 (v1.9.0): `none` falls back to the bare screed floor in 3D, just
-    // like an unset covering.
+    // F3.1.3 (v1.9.0): `none` в 3D откатывается на голую стяжку — так же,
+    // как и при отсутствующем covering.
     if (!covering || covering === 'none') return null;
-    // 3D needs the base floor color baked into the texture — no room fill renders
-    // beneath the floor mesh. 2D uses the same factory without `withBackground` so
-    // the pattern is overlay-only there (F6.2.8).
+    // В 3D базовый цвет пола нужно «запечь» в текстуру — под мешем пола нет
+    // никакой заливки комнаты. 2D использует ту же фабрику без `withBackground`,
+    // поэтому там узор работает как overlay (F6.2.8).
     const canvas = getFloorPatternCanvas(covering, { withBackground: true });
     const tex = new CanvasTexture(canvas);
     tex.wrapS = RepeatWrapping;
@@ -81,10 +81,10 @@ function RoomMesh({
       <mesh position={[cx, ROOM_HEIGHT, cz]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[w, d]} />
         {ceilingType === 'stretch' ? (
-          // F6.3.4 — glossy stretch ceiling
+          // F6.3.4 — глянцевый натяжной потолок
           <meshPhysicalMaterial color={ceilingColor(ceilingType)} roughness={0.2} clearcoat={0.5} />
         ) : (
-          // F6.3.5 — matte drywall
+          // F6.3.5 — матовый гипсокартон
           <meshStandardMaterial color={ceilingColor(ceilingType)} roughness={0.95} />
         )}
       </mesh>

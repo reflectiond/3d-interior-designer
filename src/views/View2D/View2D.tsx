@@ -32,11 +32,11 @@ import {
 import catalogData from '../../data/furniture-catalog.json';
 import styles from './View2D.module.css';
 
-const SCALE = 30; // pixels per tile
+const SCALE = 30; // пикселей на тайл
 
-// Pattern canvases are authored at 240 px / m, i.e. 60 px / tile (one tile = 0.25 m).
-// Konva pattern fill is rendered at native pixel size by default — scale it down to
-// match the on-screen tile size.
+// Канвы узоров создаются с разрешением 240 px / м, т.е. 60 px / тайл (один тайл = 0.25 м).
+// Konva pattern-fill по умолчанию рендерится в нативном пиксельном размере — масштабируем
+// его так, чтобы совпадать с экранным размером тайла.
 const PATTERN_SCALE = SCALE / 60;
 
 const catalogMap = new Map<string, CatalogItem>();
@@ -95,18 +95,18 @@ function roomColor(type: Room['type']): string {
 }
 
 export interface PlacingPreview {
-  /** Effective width of the item being placed, in tiles (post-rotation). */
+  /** Эффективная ширина размещаемого предмета в тайлах (после поворота). */
   width: number;
-  /** Effective height in tiles (post-rotation). */
+  /** Эффективная высота в тайлах (после поворота). */
   height: number;
-  /** Returns true when placing the item at (tx, ty) (bottom-left in tile-up space) is allowed. */
+  /** Возвращает true, если размещение в (tx, ty) (левый нижний угол в tile-up) допустимо. */
   isValid: (tx: number, ty: number) => boolean;
 }
 
 export interface FurnitureDragHandlers {
-  /** Returns true if dropping furniture id at (tx, ty) (bottom-left in tile-up space) is allowed. */
+  /** True, если drop мебели id в (tx, ty) (левый нижний угол в tile-up) допустим. */
   isValid: (id: string, tx: number, ty: number) => boolean;
-  /** Called once after a valid drop. Caller updates the store. */
+  /** Вызывается один раз после валидного drop'а. Caller обновляет store. */
   onCommit: (id: string, tx: number, ty: number) => void;
 }
 
@@ -114,13 +114,13 @@ export interface View2DProps {
   interactionMode?: 'none' | 'electrical' | 'furniture';
   electricalPointType?: 'socket' | 'switch';
   onFurniturePlace?: (tileX: number, tileY: number) => void;
-  /** F8.3 — when set, View2D renders a validity-coloured highlight under the cursor. */
+  /** F8.3 — когда задан, View2D рисует подсветку валидности под курсором. */
   placingPreview?: PlacingPreview | null;
-  /** F8.1 — when set, placed furniture is draggable; ghost follows cursor, drop validates. */
+  /** F8.1 — когда задан, размещённую мебель можно перетаскивать; ghost следует за курсором, drop валидируется. */
   furnitureDrag?: FurnitureDragHandlers | null;
-  /** F8.5 (v1.13.0) — id of the placed furniture currently selected on canvas. */
+  /** F8.5 (v1.13.0) — id мебели, выбранной в данный момент на канве. */
   selectedFurnitureId?: string | null;
-  /** F8.5 (v1.13.0) — fired when the user clicks a placed furniture (id) or empty space (null). */
+  /** F8.5 (v1.13.0) — срабатывает при клике пользователя по мебели (id) или по пустой канве (null). */
   onSelectFurniture?: (id: string | null) => void;
 }
 
@@ -154,9 +154,9 @@ export function View2D({
 
   const stageRef = useRef<Konva.Stage | null>(null);
 
-  // F8.3 — current cursor tile while placing furniture, for validity highlight
+  // F8.3 — текущий тайл курсора при размещении мебели, для подсветки валидности
   const [hoverTile, setHoverTile] = useState<{ tx: number; ty: number } | null>(null);
-  // F8.1 — drag-to-move state and short-lived invalid-drop flash
+  // F8.1 — состояние drag-to-move и короткая «вспышка» при невалидном drop'е
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [invalidFlash, setInvalidFlash] = useState<{
     tx: number;
@@ -174,9 +174,9 @@ export function View2D({
     (e: KonvaEventObject<MouseEvent>) => {
       if (!layout) return;
 
-      // F8.5.4 (v1.13.0): in 'none' interaction mode, click on empty canvas
-      // clears the furniture selection. Furniture Group sets cancelBubble in
-      // its own onClick so this branch never runs after a piece is clicked.
+      // F8.5.4 (v1.13.0): в режиме 'none' клик по пустой канве снимает
+      // выделение мебели. Furniture Group ставит cancelBubble в собственном
+      // onClick, поэтому эта ветка не срабатывает после клика по предмету.
       if (interactionMode === 'none') {
         onSelectFurniture?.(null);
         return;
@@ -215,7 +215,7 @@ export function View2D({
     ],
   );
 
-  // F8.3.2 — track cursor only while placing; one tile granularity is fine, no debounce needed
+  // F8.3.2 — отслеживаем курсор только во время размещения; точности до тайла достаточно, debounce не нужен
   const handleStageMove = useCallback(
     (e: KonvaEventObject<MouseEvent>) => {
       if (!placingPreview || !layout) return;
@@ -255,20 +255,20 @@ export function View2D({
           onMouseLeave={handleStageLeave}
         >
           <Layer>
-            {/* Canonical z-order (F6.4.1):
-              1. Room fill        — base color per room.type
-              2. Floor covering   — Konva pattern (F6.2)
-              3. Labels           — room name + area
-              4. Walls            — internal & external outlines
-              5. Electrical panel — щиток
-              6. Heated floor     — coral overlay + heat-wave icons (F6.1)
-              7. Electrical routes — wires
-              8. Electrical points — sockets / switches
-              9. Furniture
-              10. Veranda
-              11. Ceiling icons   — must remain on top (F6.3) */}
+            {/* Канонический z-порядок (F6.4.1):
+              1. Заливка комнаты   — базовый цвет по room.type
+              2. Напольное покрытие — Konva pattern (F6.2)
+              3. Подписи           — название и площадь комнаты
+              4. Стены             — внутренние и внешние контуры
+              5. Электрощит        — щиток
+              6. Тёплый пол        — коралловый оверлей и иконки тепловолн (F6.1)
+              7. Маршруты электрики — провода
+              8. Электроточки      — розетки и выключатели
+              9. Мебель
+              10. Веранда
+              11. Иконки потолка   — должны оставаться сверху (F6.3) */}
 
-            {/* Room fills */}
+            {/* Заливка комнат */}
             {rooms.map((room) => (
               <Rect
                 key={room.id}
@@ -282,10 +282,10 @@ export function View2D({
               />
             ))}
 
-            {/* Floor coverings (F6.2) — Konva pattern fills with per-room covering */}
+            {/* Напольные покрытия (F6.2) — Konva-pattern fill, по комнатам */}
             {rooms.map((room) => {
               const cov = floorCovering[room.id];
-              // F3.1.3 (v1.9.0): `none` keeps the room cell bare — no pattern is drawn.
+              // F3.1.3 (v1.9.0): `none` оставляет ячейку комнаты «голой» — узор не рисуется.
               if (!cov || cov === 'none') return null;
               return (
                 <Rect
@@ -295,7 +295,7 @@ export function View2D({
                   width={room.rect.width * SCALE}
                   height={room.rect.height * SCALE}
                   fillPatternImage={
-                    // Konva accepts HTMLCanvasElement at runtime; the TS type is overly narrow.
+                    // Konva принимает HTMLCanvasElement в рантайме; TS-тип слишком узкий.
                     getFloorPatternCanvas(cov) as unknown as HTMLImageElement
                   }
                   fillPatternRepeat="repeat"
@@ -306,7 +306,7 @@ export function View2D({
               );
             })}
 
-            {/* Room labels */}
+            {/* Подписи комнат */}
             {rooms.map((room) => {
               const cx = (room.rect.x + room.rect.width / 2) * SCALE;
               const cy = (gridHeight - room.rect.y - room.rect.height / 2) * SCALE;
@@ -325,7 +325,7 @@ export function View2D({
               );
             })}
 
-            {/* External walls (house outline) */}
+            {/* Внешние стены (контур дома) */}
             <Rect
               x={0}
               y={0}
@@ -336,7 +336,7 @@ export function View2D({
               listening={false}
             />
 
-            {/* Internal walls between rooms */}
+            {/* Внутренние стены между комнатами */}
             {rooms.map((room) => (
               <Rect
                 key={`wall-${room.id}`}
@@ -350,7 +350,7 @@ export function View2D({
               />
             ))}
 
-            {/* Windows (F7.2.1) — two parallel lines either side of the wall stroke */}
+            {/* Окна (F7.2.1) — две параллельные линии по обе стороны от линии стены */}
             {layout.windows.map((win) => {
               const sx1 = win.start.x * SCALE;
               const sy1 = (gridHeight - win.start.y) * SCALE;
@@ -380,14 +380,14 @@ export function View2D({
               );
             })}
 
-            {/* Door openings (F7.3.1, F7.3.2) — leaf line + swing arc.
-              Geometry computed in domain (y-up), then converted to screen. */}
+            {/* Дверные проёмы (F7.3.1, F7.3.2) — линия створки + дуга распахивания.
+              Геометрия считается в domain (y-up), затем переводится в экранные координаты. */}
             {layout.doors.map((door) => {
               const hingeD = door.hinge === 'start' ? door.start : door.end;
               const otherD = door.hinge === 'start' ? door.end : door.start;
               const dxD = otherD.x - hingeD.x;
               const dyD = otherD.y - hingeD.y;
-              // perpendicular in domain: 90° CCW = (-dyD, dxD); swing_side='right' flips.
+              // перпендикуляр в domain: 90° CCW = (-dyD, dxD); swing_side='right' переворачивает.
               const sign = door.swing_side === 'left' ? 1 : -1;
               const pxD = -dyD * sign;
               const pyD = dxD * sign;
@@ -400,21 +400,21 @@ export function View2D({
               const leafTipS = { x: toScreenX(leafTipD.x), y: toScreenY(leafTipD.y) };
 
               const r = Math.hypot(otherS.x - hingeS.x, otherS.y - hingeS.y);
-              // SVG arc sweep flag: y-flip between domain and screen makes the arc
-              // sweep CW in screen when CCW in domain. swing_side='left' produces
-              // sweep=0; 'right' produces sweep=1.
+              // SVG arc sweep-flag: y-flip между domain и экраном превращает CCW
+              // в domain в CW на экране. swing_side='left' даёт sweep=0,
+              // 'right' даёт sweep=1.
               const sweepFlag = door.swing_side === 'left' ? 0 : 1;
 
               return (
                 <React.Fragment key={`door-${door.id}`}>
-                  {/* Door leaf */}
+                  {/* Створка двери */}
                   <Line
                     points={[hingeS.x, hingeS.y, leafTipS.x, leafTipS.y]}
                     stroke={PALETTE.openings.door_frame}
                     strokeWidth={1.5}
                     listening={false}
                   />
-                  {/* Swing arc (dashed) */}
+                  {/* Дуга распахивания (пунктир) */}
                   <Path
                     data={`M ${leafTipS.x} ${leafTipS.y} A ${r} ${r} 0 0 ${sweepFlag} ${otherS.x} ${otherS.y}`}
                     stroke={PALETTE.openings.door_arc}
@@ -426,7 +426,7 @@ export function View2D({
               );
             })}
 
-            {/* Electrical panel (щиток) — rendered as a square on the wall */}
+            {/* Электрощит — рендерится как квадрат на стене */}
             {electricalPanel && (
               <>
                 <Rect
@@ -447,7 +447,7 @@ export function View2D({
               </>
             )}
 
-            {/* Heated floor (F6.1) — filled overlay + heat-wave icons every 4 tiles */}
+            {/* Тёплый пол (F6.1) — заливка-оверлей + иконки тепловолн каждые 4 тайла */}
             {rooms
               .filter((r) => flooring[r.id] === 'screed_heated')
               .map((room) => {
@@ -456,7 +456,7 @@ export function View2D({
                 const w = room.rect.width * SCALE;
                 const h = room.rect.height * SCALE;
                 const icons: { ix: number; iy: number }[] = [];
-                // 4-tile spacing in tile space, centered at +2 tiles in each axis
+                // шаг 4 тайла в tile-space, центрировано на +2 тайла по каждой оси
                 for (let dx = 2; dx < room.rect.width; dx += 4) {
                   for (let dy = 2; dy < room.rect.height; dy += 4) {
                     icons.push({
@@ -496,7 +496,7 @@ export function View2D({
                 );
               })}
 
-            {/* Electrical routes */}
+            {/* Маршруты электрики */}
             {electricalRoutes.map((route) => {
               if (route.path.length < 2) return null;
               const points = route.path.flatMap((t) => [
@@ -516,7 +516,7 @@ export function View2D({
               );
             })}
 
-            {/* Electrical points with numbers */}
+            {/* Электроточки с номерами */}
             {electricalPoints.map((point, index) => {
               const px = (Number(point.wallId.split('_')[1]) + 0.5) * SCALE;
               const py = (gridHeight - Number(point.wallId.split('_')[2]) - 0.5) * SCALE;
@@ -548,7 +548,7 @@ export function View2D({
               );
             })}
 
-            {/* Placed furniture (F8.1 — draggable when furnitureDrag is provided) */}
+            {/* Размещённая мебель (F8.1 — draggable, когда задан furnitureDrag) */}
             {furniture.map((f, i) => {
               const item = catalogMap.get(f.catalogId);
               if (!item) return null;
@@ -558,8 +558,8 @@ export function View2D({
               const screenX = f.position.x * SCALE;
               const screenY = (gridHeight - f.position.y - h) * SCALE;
               const draggable = !!furnitureDrag;
-              // F8.2.3 — mirror around the group's right edge so the rect
-              // stays in the same screen footprint while the contents flip.
+              // F8.2.3 — зеркалим вокруг правого края группы, чтобы прямоугольник
+              // оставался на том же экранном следе, а содержимое флипалось.
               const widthPx = w * SCALE;
               const isSelected = selectedFurnitureId === f.id;
               return (
@@ -570,12 +570,12 @@ export function View2D({
                   scaleX={f.mirrored ? -1 : 1}
                   offsetX={f.mirrored ? widthPx : 0}
                   draggable={draggable}
-                  // F8.1.2 — keep the original visually static during drag; ghost
-                  // shows the candidate position separately.
+                  // F8.1.2 — оригинал визуально остаётся на месте во время drag;
+                  // ghost показывает кандидатную позицию отдельно.
                   dragBoundFunc={() => ({ x: screenX, y: screenY })}
-                  // F8.5.1 (v1.13.0) — clicking selects this piece on canvas.
-                  // cancelBubble blocks the Stage onClick which would otherwise
-                  // immediately deselect via the empty-canvas branch.
+                  // F8.5.1 (v1.13.0) — клик выбирает этот предмет на канве.
+                  // cancelBubble блокирует Stage onClick, который иначе сразу же
+                  // снял бы выделение через ветку «empty-canvas».
                   onClick={(e) => {
                     e.cancelBubble = true;
                     onSelectFurniture?.(f.id);
@@ -592,7 +592,7 @@ export function View2D({
                     const stage = e.target.getStage();
                     const pos = stage?.getPointerPosition();
                     if (!pos) return;
-                    // Center the ghost on the cursor for predictable placement.
+                    // Центрируем ghost под курсором — так размещение предсказуемо.
                     const tx = Math.round(pos.x / SCALE - w / 2);
                     const ty = Math.round(gridHeight - pos.y / SCALE - h / 2);
                     setDragState((prev) =>
@@ -608,7 +608,7 @@ export function View2D({
                     if (furnitureDrag.isValid(id, tx, ty)) {
                       furnitureDrag.onCommit(id, tx, ty);
                     } else {
-                      // F8.1.3 — flash red at the rejected drop position
+                      // F8.1.3 — мигаем красным на отклонённой позиции drop'а
                       setInvalidFlash({ tx, ty, w, h });
                       window.setTimeout(() => setInvalidFlash(null), 500);
                     }
@@ -632,7 +632,7 @@ export function View2D({
                   {(() => {
                     const fw = w * SCALE;
                     const fh = h * SCALE;
-                    // Mapping подобран эмпирически под направление лицевой
+                    // Маппинг подобран эмпирически под направление лицевой
                     // стороны Kenney-моделей в 3D-сцене после Z-mirror.
                     const triPositions: Record<
                       0 | 90 | 180 | 270,
@@ -670,7 +670,7 @@ export function View2D({
               );
             })}
 
-            {/* Veranda (if present, semi-transparent) */}
+            {/* Веранда (если есть, полупрозрачная) */}
             {layout.veranda && (
               <Rect
                 x={layout.veranda.x * SCALE}
@@ -685,13 +685,13 @@ export function View2D({
               />
             )}
 
-            {/* Ceiling type icons (F6.3) — top-right corner with collision avoidance.
-              Rendered last so they sit above furniture (per F6.4.1 z-order). */}
+            {/* Иконки типа потолка (F6.3) — верхний правый угол с избеганием коллизий.
+              Рендерятся последними, чтобы лежать поверх мебели (см. z-порядок F6.4.1). */}
             {rooms.map((room) => {
               const cType = ceiling[room.id] ?? 'stretch';
               const anchor = pickCeilingIconAnchor(room, furniture, catalogMap);
               const sizeScreen = CEILING_ICON_SIZE_TILES * SCALE;
-              // Anchor is in tile-y-up; convert to Konva screen coordinates
+              // Anchor лежит в tile-y-up; переводим в экранные координаты Konva
               const left = anchor.tx * SCALE;
               const top = (gridHeight - anchor.ty - CEILING_ICON_SIZE_TILES) * SCALE;
               const cx = left + sizeScreen / 2;
@@ -738,9 +738,9 @@ export function View2D({
                     </>
                   )}
                   <Text
-                    // Label box is `LABEL_WIDTH_FACTOR × iconSize` wide, centered
-                    // on the icon. wrap="none" stops Konva from breaking long
-                    // captions like «Гипсокартон» onto two lines.
+                    // Бокс подписи шириной `LABEL_WIDTH_FACTOR × iconSize`, центрирован
+                    // на иконке. wrap="none" не даёт Konva ломать длинные подписи
+                    // вроде «Гипсокартон» на две строки.
                     x={left - ((CEILING_ICON_LABEL_WIDTH_FACTOR - 1) * sizeScreen) / 2}
                     y={top + sizeScreen + 1}
                     width={sizeScreen * CEILING_ICON_LABEL_WIDTH_FACTOR}
@@ -755,8 +755,8 @@ export function View2D({
               );
             })}
 
-            {/* Placement validity highlight (F8.3) — drawn last so it floats above
-              every other element while the user is positioning a piece. */}
+            {/* Подсветка валидности размещения (F8.3) — рисуется последней, чтобы
+              висеть поверх всех остальных элементов, пока пользователь позиционирует предмет. */}
             {placingPreview &&
               hoverTile &&
               (() => {
@@ -781,9 +781,9 @@ export function View2D({
                 );
               })()}
 
-            {/* Drag-to-move ghost (F8.1.2) — semi-transparent silhouette that
-              follows the cursor while a placed piece is being dragged. Border
-              colour reflects validity so the user sees feedback before drop. */}
+            {/* Ghost для drag-to-move (F8.1.2) — полупрозрачный силуэт, следующий
+              за курсором, пока пользователь тащит размещённый предмет. Цвет рамки
+              отражает валидность, чтобы пользователь видел обратную связь до drop'а. */}
             {dragState &&
               furnitureDrag &&
               (() => {
@@ -811,7 +811,7 @@ export function View2D({
                 );
               })()}
 
-            {/* Invalid-drop flash (F8.1.3) — short red blink at the rejected position. */}
+            {/* Вспышка при невалидном drop'е (F8.1.3) — короткий красный блик в отклонённой позиции. */}
             {invalidFlash && (
               <Rect
                 x={invalidFlash.tx * SCALE}

@@ -29,7 +29,7 @@ export interface CatalogItem {
   model3d?: { url: string; rotation?: number; scaleY?: number };
 }
 
-/** Get effective width/height after rotation */
+/** Получить эффективные width/height после поворота. */
 export function getEffectiveSize(
   item: CatalogItem,
   rotation: 0 | 90 | 180 | 270,
@@ -40,7 +40,7 @@ export function getEffectiveSize(
   return { w: item.size_tiles.w, h: item.size_tiles.h };
 }
 
-/** Get all tiles occupied by a furniture instance */
+/** Получить все тайлы, занятые экземпляром мебели. */
 export function getFurnitureTiles(
   position: TileCoord,
   item: CatalogItem,
@@ -56,7 +56,7 @@ export function getFurnitureTiles(
   return tiles;
 }
 
-/** Check if all tiles of furniture are within a single room */
+/** Проверить, что все тайлы мебели помещаются внутри одной комнаты. */
 export function isInsideRoom(tiles: TileCoord[], room: Room): boolean {
   return tiles.every(
     (t) =>
@@ -67,7 +67,7 @@ export function isInsideRoom(tiles: TileCoord[], room: Room): boolean {
   );
 }
 
-/** Find which room contains all tiles (or null if spans multiple / outside) */
+/** Найти комнату, содержащую все тайлы (или null, если мебель пересекает несколько комнат / выходит наружу). */
 export function findContainingRoom(tiles: TileCoord[], rooms: Room[]): Room | null {
   for (const room of rooms) {
     if (isInsideRoom(tiles, room)) return room;
@@ -75,7 +75,7 @@ export function findContainingRoom(tiles: TileCoord[], rooms: Room[]): Room | nu
   return null;
 }
 
-/** Check if furniture tiles overlap with any existing furniture */
+/** Проверить, пересекаются ли тайлы мебели с какой-либо уже размещённой. */
 export function hasCollision(
   tiles: TileCoord[],
   existingFurniture: FurnitureInstance[],
@@ -102,11 +102,11 @@ export interface PlacementResult {
 }
 
 /**
- * Full validation of furniture placement.
+ * Полная валидация размещения мебели.
  *
- * F8.7 (v1.13.0): `allowed_rooms` filter removed — any furniture can be
- * placed in any room. Validation requires containment (must fit inside
- * one room) and rejects collisions with existing pieces.
+ * F8.7 (v1.13.0): фильтр `allowed_rooms` убран — любую мебель можно ставить
+ * в любую комнату. Валидация требует, чтобы мебель целиком помещалась в одной
+ * комнате, и отклоняет пересечения с уже размещёнными предметами.
  */
 export function validatePlacement(
   position: TileCoord,

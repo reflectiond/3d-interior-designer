@@ -1,6 +1,6 @@
 import { z } from 'zod/v4';
 
-// --- Base types ---
+// --- Базовые типы ---
 
 export const TileCoordSchema = z.object({
   x: z.int().min(0),
@@ -19,10 +19,10 @@ export const RoomType = z.enum([
 ]);
 export type RoomType = z.infer<typeof RoomType>;
 
-// Veranda is display-only, not part of planning
+// Веранда отображается, но не участвует в планировании
 export const VerandaType = z.literal('veranda');
 
-// --- Layout JSON schema (as stored in layout files) ---
+// --- JSON-схема планировки (как хранится в файлах layout) ---
 
 // F11.3 (v1.14.0): минимум комнаты — площадь ≥ 4 м² (64 тайла²),
 // per-side минимум 2 тайла (= 0.5 м) — чтобы исключить вырожденные
@@ -48,13 +48,13 @@ export const LayoutVerandaSchema = z.object({
   height: z.int().min(1),
 });
 
-// --- Openings (windows / doors) — v1.5.0 ---
+// --- Проёмы (окна / двери) — v1.5.0 ---
 //
-// Spec §3.2 originally encoded an opening as `wallId + position 0..1`, but
-// our layouts don't enumerate wall segments — walls are derived from room
-// rectangles. We instead encode the opening as an axis-aligned tile segment
-// (start, end). This is unambiguous and backward-compatible for old layouts
-// (default to empty arrays).
+// Изначально спецификация §3.2 кодировала проём как `wallId + position 0..1`, но
+// в наших планировках сегменты стен не перечисляются — стены выводятся из
+// прямоугольников комнат. Вместо этого мы кодируем проём как осесимметричный
+// сегмент тайлов (start, end). Это однозначно и обратно совместимо со старыми
+// layout'ами (по умолчанию — пустые массивы).
 //
 // Уточнено в v1.5.0.
 
@@ -99,14 +99,14 @@ export const LayoutSchema = z.object({
 });
 export type Layout = z.infer<typeof LayoutSchema>;
 
-// --- Runtime types (after loading layout into project) ---
+// --- Runtime-типы (после загрузки планировки в проект) ---
 
 export type Room = {
   id: string;
   type: RoomType;
   name: string;
   tiles: TileCoord[];
-  area: number; // m², computed from tiles
+  area: number; // м², вычисляется по тайлам
   rect: { x: number; y: number; width: number; height: number };
 };
 
@@ -115,13 +115,13 @@ export type WallSegment = {
   type: 'external' | 'internal';
   start: TileCoord;
   end: TileCoord;
-  adjacentRooms: string[]; // room IDs
+  adjacentRooms: string[]; // ID комнат
 };
 
 export type ElectricalPoint = {
   id: string;
   wallId: string;
-  position: number; // 0..1 along wall
+  position: number; // 0..1 вдоль стены
   type: 'socket' | 'switch';
 };
 
@@ -141,10 +141,10 @@ export type FurnitureInstance = {
 export type FloorType = 'screed' | 'screed_heated';
 export type CeilingType = 'stretch' | 'drywall';
 
-// v1.9.0 — split material from covering choice. The pattern utilities and
-// pricing keys only know about real materials; the user-facing covering can
-// additionally be `'none'` (F3.1.3 — «Без покрытия»), in which case nothing
-// is rendered or priced for that room.
+// v1.9.0 — разделили материал и выбор покрытия. Утилиты узоров и ключи
+// прайсинга знают только о реальных материалах; пользовательский covering
+// может дополнительно принимать значение `'none'` (F3.1.3 — «Без покрытия»),
+// и тогда для этой комнаты ничего не рендерится и не учитывается в смете.
 export type FloorMaterial = 'linoleum' | 'laminate' | 'tile' | 'quartz_vinyl';
 export type FloorCovering = FloorMaterial | 'none';
 

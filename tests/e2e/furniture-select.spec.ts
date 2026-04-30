@@ -1,13 +1,13 @@
 import { test, expect, type Page } from '@playwright/test';
 
-// F8.5 (v1.13.0) — selection mode for placed furniture on the 2D canvas.
+// F8.5 (v1.13.0) — режим selection для размещённой мебели на 2D-канве.
 
 const STORE_KEY = '3d-interior-designer-project';
 
 async function gotoStage3Furniture(page: Page) {
-  // Layout-1 + ruler strip + multiple furniture rows in the side panel
-  // overflow the default 720-px viewport. Larger viewport keeps every
-  // test click inside it.
+  // Layout-1 + полоса линеек + несколько строк мебели в боковой панели
+  // выходят за стандартный viewport 720 px. Больший viewport удерживает
+  // все тестовые клики внутри.
   await page.setViewportSize({ width: 1280, height: 1300 });
   await page.goto('/');
   await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
@@ -39,30 +39,30 @@ test.describe('Furniture canvas select (F8.5 v1.13.0)', () => {
   test('E2E-26: rotating with R only affects the selected piece', async ({ page }) => {
     await gotoStage3Furniture(page);
 
-    // Place two chairs in different rooms (free placement, F8.7).
-    await placeChair(page, 0.7, 0.4); // chair 1 — living room area
-    await placeChair(page, 0.1, 0.8); // chair 2 — bedroom 1 area
+    // Ставим два стула в разных комнатах (свободное размещение, F8.7).
+    await placeChair(page, 0.7, 0.4); // стул 1 — область гостиной
+    await placeChair(page, 0.1, 0.8); // стул 2 — область спальни 1
 
     const before = await readFurniture(page);
     expect(before).toHaveLength(2);
-    // Both are at rotation 0 from the initial placement.
+    // Оба сразу после размещения имеют rotation 0.
     expect(before![0].rotation).toBe(0);
     expect(before![1].rotation).toBe(0);
 
-    // Click the first chair on the canvas to select it.
+    // Кликаем по первому стулу на канве для выделения.
     const canvas = page.locator('.konvajs-content canvas').first();
     const box = await canvas.boundingBox();
     if (!box) throw new Error('canvas has no bounding box');
     await page.mouse.click(box.x + box.width * 0.7, box.y + box.height * 0.4);
     await page.waitForTimeout(150);
 
-    // Press R — chair size is 2×2 so rotation is always valid.
+    // Нажимаем R — у стула размер 2×2, поэтому поворот всегда валиден.
     await page.keyboard.press('r');
     await page.waitForTimeout(700);
 
     const after = await readFurniture(page);
-    // Order in localStorage matches placement order, regardless of which
-    // matched the click — first placed is `before[0]`.
+    // Порядок в localStorage соответствует порядку размещения независимо от
+    // того, по какому стулу кликнули — первый размещённый — это `before[0]`.
     const firstAfter = after!.find((f: { id: string }) => f.id === before![0].id);
     const secondAfter = after!.find((f: { id: string }) => f.id === before![1].id);
     expect(firstAfter.rotation).toBe(90);
@@ -76,7 +76,7 @@ test.describe('Furniture canvas select (F8.5 v1.13.0)', () => {
     const before = await readFurniture(page);
     expect(before).toHaveLength(1);
 
-    // Click chair to select.
+    // Кликаем по стулу для выбора.
     const canvas = page.locator('.konvajs-content canvas').first();
     const box = await canvas.boundingBox();
     if (!box) throw new Error('canvas has no bounding box');

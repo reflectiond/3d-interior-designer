@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 
-// Inherited integration scenarios from v1.0.0. These are intentionally
-// broader than feature-specific specs (which test one F-ID at a time) — each
-// case exercises a multi-step user journey end-to-end.
+// Унаследованные интеграционные сценарии из v1.0.0. Они намеренно шире,
+// чем feature-specific специи (которые тестируют один F-ID за раз) — каждый
+// кейс проходит многошаговый пользовательский сценарий end-to-end.
 
 const STORE_KEY = '3d-interior-designer-project';
 
@@ -36,21 +36,21 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
   test('E2E-1: full sweep through stages 1→4 leaves a non-zero estimate', async ({ page }) => {
     await selectLayout1(page);
 
-    // Stage 2 — leave defaults, just visit
+    // Stage 2 — оставляем дефолты, просто заходим
     await gotoStage(page, 2);
     await expect(page.getByText('Стяжка пола')).toBeVisible();
 
-    // Stage 3 — visit floor coverings tab
+    // Stage 3 — заходим на вкладку покрытий пола
     await gotoStage(page, 3);
     await expect(page.getByText('Покрытие пола')).toBeVisible();
 
-    // Stage 4 — totals appear
+    // Stage 4 — появляются итоговые суммы
     await gotoStage(page, 4);
     await expect(page.getByText('Итоговая смета')).toBeVisible();
     await expect(page.getByText('Итого:')).toBeVisible();
 
-    // Estimate must be non-zero (rough finish always contributes — every layout
-    // has plaster/screed/ceiling work even with no electrical/furniture choices).
+    // Смета должна быть ненулевой (черновая отделка всегда вносит вклад — в любой
+    // планировке есть штукатурка/стяжка/потолок даже без выбора электрики и мебели).
     const totalText = await page.locator('text=/^[0-9  ]+ ₽ — [0-9  ]+ ₽$/').first().textContent();
     expect(totalText).not.toBeNull();
     const minPart = totalText!.split('—')[0];
@@ -59,8 +59,8 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
   });
 
   test('E2E-3: five electrical points are persisted to the store', async ({ page }) => {
-    // Layout-1 canvas is 1080×960; default 720-px viewport clips the lower
-    // half. Make it tall enough so every test click lands inside the viewport.
+    // Канва Layout-1 — 1080×960; стандартный viewport 720 px обрезает нижнюю
+    // половину. Делаем его достаточно высоким, чтобы каждый клик попал в видимую область.
     await page.setViewportSize({ width: 1280, height: 1200 });
     await selectLayout1(page);
     await gotoStage(page, 2);
@@ -70,10 +70,10 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
 
-    // findNearestWallEdge only matches edge tiles of a room. We target the
-    // east wall of bedroom_1/bedroom_2 (tile column x=11, an internal wall)
-    // at five distinct y positions — all comfortably inside the 1280×1200
-    // viewport set above.
+    // findNearestWallEdge сопоставляет только граничные тайлы комнаты. Целимся в
+    // восточную стену bedroom_1/bedroom_2 (колонка тайлов x=11, внутренняя стена)
+    // на пяти различных позициях по y — все они комфортно лежат в установленном
+    // выше viewport'е 1280×1200.
     const SCALE = 30;
     const targets = [
       [11, 5],
@@ -88,7 +88,7 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
       await page.mouse.click(sx, sy);
       await page.waitForTimeout(120);
     }
-    await page.waitForTimeout(700); // debounced autosave
+    await page.waitForTimeout(700); // debounce-автосохранения
 
     const state = await readState(page);
     expect(state).not.toBeNull();
@@ -96,8 +96,8 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
   });
 
   test('F8.7 (v1.13.0): «Унитаз» can now be placed in any room', async ({ page }) => {
-    // F8.7 inverts E2E-4 — `allowed_rooms` filter is removed, so a toilet
-    // dropped into the living room is accepted. Pre-1.13 this was rejected.
+    // F8.7 инвертирует E2E-4 — фильтр `allowed_rooms` удалён, поэтому унитаз,
+    // поставленный в гостиную, принимается. До 1.13 это отклонялось.
     await selectLayout1(page);
     await gotoStage3Furniture(page);
 
@@ -109,7 +109,7 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
 
-    // Click in living-room area (right side of layout 1).
+    // Клик в области гостиной (правая часть планировки 1).
     await page.mouse.click(box!.x + box!.width * 0.7, box!.y + box!.height * 0.4);
     await page.waitForTimeout(700);
 
@@ -129,8 +129,8 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
 
-    // Layout 1 grid is 36×32 tiles; tile (35, 33) is outside the grid → outside any room.
-    // Click near the very bottom-right corner of the canvas.
+    // Сетка Layout 1 — 36×32 тайла; тайл (35, 33) лежит за сеткой → вне любой комнаты.
+    // Кликаем в самом нижнем правом углу канвы.
     await page.mouse.click(box!.x + box!.width * 0.99, box!.y + box!.height * 0.99);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(700);
@@ -164,7 +164,7 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
     await page.waitForTimeout(700);
 
     const stateAfter = await readState(page);
-    // Chair is symmetric (2×2) so all 4 rotations validate; after ×4 it lands on 0°
+    // Стул симметричен (2×2), поэтому все 4 поворота проходят валидацию; после ×4 угол снова 0°
     expect(stateAfter!.furniture[0].rotation).toBe(0);
   });
 
@@ -184,14 +184,14 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
     expect(stateBefore!.furniture).toHaveLength(1);
     const exportJSON = JSON.stringify(stateBefore);
 
-    // Wipe localStorage and reload — state must be cleared
+    // Очищаем localStorage и перезагружаем — состояние должно сброситься
     await page.evaluate((key) => localStorage.removeItem(key), STORE_KEY);
     await page.reload();
     await expect(page.getByText('Выберите планировку')).toBeVisible();
     expect(await readState(page)).toBeNull();
 
-    // Re-import the saved JSON via a temporary File on the «Загрузить проект»
-    // button. Stage 4 hosts that control.
+    // Снова импортируем сохранённый JSON как временный File через кнопку
+    // «Загрузить проект». Этот контрол находится на Stage 4.
     await selectLayout1(page);
     await gotoStage(page, 4);
     const fileChooserPromise = page.waitForEvent('filechooser');
@@ -228,8 +228,8 @@ test.describe('Inherited integration journeys (E2E-1..E2E-9)', () => {
     expect(before!.layoutId).toBe(1);
 
     await page.reload();
-    // Restore puts us back on Stage 3 (its default tab is Покрытие пола), but
-    // the in-page Furniture tab state is not persisted — re-open it.
+    // Восстановление возвращает на Stage 3 (его дефолтная вкладка — «Покрытие пола»),
+    // но состояние in-page вкладки «Мебель» не сохраняется — открываем её заново.
     await expect(page.getByText('Покрытие пола')).toBeVisible();
     await page.getByRole('button', { name: 'Мебель', exact: true }).click();
     await expect(page.getByText('Размещённая мебель')).toBeVisible();

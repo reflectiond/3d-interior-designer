@@ -53,9 +53,9 @@ describe('customLayouts — F14', () => {
   });
 
   it('F14.6: лимит 50 записей — превышение возвращает {ok:false, reason:"limit"}', () => {
-    // Заполним storage 50 валидными записями (без вызова importCustomLayout
-    // 50 раз — это медленнее, но надёжнее: гарантирует, что путь lookup'а
-    // включает текущий runtime-формат).
+    // Заполняем storage 50 валидными записями (без 50 вызовов importCustomLayout
+    // это было бы быстрее, но менее надёжно: текущий путь гарантирует, что lookup
+    // проходит через актуальный runtime-формат).
     for (let i = 0; i < MAX_CUSTOM_LAYOUTS; i++) {
       const r = importCustomLayout(layout1Data);
       expect(r.ok).toBe(true);

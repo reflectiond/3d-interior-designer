@@ -109,11 +109,11 @@ describe('getFurnitureTiles', () => {
   it('respects rotation', () => {
     const tiles = getFurnitureTiles({ x: 0, y: 0 }, sofa, 90);
     expect(tiles).toHaveLength(32); // 4×8
-    // Check bounds
+    // Проверяем границы
     const maxX = Math.max(...tiles.map((t) => t.x));
     const maxY = Math.max(...tiles.map((t) => t.y));
-    expect(maxX).toBe(3); // w=4 after rotation
-    expect(maxY).toBe(7); // h=8 after rotation
+    expect(maxX).toBe(3); // w=4 после поворота
+    expect(maxY).toBe(7); // h=8 после поворота
   });
 });
 
@@ -124,7 +124,7 @@ describe('isInsideRoom', () => {
   });
 
   it('returns false when tiles exceed room bounds', () => {
-    const tiles = getFurnitureTiles({ x: 15, y: 0 }, sofa, 0); // x goes to 22, room ends at 20
+    const tiles = getFurnitureTiles({ x: 15, y: 0 }, sofa, 0); // x доходит до 22, комната заканчивается на 20
     expect(isInsideRoom(tiles, livingRoom)).toBe(false);
   });
 });
@@ -134,7 +134,7 @@ describe('hasCollision', () => {
     const existing: FurnitureInstance[] = [
       { id: 'f1', catalogId: 'sofa', position: { x: 0, y: 0 }, rotation: 0, mirrored: false },
     ];
-    const newTiles = getFurnitureTiles({ x: 4, y: 0 }, sofa, 0); // overlaps at x=4..7
+    const newTiles = getFurnitureTiles({ x: 4, y: 0 }, sofa, 0); // пересечение на x=4..7
     expect(hasCollision(newTiles, existing, catalogMap)).toBe(true);
   });
 

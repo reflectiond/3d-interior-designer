@@ -195,7 +195,7 @@ describe('openingTiles & helpers', () => {
       start: { x: 0, y: 0 },
       end: { x: 4, y: 0 },
     });
-    // 4 tiles × 0.25 m × 2.1 m = 2.1 m²
+    // 4 тайла × 0.25 м × 2.1 м = 2.1 м²
     expect(openingAreaM2(door, 0.25)).toBeCloseTo(2.1);
   });
 });
@@ -208,14 +208,14 @@ describe('getDoorBlockedTiles (F7.3.4)', () => {
       end: { x: 7, y: 10 },
     });
     const blocked = getDoorBlockedTiles([door]);
-    // 3 segment tiles + 6 buffer tiles (3 above + 3 below)
+    // 3 тайла сегмента + 6 тайлов буфера (3 сверху + 3 снизу)
     expect(blocked).toHaveLength(9);
     const set = new Set(blocked.map((t) => `${t.x},${t.y}`));
     expect(set.has('4,10')).toBe(true);
     expect(set.has('5,10')).toBe(true);
     expect(set.has('6,10')).toBe(true);
-    expect(set.has('4,9')).toBe(true); // buffer south
-    expect(set.has('5,11')).toBe(true); // buffer north
+    expect(set.has('4,9')).toBe(true); // буфер с юга
+    expect(set.has('5,11')).toBe(true); // буфер с севера
   });
 
   it('blocks the segment tiles plus a 1-tile buffer perpendicular to a vertical door', () => {
@@ -228,8 +228,8 @@ describe('getDoorBlockedTiles (F7.3.4)', () => {
     expect(blocked).toHaveLength(9);
     const set = new Set(blocked.map((t) => `${t.x},${t.y}`));
     expect(set.has('10,4')).toBe(true);
-    expect(set.has('9,4')).toBe(true); // buffer west
-    expect(set.has('11,5')).toBe(true); // buffer east
+    expect(set.has('9,4')).toBe(true); // буфер с запада
+    expect(set.has('11,5')).toBe(true); // буфер с востока
   });
 
   it('returns an empty array when there are no doors', () => {

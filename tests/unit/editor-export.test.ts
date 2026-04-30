@@ -38,7 +38,7 @@ describe('exportLayout', () => {
     const result = exportLayout(buildMinimalValidState());
     expect(result.ok).toBe(true);
     if (result.ok) {
-      // The same JSON parses back through LayoutSchema unchanged
+      // Тот же JSON без изменений парсится обратно через LayoutSchema
       const reparsed = LayoutSchema.parse(JSON.parse(result.json));
       expect(reparsed.id).toBe(42);
       expect(reparsed.rooms).toHaveLength(1);
@@ -49,14 +49,15 @@ describe('exportLayout', () => {
 
   it('returns ok=false with messages when the room is too small for LayoutRoomSchema', () => {
     let s = initialEditorState();
-    // Bypass the editor's UI gate by injecting a 3×3 room directly through reducer.
-    // The reducer itself doesn't enforce min size — only the schema does.
+    // F11.3 (v1.14.0): per-side минимум опущен до 2 — чтобы поломать
+    // схему, нужна комната width=1 или height=1.
+    // Сам reducer минимальный размер не проверяет — только схема.
     s = editorReducer(s, {
       type: 'add_room',
-      rect: { x: 0, y: 0, width: 3, height: 3 },
+      rect: { x: 0, y: 0, width: 1, height: 8 },
       roomType: 'bedroom',
     });
-    s = editorReducer(s, { type: 'set_panel', coord: { x: 1, y: 1 } });
+    s = editorReducer(s, { type: 'set_panel', coord: { x: 0, y: 1 } });
     const result = exportLayout(s);
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -81,9 +82,9 @@ describe('exportLayout', () => {
       expect(result.layout.windows).toHaveLength(1);
       expect(result.layout.doors).toHaveLength(1);
       expect(result.layout.doors[0].hinge).toBe('start');
-      // F11.2.8 (v1.10.0): swing auto-picks 'right' here — door is on the
-      // south wall y=10 of the (0,0,10,10) room, so the leaf opens INTO the
-      // room (which sits at y < 10).
+      // F11.2.8 (v1.10.0): здесь swing автоматически выбирается 'right' — дверь
+      // на южной стене y=10 комнаты (0,0,10,10), и створка распахивается В комнату
+      // (которая лежит в y < 10).
       expect(result.layout.doors[0].swing_side).toBe('right');
       expect(result.layout.doors[0].height_m).toBe(2.1);
     }

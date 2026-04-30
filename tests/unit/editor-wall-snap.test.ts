@@ -43,7 +43,7 @@ describe('projectOntoWall', () => {
 describe('findNearestWall (F11.2.8 v1.10.0)', () => {
   it('snaps a click near a wall to the wall line', () => {
     const r = room('r', 0, 0, 12, 8);
-    // Click 1 tile inside the east wall; should snap to x=12, same y.
+    // Клик на 1 тайл внутри восточной стены; должен прилипнуть к x=12, y без изменений.
     const result = findNearestWall({ x: 11, y: 5 }, [r]);
     expect(result?.snapped).toEqual({ x: 12, y: 5 });
     expect(result?.wall.axis).toBe('v');
@@ -52,8 +52,8 @@ describe('findNearestWall (F11.2.8 v1.10.0)', () => {
 
   it('returns null when click is far from any wall', () => {
     const r = room('r', 0, 0, 20, 20);
-    // Click in the middle of a 20×20 room — the closest wall is 10 tiles away,
-    // beyond WALL_SNAP_RADIUS.
+    // Клик в центре комнаты 20×20 — ближайшая стена в 10 тайлах,
+    // за пределами WALL_SNAP_RADIUS.
     const result = findNearestWall({ x: 10, y: 10 }, [r]);
     expect(result).toBeNull();
     expect(WALL_SNAP_RADIUS).toBe(3);
@@ -62,7 +62,7 @@ describe('findNearestWall (F11.2.8 v1.10.0)', () => {
   it('picks the closest wall when multiple rooms share a boundary', () => {
     const a = room('a', 0, 0, 12, 8);
     const b = room('b', 12, 0, 8, 8);
-    // Click slightly inside room A, near the shared east/west wall at x=12.
+    // Клик чуть внутри комнаты A, рядом с общей east/west стеной на x=12.
     const result = findNearestWall({ x: 11, y: 4 }, [a, b]);
     expect(result?.snapped.x).toBe(12);
     expect(result?.wall.axis).toBe('v');
@@ -77,16 +77,17 @@ describe('findNearestWall (F11.2.8 v1.10.0)', () => {
 describe('pickDoorSwingSide (F11.2.8 v1.10.0)', () => {
   it("picks 'left' when the left side is inside a room and right is empty", () => {
     const r = room('r', 0, 0, 12, 8);
-    // Vertical door on east wall x=12, y=2..5. Left side is inside room (x<12),
-    // right side is outside layout — leaf should swing INTO the room (left).
+    // Вертикальная дверь на восточной стене x=12, y=2..5. Левая сторона — внутри
+    // комнаты (x<12), правая — снаружи планировки. Створка должна распахиваться
+    // В комнату (left).
     const swing = pickDoorSwingSide({ start: { x: 12, y: 2 }, end: { x: 12, y: 5 } }, [r]);
     expect(swing).toBe('left');
   });
 
   it("picks 'right' when only the right side has a room", () => {
     const r = room('r', 12, 0, 8, 8);
-    // Vertical door on west wall x=12 of room. Right side (x>=12) is room,
-    // left side (x<12) is empty — leaf swings right INTO room.
+    // Вертикальная дверь на западной стене x=12 комнаты. Правая сторона (x>=12) —
+    // комната, левая (x<12) — пусто. Створка распахивается вправо В комнату.
     const swing = pickDoorSwingSide({ start: { x: 12, y: 2 }, end: { x: 12, y: 5 } }, [r]);
     expect(swing).toBe('right');
   });
@@ -94,7 +95,7 @@ describe('pickDoorSwingSide (F11.2.8 v1.10.0)', () => {
   it("defaults to 'left' for an internal door with rooms on both sides", () => {
     const a = room('a', 0, 0, 12, 8);
     const b = room('b', 12, 0, 8, 8);
-    // Both sides are rooms — no preference, default 'left'.
+    // С обеих сторон — комнаты, явных предпочтений нет, дефолт 'left'.
     const swing = pickDoorSwingSide({ start: { x: 12, y: 2 }, end: { x: 12, y: 5 } }, [a, b]);
     expect(swing).toBe('left');
   });
@@ -106,11 +107,11 @@ describe('pickDoorSwingSide (F11.2.8 v1.10.0)', () => {
 
   it('handles horizontal doors on north/south walls', () => {
     const r = room('r', 0, 0, 12, 8);
-    // Door on south wall y=0, x=2..6. Room is below (y>0), outside layout above.
+    // Дверь на южной стене y=0, x=2..6. Комната снизу (y>0), снаружи планировки сверху.
     const swing = pickDoorSwingSide({ start: { x: 2, y: 0 }, end: { x: 6, y: 0 } }, [r]);
-    // For start→end going +x with dx=4,dy=0: ux=0, uy=4/4=1. Mid=(4, 0).
-    // leftProbe = floor(4 + 0*0.5, 0 + 1*0.5) = (4, 0) → inside room (y>=0 ∧ y<8). ✓
-    // rightProbe = floor(4, 0 - 0.5) = (4, -1) → outside.
+    // Для start→end по +x с dx=4,dy=0: ux=0, uy=4/4=1. Mid=(4, 0).
+    // leftProbe = floor(4 + 0*0.5, 0 + 1*0.5) = (4, 0) → внутри комнаты (y>=0 ∧ y<8). ✓
+    // rightProbe = floor(4, 0 - 0.5) = (4, -1) → снаружи.
     expect(swing).toBe('left');
   });
 });

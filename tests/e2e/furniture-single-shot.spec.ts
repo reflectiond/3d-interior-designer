@@ -1,14 +1,14 @@
 import { test, expect, type Page } from '@playwright/test';
 
-// F8.6 (v1.12.0) — placement mode auto-resets after a successful commit,
-// mirroring the editor's single-shot tool behaviour (F11.2.9).
+// F8.6 (v1.12.0) — режим размещения автоматически сбрасывается после успешного
+// commit'а — зеркалит single-shot поведение редактора (F11.2.9).
 
 const STORE_KEY = '3d-interior-designer-project';
 
 async function gotoStage3Furniture(page: Page) {
-  // Layout-1 canvas plus ruler strips (F13.1) overflow the default 720-px
-  // viewport, hiding the bottom half. Make the viewport tall enough so test
-  // clicks always land inside it.
+  // Канва Layout-1 плюс полосы линеек (F13.1) выходят за стандартный viewport
+  // 720 px, скрывая нижнюю половину. Делаем viewport достаточно высоким, чтобы
+  // тестовые клики всегда попадали внутрь.
   await page.setViewportSize({ width: 1280, height: 1300 });
   await page.goto('/');
   await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
@@ -36,17 +36,17 @@ test.describe('Furniture single-shot (F8.6 v1.12.0)', () => {
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
 
-    // First click — chair placed
+    // Первый клик — стул размещён
     await page.mouse.click(box!.x + box!.width * 0.7, box!.y + box!.height * 0.4);
     await expect(page.getByText('Размещённая мебель')).toBeVisible();
     await page.waitForTimeout(700);
     const afterFirst = await readFurniture(page);
     expect(afterFirst).toHaveLength(1);
 
-    // Hint about placement mode should disappear (placingItem is now null)
+    // Подсказка о режиме размещения должна исчезнуть (placingItem теперь null)
     await expect(page.getByText(/Кликните на 2D-схему, чтобы разместить «Стул»/)).toHaveCount(0);
 
-    // Second click on a different empty tile — must NOT add a 2nd chair
+    // Второй клик по другому пустому тайлу — не должен добавить второй стул
     await page.mouse.click(box!.x + box!.width * 0.3, box!.y + box!.height * 0.6);
     await page.waitForTimeout(700);
     const afterSecond = await readFurniture(page);
@@ -61,14 +61,15 @@ test.describe('Furniture single-shot (F8.6 v1.12.0)', () => {
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
 
-    // Place first
+    // Ставим первый
     await chairBtn.click();
     await expect(page.getByText(/Кликните на 2D-схему/)).toBeVisible();
     await page.mouse.click(box!.x + box!.width * 0.7, box!.y + box!.height * 0.4);
     await expect(page.getByText('Размещённая мебель')).toBeVisible();
 
-    // Re-pick to place second — wait for placement hint to confirm React re-rendered.
-    // Position picked to clear layout-1's door swing buffer at x=11 (door_bedroom1_corridor).
+    // Снова берём из каталога, чтобы поставить второй — ждём подсказку, чтобы убедиться,
+    // что React перерисовался. Позиция выбрана так, чтобы обойти буфер двери layout-1
+    // на x=11 (door_bedroom1_corridor).
     await chairBtn.click();
     await expect(page.getByText(/Кликните на 2D-схему/)).toBeVisible();
     await page.mouse.click(box!.x + box!.width * 0.1, box!.y + box!.height * 0.8);

@@ -129,7 +129,7 @@ describe('groupEstimateByWorkType', () => {
   it('ignores quantity unit drift inside a group (price still aggregates)', () => {
     const groups = groupEstimateByWorkType([
       lineItem('rough', 'Какая-то работа — A', '10 м²', 1000, 2000),
-      // Same workType but ridiculously different unit (shouldn't normally happen)
+      // Тот же workType, но единица измерения совсем другая (в норме не должно случаться)
       lineItem('rough', 'Какая-то работа — B', '3 м', 500, 800),
     ]);
     expect(groups).toHaveLength(1);

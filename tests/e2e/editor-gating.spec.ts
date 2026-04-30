@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// The dev/preview build uses the .env value; tests rely on it being the
-// known dev token. If it ever changes, update here.
+// dev/preview-сборка использует значение из .env; тесты полагаются на то, что
+// это известный dev-токен. Если он изменится — обнови здесь.
 const TOKEN = 'dev-only-token-replace-in-prod';
 
 test.describe('Layout editor — access gating (F11.1.x, SEC-7)', () => {
@@ -28,9 +28,9 @@ test.describe('Layout editor — access gating (F11.1.x, SEC-7)', () => {
   test('F11.1.1: correct token opens the editor and hides the main app', async ({ page }) => {
     await page.goto(`/?editor=1&token=${TOKEN}`);
     await expect(page.getByTestId('layout-editor')).toBeVisible();
-    // Main app (StageNavigator) must not render alongside the editor (F11.1.4)
+    // Основное приложение (StageNavigator) не должно рендериться рядом с редактором (F11.1.4)
     await expect(page.getByRole('navigation', { name: 'Этапы' })).toHaveCount(0);
-    // Heading is the editor's, not the main app's
+    // Заголовок — редактора, а не основного приложения
     await expect(page.locator('h1')).toContainText('Редактор планировок');
   });
 

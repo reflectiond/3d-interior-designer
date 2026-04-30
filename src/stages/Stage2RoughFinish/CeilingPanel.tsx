@@ -2,7 +2,7 @@ import { useProjectStore } from '../../store/projectStore';
 import styles from './SidePanel.module.css';
 
 export function CeilingPanel() {
-  // F2.4.4 / F12.1 (v1.9.0): corridor and wardrobe pick ceiling type alongside the rest.
+  // F2.4.4 / F12.1 (v1.9.0): коридор и гардеробная выбирают тип потолка наравне с остальными.
   const { rooms, ceiling, setCeiling } = useProjectStore();
   const relevantRooms = rooms;
 

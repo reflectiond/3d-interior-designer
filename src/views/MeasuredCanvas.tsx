@@ -2,31 +2,31 @@ import React from 'react';
 import { PALETTE } from '../theme/palette';
 import { useRulersEnabled } from './useRulersEnabled';
 
-const RULER_PX = 24; // F13.1.1 — outer strip thickness
+const RULER_PX = 24; // F13.1.1 — толщина внешней полосы
 
 interface MeasuredCanvasProps {
-  /** Canvas pixel dimensions (matches Stage width/height). */
+  /** Размеры канвы в пикселях (совпадает с width/height Stage'а). */
   widthPx: number;
   heightPx: number;
-  /** Pixels per tile — converts ruler tick spacing. */
+  /** Пикселей на тайл — задаёт шаг засечек линейки. */
   pxPerTile: number;
-  /** Tiles per meter (always 4 for the 0.25 m tile system, but kept as a prop
-   *  so unit tests can override). */
+  /** Тайлов в метре (всегда 4 для системы тайлов 0.25 м, но оставлено пропом,
+   *  чтобы unit-тесты могли переопределить). */
   tilesPerMeter?: number;
-  /** Konva Stage element rendered to the right of / below the rulers. */
+  /** Элемент Konva Stage, рендерится правее/ниже линеек. */
   children: React.ReactNode;
-  /** Identifier used in the toggle button's data-testid. */
+  /** Идентификатор, используемый в data-testid кнопки переключателя. */
   testIdPrefix?: string;
 }
 
 /**
- * F13.1 (v1.11.0) — wraps a Konva Stage with optional measurement rulers
- * along the top and left edges, plus a small toggle button in the corner.
- * The toggle state is shared via {@link useRulersEnabled} and persisted in
- * localStorage.
+ * F13.1 (v1.11.0) — оборачивает Konva Stage опциональными измерительными
+ * линейками по верхнему и левому краям и небольшой кнопкой-переключателем в
+ * углу. Состояние переключателя расшарено через {@link useRulersEnabled} и
+ * сохраняется в localStorage.
  *
- * The rulers live OUTSIDE the Stage, so they never appear in
- * `stage.toDataURL()` snapshots — keeping export output unchanged.
+ * Линейки лежат СНАРУЖИ Stage'а, поэтому никогда не попадают в снапшоты
+ * `stage.toDataURL()` — экспортный вывод остаётся неизменным.
  */
 export function MeasuredCanvas({
   widthPx,
@@ -145,7 +145,7 @@ function HorizontalRuler({
       </text>,
     );
   }
-  // Minor ticks every tile (0.25 m), skip those that coincide with major
+  // Малые засечки на каждом тайле (0.25 м), пропускаем совпадающие с крупными
   const tiles = Math.ceil(width / pxPerTile);
   for (let t = 0; t <= tiles; t++) {
     if ((t * pxPerTile) % pxPerMeter === 0) continue;

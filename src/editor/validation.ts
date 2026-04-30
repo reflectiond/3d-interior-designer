@@ -1,9 +1,9 @@
 /**
- * Real-time validation for the layout editor (F11.2.4).
+ * Валидация в реальном времени для редактора планировок (F11.2.4).
  *
- * Pure logic: takes editor state, returns a list of human-readable issues
- * with references to the offending objects. Used both to render the issues
- * panel and to gate the JSON export button.
+ * Чистая логика: на вход — состояние редактора, на выход — список читаемых
+ * issue с ссылками на проблемные объекты. Используется и для рендера панели
+ * проблем, и для блокировки кнопки JSON-экспорта.
  */
 
 import { validateNoOverlaps } from '../domain/geometry/openings';
@@ -23,7 +23,7 @@ export type IssueRef =
   | { kind: 'panel' };
 
 export interface EditorIssue {
-  /** Stable id so React lists do not jitter as the user edits. */
+  /** Стабильный id, чтобы React-списки не дёргались при редактировании. */
   id: string;
   message: string;
   refs: IssueRef[];
@@ -41,10 +41,10 @@ function rectsOverlap(a: EditorRoom, b: EditorRoom): boolean {
 }
 
 /**
- * An axis-aligned tile segment is "on a wall" iff every unit-edge it covers
- * separates either (a) one room from outside, or (b) two distinct rooms.
- * Free-floating segments (both sides outside any room) and segments fully
- * inside a single room are invalid.
+ * Осесимметричный сегмент тайлов лежит «на стене» тогда и только тогда, когда
+ * каждое единичное ребро, которое он покрывает, разделяет либо (а) одну комнату
+ * и внешнее пространство, либо (б) две разные комнаты. Сегменты, висящие в воздухе
+ * (обе стороны вне комнат), и сегменты целиком внутри одной комнаты — невалидны.
  */
 function isOpeningOnWall(rooms: readonly EditorRoom[], start: TileCoord, end: TileCoord): boolean {
   if (start.x === end.x && start.y === end.y) return false;
@@ -163,9 +163,9 @@ export function validateEditor(state: EditorState): EditorIssue[] {
     }
   }
 
-  // Mutual overlap of openings — reuse the v1.5 helper. It returns plain
-  // strings; we wrap each as a separate issue without typed refs because the
-  // helper does not expose the participant ids.
+  // Взаимное перекрытие проёмов — переиспользуем хелпер из v1.5. Он возвращает
+  // обычные строки; оборачиваем каждую как отдельный issue без типизированных refs,
+  // потому что хелпер не отдаёт id участников.
   for (const overlapMessage of validateNoOverlaps(state.windows, state.doors)) {
     issues.push({
       id: `overlap-${overlapMessage}`,
@@ -177,7 +177,7 @@ export function validateEditor(state: EditorState): EditorIssue[] {
   return issues;
 }
 
-/** Set of object refs flagged by at least one issue — used for canvas highlighting. */
+/** Множество refs объектов, помеченных хотя бы одним issue — для подсветки на канве. */
 export function invalidObjectKeys(issues: readonly EditorIssue[]): Set<string> {
   const set = new Set<string>();
   for (const issue of issues) {

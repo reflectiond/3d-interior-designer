@@ -14,7 +14,7 @@ describe('useLazyImage — F15.2', () => {
 
   it('возвращает null сразу после монтирования (до onload)', () => {
     const { result } = renderHook(() => useLazyImage('/sprites/hypothetical.png'));
-    // Hook synchronously returns null; onload fires asynchronously, не ждём.
+    // Hook синхронно возвращает null; onload срабатывает асинхронно, не ждём.
     expect(result.current).toBeNull();
   });
 

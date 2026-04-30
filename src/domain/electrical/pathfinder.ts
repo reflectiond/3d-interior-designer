@@ -1,26 +1,26 @@
 import type { TileCoord, ElectricalRoute } from '../geometry/types';
 
 interface PathfinderInput {
-  /** All ceiling tiles available for routing (every room tile is a ceiling tile) */
+  /** Все потолочные тайлы, доступные для прокладки (каждый тайл комнаты — потолочный). */
   ceilingTiles: Set<string>;
-  /** Electrical panel position */
+  /** Положение электрощита. */
   panelPos: TileCoord;
-  /** Points to route to, each with an id and tile position */
+  /** Точки, к которым нужно проложить маршруты — каждая с id и координатой тайла. */
   points: { id: string; tile: TileCoord }[];
 }
 
-/** Convert tile coord to set key */
+/** Преобразовать координату тайла в ключ для Set. */
 function key(t: TileCoord): string {
   return `${t.x},${t.y}`;
 }
 
-/** Parse key back to tile coord */
+/** Распарсить ключ обратно в координату тайла. */
 function parseKey(k: string): TileCoord {
   const [x, y] = k.split(',').map(Number);
   return { x, y };
 }
 
-/** 4-directional neighbors */
+/** Соседи по 4 направлениям. */
 function neighbors(t: TileCoord): TileCoord[] {
   return [
     { x: t.x - 1, y: t.y },
@@ -31,8 +31,8 @@ function neighbors(t: TileCoord): TileCoord[] {
 }
 
 /**
- * BFS from a source tile to a target tile, moving only through allowed ceiling tiles.
- * Returns the path (list of tiles from source to target, inclusive), or null if unreachable.
+ * BFS из исходного тайла до целевого, перемещаемся только по разрешённым потолочным тайлам.
+ * Возвращает путь (список тайлов от source до target включительно) или null, если цель недостижима.
  */
 export function bfsPath(
   source: TileCoord,
@@ -57,7 +57,7 @@ export function bfsPath(
         visited.add(nk);
         parent.set(nk, key(current));
         if (nk === targetKey) {
-          // Reconstruct path
+          // Восстанавливаем путь
           const path: TileCoord[] = [];
           let cur = targetKey;
           while (cur !== sourceKey) {
@@ -76,25 +76,25 @@ export function bfsPath(
 }
 
 /**
- * Build routing tree: compute routes from the electrical panel to each point.
+ * Построить дерево маршрутизации: вычислить маршруты от электрощита к каждой точке.
  *
- * Strategy: greedily route each point to the nearest node on the existing tree.
- * The tree starts with just the panel. For each new point, BFS finds the shortest
- * path from the point to any tile already in the tree, then that path is added
- * to the tree.
+ * Стратегия: жадно прокладываем каждую точку до ближайшего узла существующего дерева.
+ * Дерево стартует с одного щита. Для каждой новой точки BFS находит кратчайший путь
+ * от точки до любого тайла, уже входящего в дерево, и затем этот путь добавляется
+ * в дерево.
  *
- * This produces a reasonable (not necessarily optimal) wiring tree.
+ * Результат — разумное (необязательно оптимальное) дерево разводки.
  */
 export function computeRoutes(input: PathfinderInput): ElectricalRoute[] {
   const { ceilingTiles, panelPos, points } = input;
 
   if (points.length === 0) return [];
 
-  // The "tree" is the set of tiles that already have wiring
+  // «Дерево» — это множество тайлов, уже включённых в разводку
   const treeTiles = new Set<string>([key(panelPos)]);
   const routes: ElectricalRoute[] = [];
 
-  // Sort points by Manhattan distance to panel (closest first for better tree shape)
+  // Сортируем точки по манхэттенскому расстоянию до щита (ближайшие первыми — лучше форма дерева)
   const sorted = [...points].sort((a, b) => {
     const da = Math.abs(a.tile.x - panelPos.x) + Math.abs(a.tile.y - panelPos.y);
     const db = Math.abs(b.tile.x - panelPos.x) + Math.abs(b.tile.y - panelPos.y);
@@ -102,16 +102,16 @@ export function computeRoutes(input: PathfinderInput): ElectricalRoute[] {
   });
 
   for (const point of sorted) {
-    // BFS from the point to any tile in the tree
+    // BFS от точки до любого тайла, уже входящего в дерево
     const path = bfsToTree(point.tile, treeTiles, ceilingTiles);
     if (path) {
-      // Add all path tiles to the tree
+      // Добавляем все тайлы пути в дерево
       for (const t of path) {
         treeTiles.add(key(t));
       }
       routes.push({ pointId: point.id, path });
     } else {
-      // Unreachable — still record empty route
+      // Недостижимо — всё равно записываем пустой маршрут
       routes.push({ pointId: point.id, path: [] });
     }
   }
@@ -120,8 +120,8 @@ export function computeRoutes(input: PathfinderInput): ElectricalRoute[] {
 }
 
 /**
- * BFS from a source to the nearest tile in the existing tree.
- * Returns path from source to the tree node (inclusive).
+ * BFS из исходного тайла до ближайшего тайла существующего дерева.
+ * Возвращает путь от source до узла дерева включительно.
  */
 function bfsToTree(
   source: TileCoord,
@@ -130,7 +130,7 @@ function bfsToTree(
 ): TileCoord[] | null {
   const sourceKey = key(source);
 
-  // If source is already on the tree
+  // Если source уже в дереве
   if (treeTiles.has(sourceKey)) return [source];
   if (!allowed.has(sourceKey)) return null;
 
@@ -146,7 +146,7 @@ function bfsToTree(
         visited.add(nk);
         parent.set(nk, key(current));
         if (treeTiles.has(nk)) {
-          // Found the tree — reconstruct path
+          // Дерево найдено — восстанавливаем путь
           const path: TileCoord[] = [];
           let cur = nk;
           while (cur !== sourceKey) {

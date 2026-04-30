@@ -2,16 +2,16 @@ import type { TileCoord, RoomType } from '../domain/geometry/types';
 import { pickDoorSwingSide } from './wallSnap';
 
 /**
- * Layout editor state machine (F11.2.x).
+ * Конечный автомат редактора планировок (F11.2.x).
  *
- * Pure logic, no React, no Konva — so it can be unit-tested. The editor
- * keeps its own state isolated from the project store and never touches
- * the main app's localStorage (F11.2.6).
+ * Чистая логика, без React и Konva — чтобы её можно было покрывать unit-тестами.
+ * Редактор держит собственное состояние изолированно от project-store и никогда
+ * не пишет в основной localStorage приложения (F11.2.6).
  *
- * v1.6.0 deviation from F11.2.2: we drop the explicit "wall" tool because
- * `LayoutSchema` doesn't store walls — they are derived from room rectangles.
- * Tools are: select, room (drag rectangle), panel (click), window (click-click),
- * door (click-click). See docs/DECISIONS.md.
+ * Отступление от F11.2.2 в v1.6.0: явный инструмент «wall» убран, потому что
+ * `LayoutSchema` не хранит стены — они выводятся из прямоугольников комнат.
+ * Инструменты: select, room (drag rectangle), panel (click), window (click-click),
+ * door (click-click). См. docs/DECISIONS.md.
  */
 
 export type EditorTool = 'select' | 'room' | 'panel' | 'window' | 'door';
@@ -61,7 +61,7 @@ export interface EditorState {
   doors: EditorDoor[];
   tool: EditorTool;
   selection: EditorSelection;
-  /** Per-type auto-increment counters used for stable ids. */
+  /** Авто-инкрементные счётчики по типам, используются для стабильных id. */
   counters: { room: number; window: number; door: number };
 }
 
@@ -125,11 +125,11 @@ function nextRoomFromType(state: EditorState, roomType: RoomType): { id: string;
 }
 
 /**
- * F11.2.7 (v1.10.0) — when a room's type changes the id is rebuilt to keep the
- * `<type>_<n>` invariant that the rest of the codebase relies on (e.g.
- * `rooms.filter(r => r.type === 'bathroom')` is sometimes paired with
- * "id starts with `bathroom_`" assumptions). The new index is the smallest
- * positive integer that produces a unique id within the existing rooms.
+ * F11.2.7 (v1.10.0) — при смене типа комнаты её id пересобирается, чтобы сохранить
+ * инвариант `<type>_<n>`, на который опирается остальной код (например,
+ * `rooms.filter(r => r.type === 'bathroom')` иногда сочетается с предположением
+ * «id начинается с `bathroom_`»). Новый индекс — минимальное положительное
+ * целое, дающее уникальный id среди существующих комнат.
  */
 function nextIdForType(rooms: EditorRoom[], roomType: RoomType, excludeId: string): string {
   const used = new Set(rooms.filter((r) => r.id !== excludeId).map((r) => r.id));
@@ -137,7 +137,7 @@ function nextIdForType(rooms: EditorRoom[], roomType: RoomType, excludeId: strin
     const candidate = `${roomType}_${n}`;
     if (!used.has(candidate)) return candidate;
   }
-  // Practically unreachable — 10k rooms is far beyond any layout.
+  // Практически недостижимо — 10k комнат далеко за рамками любой планировки.
   return `${roomType}_${Date.now()}`;
 }
 
@@ -166,8 +166,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       const { rect, roomType } = action;
       const { id, name } = nextRoomFromType(state, roomType);
       const room: EditorRoom = { id, name, type: roomType, ...rect };
-      // F11.2.9 (v1.10.0) — single-shot tool: drop back to `select` so
-      // accidental further canvas clicks don't spawn another room.
+      // F11.2.9 (v1.10.0) — single-shot инструмент: возвращаемся в `select`,
+      // чтобы случайные последующие клики не создавали ещё одну комнату.
       return {
         ...state,
         rooms: [...state.rooms, room],
@@ -178,14 +178,14 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     }
 
     case 'update_room': {
-      // F11.2.7: type change → regenerate id so the prefix matches the new type.
+      // F11.2.7: смена типа → перегенерируем id, чтобы префикс соответствовал новому типу.
       const target = state.rooms.find((r) => r.id === action.id);
       if (!target) return state;
       const typeChanged = action.patch.type !== undefined && action.patch.type !== target.type;
       const newType = action.patch.type ?? target.type;
       const newId = typeChanged ? nextIdForType(state.rooms, newType, target.id) : target.id;
-      // Default-rename when the user hasn't customised the name yet (matches the
-      // auto-generated name from the previous type).
+      // Авто-переименование, если пользователь ещё не менял имя вручную (совпадает с
+      // автогенерируемым именем для прежнего типа).
       const oldDefaultName = `${ROOM_NAMES[target.type]} ${target.id.split('_').pop()}`;
       const renaming =
         action.patch.name === undefined && typeChanged && target.name === oldDefaultName;
@@ -195,7 +195,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       const updatedRooms = state.rooms.map((r) =>
         r.id === target.id ? { ...r, ...action.patch, id: newId, name: nextName } : r,
       );
-      // Keep selection pointing at the renamed room.
+      // Сохраняем selection на переименованной комнате.
       const nextSelection: EditorSelection =
         state.selection?.kind === 'room' && state.selection.id === target.id
           ? { kind: 'room', id: newId }
@@ -204,7 +204,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     }
 
     case 'set_panel':
-      // F11.2.9 — single-shot tool.
+      // F11.2.9 — single-shot инструмент.
       return {
         ...state,
         electricalPanel: action.coord,
@@ -222,7 +222,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         sill_height_m: 0.9,
         height_m: 1.5,
       };
-      // F11.2.9 — single-shot tool.
+      // F11.2.9 — single-shot инструмент.
       return {
         ...state,
         windows: [...state.windows, win],
@@ -241,9 +241,9 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'add_door': {
       const n = state.counters.door + 1;
       const id = `door_${n}`;
-      // F11.2.8 (v1.10.0) — auto-pick swing_side so the leaf opens INTO an
-      // adjacent room. Falls back to 'left' on internal doors with rooms on
-      // both sides; user can still flip via the dropdown.
+      // F11.2.8 (v1.10.0) — авто-выбор swing_side, чтобы дверь распахивалась В
+      // смежную комнату. Для внутренних дверей с комнатами с обеих сторон
+      // возвращается 'left'; пользователь может поменять через выпадающий список.
       const swing = pickDoorSwingSide(action.segment, state.rooms);
       const door: EditorDoor = {
         id,
@@ -253,7 +253,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         hinge: 'start',
         swing_side: swing,
       };
-      // F11.2.9 — single-shot tool.
+      // F11.2.9 — single-shot инструмент.
       return {
         ...state,
         doors: [...state.doors, door],
@@ -307,9 +307,9 @@ function deleteSelection(state: EditorState, sel: EditorSelection): EditorState 
 }
 
 /**
- * Locate the topmost object under a tile coord. Used by Shift+click delete and
- * by select-tool clicks. Lookup priority: doors > windows > panel > rooms,
- * because openings sit on top of room rectangles visually.
+ * Найти верхний объект под координатой тайла. Используется удалением по Shift+click
+ * и кликами в режиме select. Приоритет: doors > windows > panel > rooms,
+ * потому что проёмы визуально лежат поверх прямоугольников комнат.
  */
 export function findObjectAt(state: EditorState, tile: TileCoord): EditorSelection {
   for (const door of state.doors) {

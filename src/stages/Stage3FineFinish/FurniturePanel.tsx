@@ -25,8 +25,8 @@ interface FurniturePanelProps {
 export function FurniturePanel({ onStartPlace, placingItem }: FurniturePanelProps) {
   const { furniture, rooms, removeFurniture, updateFurniture } = useProjectStore();
 
-  // F8.7 (v1.13.0) — placement freedom: edits only validate containment +
-  // collision; no `allowed_rooms` filter, no door buffer.
+  // F8.7 (v1.13.0) — свобода размещения: редактирование валидирует только
+  // containment + collision; без фильтра `allowed_rooms` и буфера у двери.
   function isEditValid(
     fId: string,
     catalogId: string,
@@ -47,7 +47,7 @@ export function FurniturePanel({ onStartPlace, placingItem }: FurniturePanelProp
     <div className={styles.section}>
       <h3 className={styles.sectionTitle}>Мебель</h3>
 
-      {/* Catalog */}
+      {/* Каталог */}
       <div className={fStyles.catalog}>
         {catalog.map((item) => {
           const w = (item.size_tiles.w * TILE_SIZE * 100).toFixed(0);
@@ -85,7 +85,7 @@ export function FurniturePanel({ onStartPlace, placingItem }: FurniturePanelProp
         </p>
       )}
 
-      {/* Placed furniture list */}
+      {/* Список размещённой мебели */}
       {furniture.length > 0 && (
         <>
           <h4 className={fStyles.subTitle}>Размещённая мебель</h4>
@@ -110,10 +110,11 @@ export function FurniturePanel({ onStartPlace, placingItem }: FurniturePanelProp
                       <button
                         className={fStyles.actionBtn}
                         onClick={() => {
-                          // Validate the new rotation against the current footprint.
-                          // For rectangular pieces 90°/270° swaps width/height, so the
-                          // rotated rect may now cross a wall or another piece — reject
-                          // silently in that case (consistent with placement behaviour).
+                          // Проверяем новый поворот против текущего footprint'а.
+                          // Для прямоугольных предметов 90°/270° меняют местами ширину и
+                          // высоту, поэтому повёрнутый прямоугольник может пересечь стену
+                          // или другой предмет — в этом случае молча отклоняем
+                          // (поведение совпадает с размещением).
                           const next = ((f.rotation + 90) % 360) as 0 | 90 | 180 | 270;
                           if (isEditValid(f.id, f.catalogId, f.position, next)) {
                             updateFurniture(f.id, { rotation: next });
@@ -129,9 +130,9 @@ export function FurniturePanel({ onStartPlace, placingItem }: FurniturePanelProp
                       <button
                         className={fStyles.actionBtn}
                         onClick={() => {
-                          // Mirror keeps the AABB footprint identical for symmetric
-                          // boxes shipped today, but stays defensive for future
-                          // asymmetric models — re-validate the same way as rotate.
+                          // Mirror сохраняет AABB-footprint для симметричных боксов,
+                          // отгружаемых сегодня, но мы остаёмся защитными к будущим
+                          // асимметричным моделям — валидируем так же, как и поворот.
                           if (isEditValid(f.id, f.catalogId, f.position, f.rotation)) {
                             updateFurniture(f.id, { mirrored: !f.mirrored });
                           }

@@ -1,20 +1,20 @@
 import type { TileCoord, Room } from '../geometry/types';
 
 interface WallEdge {
-  /** Tile that is inside a room, adjacent to a wall */
+  /** Тайл внутри комнаты, примыкающий к стене. */
   tile: TileCoord;
-  /** Which side of the tile touches the wall */
+  /** Какой стороной тайла он касается стены. */
   side: 'top' | 'bottom' | 'left' | 'right';
-  /** Is this an external wall of the house? */
+  /** Является ли эта стена внешней стеной дома. */
   isExternal: boolean;
-  /** Room this tile belongs to */
+  /** Комната, которой принадлежит тайл. */
   roomId: string;
 }
 
 /**
- * Given a click position in tile coordinates, find the nearest wall edge of
- * the containing room. The returned edge's `tile` is the boundary tile on
- * the wall closest to the click (snapped along the wall axis).
+ * По координате клика в тайлах находит ближайшую стену комнаты, в которой клик произошёл.
+ * Поле `tile` возвращаемого ребра — граничный тайл стены, ближайший к клику
+ * (с привязкой по оси стены).
  *
  * Возвращает null только если клик пришёлся вне любой комнаты. Если клик
  * внутри комнаты — гарантированно возвращает ближайшую стену; раньше
@@ -31,7 +31,7 @@ export function findNearestWallEdge(
   const tx = Math.floor(tileX);
   const ty = Math.floor(tileY);
 
-  // Find which room this tile belongs to
+  // Находим, какой комнате принадлежит этот тайл
   const room = rooms.find(
     (r) =>
       tx >= r.rect.x &&
@@ -43,7 +43,7 @@ export function findNearestWallEdge(
 
   const { x: rx, y: ry, width: rw, height: rh } = room.rect;
 
-  // Distance from click to each of 4 walls (in tile-units).
+  // Расстояние от клика до каждой из 4 стен (в тайлах).
   // Walls — линии тайлов на границе rect'а.
   const distLeft = tileX - rx; // расстояние до западной стены
   const distRight = rx + rw - tileX; // до восточной (ширина rect'а в тайлах)
@@ -58,7 +58,7 @@ export function findNearestWallEdge(
   ];
   const bestSide = sides.reduce((a, b) => (b.dist < a.dist ? b : a)).side;
 
-  // Snap click to the boundary tile of the chosen wall.
+  // Привязываем клик к граничному тайлу выбранной стены.
   // Для горизонтальных стен (top/bottom) фиксируем X на оси клика, Y
   // ставим на boundary; для вертикальных — наоборот.
   let snappedTile: TileCoord;

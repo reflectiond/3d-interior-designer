@@ -53,15 +53,15 @@ test.describe('Layout editor — validation + export (F11.2.4, F11.2.5)', () => 
   test('F11.2.4: window placed off any wall is flagged in real time', async ({ page }) => {
     await openEditor(page);
     await page.getByTestId('tool-room').click();
-    // F11.2.8 (v1.10.0): wall snap is within ~3 tiles, so the room must be
-    // big enough for the test click to land in true interior — > 3 tiles
-    // from each wall.
+    // F11.2.8 (v1.10.0): wall snap работает в пределах ~3 тайлов, поэтому комната
+    // должна быть достаточно большой, чтобы тестовый клик попал в истинный
+    // интерьер — > 3 тайлов от каждой стены.
     await dragTile(page, { x: 2, y: 2 }, { x: 17, y: 17 });
     await page.getByTestId('tool-panel').click();
     await clickTile(page, 5, 5);
 
     await page.getByTestId('tool-window').click();
-    // Both endpoints in the deep interior — beyond WALL_SNAP_RADIUS from any wall.
+    // Обе концевые точки в глубоком интерьере — за пределами WALL_SNAP_RADIUS от любой стены.
     await clickTile(page, 9, 9);
     await clickTile(page, 12, 9);
 
@@ -74,19 +74,19 @@ test.describe('Layout editor — validation + export (F11.2.4, F11.2.5)', () => 
   }) => {
     await openEditor(page);
 
-    // Draw a single 8×8 bedroom in the upper-left
+    // Рисуем одну спальню 8×8 в верхнем левом углу
     await page.getByTestId('tool-room').click();
     await dragTile(page, { x: 0, y: 0 }, { x: 7, y: 7 });
 
-    // Place the panel inside the bedroom
+    // Ставим электрощит внутри спальни
     await page.getByTestId('tool-panel').click();
     await clickTile(page, 2, 2);
 
-    // Validation should be clean and the export button enabled
+    // Валидация должна быть чистой, кнопка экспорта — доступной
     await expect(page.getByTestId('validation-status')).toContainText('всё ок');
     await expect(page.getByTestId('export-json')).toBeEnabled();
 
-    // Trigger the download and inspect the JSON
+    // Триггерим скачивание и инспектируем JSON
     const downloadPromise = page.waitForEvent('download');
     await page.getByTestId('export-json').click();
     const download = await downloadPromise;
@@ -107,9 +107,9 @@ test.describe('Layout editor — validation + export (F11.2.4, F11.2.5)', () => 
   }) => {
     await openEditor(page);
 
-    // Two adjacent rooms, panel in one, an internal door, an external window.
-    // F11.2.9 (v1.10.0): each placement single-shots back to select, so the
-    // second room placement requires re-picking the room tool.
+    // Две смежные комнаты, щит в одной, внутренняя дверь, внешнее окно.
+    // F11.2.9 (v1.10.0): каждое размещение возвращает в select (single-shot),
+    // поэтому для второй комнаты нужно снова активировать инструмент room.
     await page.getByTestId('tool-room').click();
     await dragTile(page, { x: 0, y: 0 }, { x: 7, y: 11 });
     await page.getByTestId('tool-room').click();

@@ -12,9 +12,9 @@ test.describe('Mirror furniture (F8.2)', () => {
   test('F8.4.2: clicking mirror button changes the canvas (label flips)', async ({ page }) => {
     await gotoStage3Furniture(page);
 
-    // Place a sofa — 8×4 tiles, mirrorable, allowed in living/bedroom.
-    // Layout 1's bedroom_2 covers tiles (0..12, 15..32); aim at (~3, ~19) so
-    // the 8×4 footprint fits cleanly.
+    // Ставим диван — 8×4 тайла, можно зеркалить, разрешён в living/bedroom.
+    // bedroom_2 в Layout 1 покрывает тайлы (0..12, 15..32); целимся в (~3, ~19),
+    // чтобы 8×4 footprint помещался чисто.
     await page.getByRole('button', { name: /Диван/ }).first().click();
     const canvas = page.locator('.konvajs-content canvas').first();
     const box = await canvas.boundingBox();
@@ -23,17 +23,17 @@ test.describe('Mirror furniture (F8.2)', () => {
     await page.keyboard.press('Escape');
     await page.waitForTimeout(150);
 
-    // Verify the sofa landed in the placed-furniture list (mirror UI surfaces)
+    // Убеждаемся, что диван попал в список размещённой мебели (там появляется кнопка mirror)
     await expect(page.getByText('Размещённая мебель')).toBeVisible();
 
-    // Capture the canvas before mirror
+    // Снимаем состояние канвы до зеркалирования
     const before = await page.evaluate(() => {
       const c = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
       return c ? c.toDataURL() : null;
     });
     expect(before).not.toBeNull();
 
-    // Click the «Отзеркалить» button next to the sofa in the placed-furniture list
+    // Кликаем «Отзеркалить» рядом с диваном в списке размещённой мебели
     const mirrorBtn = page.getByRole('button', { name: 'Отзеркалить' }).first();
     await expect(mirrorBtn).toBeVisible();
     await mirrorBtn.click();
@@ -43,10 +43,10 @@ test.describe('Mirror furniture (F8.2)', () => {
       const c = document.querySelector('.konvajs-content canvas') as HTMLCanvasElement | null;
       return c ? c.toDataURL() : null;
     });
-    // Mirroring inverts the in-rect text label so the canvas data URL must differ
+    // Mirror инвертирует подпись внутри прямоугольника, поэтому data URL канвы должен измениться
     expect(after).not.toBe(before);
 
-    // Click again to flip back — should return close to the original
+    // Жмём ещё раз, чтобы перевернуть обратно — должны вернуться близко к оригиналу
     await mirrorBtn.click();
     await page.waitForTimeout(200);
     const restored = await page.evaluate(() => {

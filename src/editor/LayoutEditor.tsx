@@ -7,13 +7,13 @@ import { EditorSidebar } from './EditorSidebar';
 const EDITOR_BG = PALETTE.walls.paint;
 
 /**
- * Layout editor (F11.x).
+ * Редактор планировок (F11.x).
  *
- * v1.6.0 sub-sprint 1.6.b: drawing tools landed (Room / Panel / Window / Door).
- * Real-time validation + JSON export → 1.6.c.
+ * v1.6.0 саб-спринт 1.6.b: появились инструменты рисования (Room / Panel / Window / Door).
+ * Валидация в реальном времени + JSON-экспорт → 1.6.c.
  *
- * F11.2.6: state lives entirely in this component's `useReducer`. No
- * persistence, no projectStore mutation — closing the tab discards everything.
+ * F11.2.6: всё состояние живёт в `useReducer` этого компонента. Никакой
+ * персистентности, никаких мутаций projectStore — закрытие вкладки сбрасывает всё.
  */
 export function LayoutEditor() {
   const [state, dispatch] = useReducer(editorReducer, initialEditorState());

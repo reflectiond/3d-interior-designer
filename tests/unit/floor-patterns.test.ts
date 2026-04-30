@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { getPatternUnitSize } from '../../src/views/floorPatterns';
 
-// Note: renderFloorPattern() and getFloorPatternCanvas() exercise the Canvas 2D API
-// which is unavailable in jsdom. These are covered by the e2e tests in
-// tests/e2e/floor-patterns.spec.ts where a real browser canvas is used.
+// Примечание: renderFloorPattern() и getFloorPatternCanvas() задействуют Canvas 2D API,
+// который недоступен в jsdom. Они покрыты e2e-тестами в
+// tests/e2e/floor-patterns.spec.ts, где используется настоящий браузерный canvas.
 
 describe('getPatternUnitSize', () => {
   it('linoleum unit is 0.25 × 0.25 m (1 tile; F6.2.2 + F6.2.9 v1.8.0 — speckle)', () => {
@@ -26,7 +26,7 @@ describe('getPatternUnitSize', () => {
     const types = ['linoleum', 'laminate', 'tile', 'quartz_vinyl'] as const;
     for (const t of types) {
       const { widthM, heightM } = getPatternUnitSize(t);
-      // Multiplied by 20 should yield an integer (i.e. unit is multiple of 0.05 m)
+      // Умножение на 20 должно дать целое число (т.е. юнит кратен 0.05 м)
       expect(Math.round(widthM * 20)).toBe(widthM * 20);
       expect(Math.round(heightM * 20)).toBe(heightM * 20);
     }

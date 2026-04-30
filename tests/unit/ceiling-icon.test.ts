@@ -52,7 +52,7 @@ describe('pickCeilingIconAnchor', () => {
     const room = makeRoom(0, 0, 20, 16);
     const a = pickCeilingIconAnchor(room, [], catalogMap);
     expect(a.corner).toBe('TR');
-    // top-right tile-up coords
+    // координаты top-right в tile-up
     const expectedTx = 20 - CEILING_ICON_SIZE_TILES - CEILING_ICON_INSET_TILES;
     const expectedTy = 16 - CEILING_ICON_SIZE_TILES - CEILING_ICON_INSET_TILES;
     expect(a.tx).toBeCloseTo(expectedTx);
@@ -61,7 +61,7 @@ describe('pickCeilingIconAnchor', () => {
 
   it('falls back to BR when furniture blocks TR', () => {
     const room = makeRoom(0, 0, 20, 16);
-    // Sofa 8×4 at top-right corner
+    // Диван 8×4 в правом верхнем углу
     const sofa = makeFurniture(12, 12);
     const a = pickCeilingIconAnchor(room, [sofa], catalogMap);
     expect(a.corner).toBe('BR');
@@ -69,7 +69,7 @@ describe('pickCeilingIconAnchor', () => {
 
   it('falls back to BL when TR and BR blocked', () => {
     const room = makeRoom(0, 0, 20, 16);
-    // Two sofas occupy top-right and bottom-right
+    // Два дивана занимают TR и BR
     const a = pickCeilingIconAnchor(
       room,
       [makeFurniture(12, 12), makeFurniture(12, 0)],
@@ -90,7 +90,7 @@ describe('pickCeilingIconAnchor', () => {
 
   it('returns TR fallback when every corner is blocked', () => {
     const room = makeRoom(0, 0, 20, 16);
-    // Furniture in every corner
+    // Мебель в каждом углу
     const a = pickCeilingIconAnchor(
       room,
       [
@@ -106,7 +106,7 @@ describe('pickCeilingIconAnchor', () => {
 
   it('ignores furniture in other rooms (not overlapping the candidate corner)', () => {
     const room = makeRoom(20, 0, 16, 16);
-    // Sofa entirely outside this room
+    // Диван целиком вне этой комнаты
     const sofa = makeFurniture(0, 0);
     const a = pickCeilingIconAnchor(room, [sofa], catalogMap);
     expect(a.corner).toBe('TR');
@@ -114,20 +114,20 @@ describe('pickCeilingIconAnchor', () => {
 
   it('respects furniture rotation when checking collision', () => {
     const room = makeRoom(0, 0, 20, 16);
-    // Sofa 8×4 rotated 90° becomes 4×8 (taller). Place at (16, 8) so it occupies
-    // x[16..20], y[8..16] — overlaps the TR icon. BR is unaffected since y range
-    // is far below.
+    // Диван 8×4, повёрнутый на 90°, превращается в 4×8 (выше). Ставим в (16, 8),
+    // чтобы он занимал x[16..20], y[8..16] — пересекает иконку TR. BR не задет,
+    // потому что диапазон y лежит сильно ниже.
     const sofa = makeFurniture(16, 8, 90);
     const a = pickCeilingIconAnchor(room, [sofa], catalogMap);
     expect(a.corner).toBe('BR');
   });
 
   it('F6.3.6 (v1.8.1): icon + LABEL_WIDTH_FACTOR×size label fits inside a 4×4-tile room', () => {
-    // Smallest typical room: 4×4 tiles (1×1 m). Label is centered on icon.
-    // For factor=4, iconSize=0.6, inset=1.0:
-    //   icon center at inset + iconSize/2 = 1.3 from each wall
-    //   label half-width = (4 × 0.6) / 2 = 1.2
-    //   slack to closest wall = 1.3 − 1.2 = 0.1 tile (~3 px)
+    // Самая маленькая типичная комната: 4×4 тайла (1×1 м). Подпись центрируется на иконке.
+    // При factor=4, iconSize=0.6, inset=1.0:
+    //   центр иконки на inset + iconSize/2 = 1.3 от каждой стены
+    //   половина ширины подписи = (4 × 0.6) / 2 = 1.2
+    //   зазор до ближайшей стены = 1.3 − 1.2 = 0.1 тайла (~3 px)
     const room = makeRoom(0, 0, 4, 4);
     const a = pickCeilingIconAnchor(room, [], catalogMap);
     const labelHalfWidth = (CEILING_ICON_LABEL_WIDTH_FACTOR * CEILING_ICON_SIZE_TILES) / 2;

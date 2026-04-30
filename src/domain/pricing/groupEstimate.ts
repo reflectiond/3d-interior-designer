@@ -3,23 +3,23 @@ import type { EstimateLineItem } from './estimator';
 export type WorkUnit = 'м²' | 'м' | 'шт.';
 
 export interface EstimateGroup {
-  /** Common work type (e.g. "Стяжка пола", "Ламинат", "Электропроводка"). */
+  /** Общий тип работы (например, «Стяжка пола», «Ламинат», «Электропроводка»). */
   workType: string;
   category: 'rough' | 'fine' | 'furniture';
   unit: WorkUnit;
   totalQuantity: number;
   totalPriceMin: number;
   totalPriceMax: number;
-  /** Original detail rows under this group, in their original order. */
+  /** Исходные строки-детали внутри группы, в исходном порядке. */
   items: EstimateLineItem[];
 }
 
 const NAME_SEPARATOR = ' — ';
 
 /**
- * Splits "{work} — {room}" into its components. Items without a separator are
- * single-room/aggregate work types like "Штукатурка стен" or "Электропроводка"
- * — those become their own group with no detail.
+ * Разбирает "{работа} — {комната}" на компоненты. Строки без разделителя — это
+ * однокомнатные/агрегатные виды работ вроде «Штукатурка стен» или «Электропроводка»;
+ * они становятся отдельной группой без деталей.
  */
 export function splitWorkAndDetail(name: string): { workType: string; detail: string | null } {
   const idx = name.indexOf(NAME_SEPARATOR);
@@ -31,8 +31,8 @@ export function splitWorkAndDetail(name: string): { workType: string; detail: st
 }
 
 /**
- * Parses "12.5 м²" / "8 м" / "1 шт." into a numeric value and the unit. Returns
- * null when the format is unrecognised.
+ * Парсит «12.5 м²» / «8 м» / «1 шт.» в числовое значение и единицу. Возвращает
+ * null, если формат не распознан.
  */
 export function parseQuantity(raw: string): { value: number; unit: WorkUnit } | null {
   const m = raw.trim().match(/^([\d.,]+)\s*(м²|м|шт\.)$/);
@@ -44,9 +44,9 @@ export function parseQuantity(raw: string): { value: number; unit: WorkUnit } | 
 }
 
 /**
- * Groups flat estimate items by their work type (the prefix before " — ").
- * Group ordering follows the first occurrence in the input — this preserves
- * the technological order assembled by `computeEstimate` (F4.3 / F9.1.5).
+ * Группирует плоские строки сметы по типу работы (префиксу до « — »).
+ * Порядок групп соответствует порядку первого появления во входе — это
+ * сохраняет технологическую последовательность, заданную `computeEstimate` (F4.3 / F9.1.5).
  */
 export function groupEstimateByWorkType(items: readonly EstimateLineItem[]): EstimateGroup[] {
   const groups = new Map<string, EstimateGroup>();
@@ -72,9 +72,9 @@ export function groupEstimateByWorkType(items: readonly EstimateLineItem[]): Est
     if (parsed && parsed.unit === group.unit) {
       group.totalQuantity += parsed.value;
     } else if (parsed) {
-      // Unit mismatch within a group — keep the first-seen unit and skip aggregation
-      // for this row. Prices still aggregate, quantity just under-counts which is
-      // surfaced in the per-item detail.
+      // Расхождение единиц внутри группы — оставляем первую встретившуюся единицу и
+      // пропускаем агрегацию количества для этой строки. Цены агрегируются, количество
+      // недосчитывается, что видно в детализации по позициям.
     }
     group.totalPriceMin += item.priceMin;
     group.totalPriceMax += item.priceMax;
@@ -84,7 +84,7 @@ export function groupEstimateByWorkType(items: readonly EstimateLineItem[]): Est
   return Array.from(groups.values());
 }
 
-/** Format a group's aggregate quantity with one decimal for м/м² and integer for шт. */
+/** Форматирует агрегатное количество группы с одним знаком после запятой для м/м² и целочисленно для шт. */
 export function formatGroupQuantity(group: EstimateGroup): string {
   const qty =
     group.unit === 'шт.' ? Math.round(group.totalQuantity) : group.totalQuantity.toFixed(1);

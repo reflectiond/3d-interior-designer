@@ -14,13 +14,13 @@ test.describe('Stage 1 — Layout Selection', () => {
     await expect(page.getByText('Планировка 1')).toBeVisible();
     await expect(page.getByText('Планировка 2')).toBeVisible();
     await expect(page.getByText('Планировка 3')).toBeVisible();
-    // Areas should contain м²
+    // Площади должны содержать м²
     await expect(page.getByText(/м²/).first()).toBeVisible();
   });
 
   test('F1.3: selecting layout loads it into view', async ({ page }) => {
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
-    // After selection, the 2D canvas should appear
+    // После выбора должна появиться 2D-канва
     await expect(page.locator('canvas').first()).toBeVisible();
   });
 
@@ -30,28 +30,28 @@ test.describe('Stage 1 — Layout Selection', () => {
   });
 
   test('F1.6: "Далее" button appears after selection', async ({ page }) => {
-    // No "Далее" before selection
+    // До выбора кнопки «Далее» не должно быть
     await expect(page.getByText('Далее →')).not.toBeVisible();
-    // Select layout
+    // Выбираем планировку
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
-    // Now "Далее" should appear
+    // Теперь «Далее» должна появиться
     await expect(page.getByText('Далее →')).toBeVisible();
   });
 
   test('F1.6: clicking "Далее" moves to stage 2', async ({ page }) => {
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
     await page.getByText('Далее →').click();
-    // Stage 2 indicator should be active
-    // Stage 2 screed panel should be visible
+    // Индикатор второго этапа должен стать активным
+    // Должна стать видимой панель «Стяжка пола» этапа 2
     await expect(page.getByText('Стяжка пола')).toBeVisible();
   });
 
   test('F1.7: changing layout after selection shows confirm dialog', async ({ page }) => {
-    // Select layout 1
+    // Выбираем планировку 1
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
-    // Try to select layout 2
+    // Пытаемся выбрать планировку 2
     await page.getByRole('button', { name: /Выбрать Планировка 2/ }).click();
-    // Confirm dialog should appear
+    // Должен появиться диалог подтверждения
     await expect(page.getByText('Сменить планировку?')).toBeVisible();
     await expect(page.getByText('Все ваши изменения будут сброшены')).toBeVisible();
   });
@@ -60,7 +60,7 @@ test.describe('Stage 1 — Layout Selection', () => {
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
     await page.getByRole('button', { name: /Выбрать Планировка 2/ }).click();
     await page.getByText('Отмена').click();
-    // Should still have layout 1 selected
+    // Планировка 1 должна остаться выбранной
     await expect(page.getByText('Выбрано').first()).toBeVisible();
   });
 
@@ -68,7 +68,7 @@ test.describe('Stage 1 — Layout Selection', () => {
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
     await page.getByRole('button', { name: /Выбрать Планировка 2/ }).click();
     await page.getByText('Подтвердить').click();
-    // Dialog should close
+    // Диалог должен закрыться
     await expect(page.getByText('Сменить планировку?')).not.toBeVisible();
   });
 
@@ -80,9 +80,9 @@ test.describe('Stage 1 — Layout Selection', () => {
   test('F5.2: can navigate back from stage 2 to stage 1', async ({ page }) => {
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
     await page.getByText('Далее →').click();
-    // Now on stage 2, click stage 1 in navigator
+    // Сейчас мы на этапе 2 — кликаем по этапу 1 в навигаторе
     await page.getByRole('button', { name: /1/ }).first().click();
-    // Should see layout selection again
+    // Снова должен появиться экран выбора планировки
     await expect(page.getByText('Выберите планировку')).toBeVisible();
   });
 });

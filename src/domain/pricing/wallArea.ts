@@ -4,7 +4,7 @@ import { openingAreaM2 } from '../geometry/openings';
 
 const ROOM_HEIGHT = 2.7;
 
-/** Bare wall area for the room — perimeter × room height, in square meters. */
+/** Голая площадь стен комнаты — периметр × высота помещения, в квадратных метрах. */
 export function wallAreaBare(room: Room): number {
   const w = room.rect.width * TILE_SIZE;
   const h = room.rect.height * TILE_SIZE;
@@ -12,20 +12,19 @@ export function wallAreaBare(room: Room): number {
 }
 
 /**
- * F2.3.4 / F3.2.7 (v1.9.0) — wall area for a single room with windows and
- * doors that lie on its perimeter subtracted out.
+ * F2.3.4 / F3.2.7 (v1.9.0) — площадь стен одной комнаты с вычетом окон и дверей,
+ * лежащих на её периметре.
  *
- * Each opening is encoded as an axis-aligned tile segment along a single
- * wall (start.x === end.x → vertical wall, start.y === end.y → horizontal).
- * For an opening to belong to *this* room, the segment must run along one
- * of the room's four walls and stay within the room's extent on that wall.
+ * Каждый проём кодируется как осесимметричный сегмент тайлов вдоль одной стены
+ * (start.x === end.x → вертикальная стена, start.y === end.y → горизонтальная).
+ * Чтобы проём принадлежал *этой* комнате, сегмент должен идти вдоль одной из её
+ * четырёх стен и не выходить за границы комнаты по этой стене.
  *
- * Internal openings (a door between two adjacent rooms) belong to BOTH
- * rooms — `wallAreaForRoom` subtracts them from each room's surface
- * independently. Summing the result over all rooms therefore subtracts an
- * internal opening twice (once per side), which matches reality: plaster
- * is missing on both sides of the wall. External windows belong to a
- * single room and are subtracted once.
+ * Внутренние проёмы (дверь между двумя смежными комнатами) принадлежат ОБЕИМ
+ * комнатам — `wallAreaForRoom` вычитает их из площади каждой комнаты независимо.
+ * Сумма по всем комнатам вычтёт внутренний проём дважды (по разу с каждой стороны),
+ * что соответствует реальности: штукатурки нет с обеих сторон стены. Внешние окна
+ * принадлежат одной комнате и вычитаются однократно.
  */
 export function wallAreaForRoom(room: Room, windows: Window[], doors: Door[]): number {
   const base = wallAreaBare(room);
@@ -47,14 +46,14 @@ function openingBelongsToRoom(
   const yMin = Math.min(op.start.y, op.end.y);
   const yMax = Math.max(op.start.y, op.end.y);
   const r = room.rect;
-  // Vertical opening: stays on x = const, runs along y. Must sit on the
-  // room's west or east wall and lie within the room's vertical extent.
+  // Вертикальный проём: x = const, идёт вдоль y. Должен лежать на западной или
+  // восточной стене комнаты и находиться в её вертикальных границах.
   if (op.start.x === op.end.x) {
     const onWest = op.start.x === r.x;
     const onEast = op.start.x === r.x + r.width;
     return (onWest || onEast) && yMin >= r.y && yMax <= r.y + r.height;
   }
-  // Horizontal opening: y = const, runs along x. Must sit on south/north wall.
+  // Горизонтальный проём: y = const, идёт вдоль x. Должен лежать на южной/северной стене.
   if (op.start.y === op.end.y) {
     const onSouth = op.start.y === r.y;
     const onNorth = op.start.y === r.y + r.height;
@@ -63,7 +62,7 @@ function openingBelongsToRoom(
   return false;
 }
 
-/** Total plaster surface across the project — sum of per-room wall area. */
+/** Суммарная площадь штукатурки по проекту — сумма площадей стен по комнатам. */
 export function totalPlasterArea(rooms: Room[], windows: Window[], doors: Door[]): number {
   let total = 0;
   for (const room of rooms) {

@@ -35,15 +35,15 @@ export function Stage3FineFinish() {
   const [viewMode, setViewMode] = useState<ViewMode>('2d');
   const [placingItem, setPlacingItem] = useState<CatalogItem | null>(null);
   const [placingRotation, setPlacingRotation] = useState<0 | 90 | 180 | 270>(0);
-  // F8.5.1 (v1.13.0) — currently selected placed furniture on canvas.
+  // F8.5.1 (v1.13.0) — текущая выбранная на канве размещённая мебель.
   const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
   const { setStage, rooms, furniture, addFurniture, updateFurniture, removeFurniture } =
     useProjectStore();
 
-  // F8.7 (v1.13.0) — placement freedom: `allowed_rooms` and door buffer
-  // restrictions are removed. Containment and collision remain.
+  // F8.7 (v1.13.0) — свобода размещения: ограничения `allowed_rooms` и буфера
+  // дверей убраны. Остались containment и collision.
 
-  // F8.1 — drag-to-move handlers for placed furniture
+  // F8.1 — обработчики drag-to-move для размещённой мебели
   const validateMove = useCallback(
     (id: string, tx: number, ty: number): boolean => {
       const f = furniture.find((x) => x.id === id);
@@ -53,8 +53,8 @@ export function Stage3FineFinish() {
       const tiles = getFurnitureTiles({ x: tx, y: ty }, item, f.rotation);
       const room = findContainingRoom(tiles, rooms);
       if (!room) return false;
-      // Exclude self from collision check — the piece is allowed to occupy
-      // its own current footprint while moving.
+      // Исключаем самого себя из проверки коллизий — предмет вправе занимать
+      // собственный текущий footprint во время перемещения.
       const others = furniture.filter((x) => x.id !== id);
       if (hasCollision(tiles, others, catalogMap)) return false;
       return true;
@@ -73,7 +73,7 @@ export function Stage3FineFinish() {
     setPlacingItem(item);
     setPlacingRotation(0);
     setViewMode('2d');
-    // F8.5 — picking a new piece in the catalog clears any prior selection.
+    // F8.5 — выбор нового предмета в каталоге снимает предыдущее выделение.
     setSelectedFurnitureId(null);
   }, []);
 
@@ -86,7 +86,7 @@ export function Stage3FineFinish() {
       const room = findContainingRoom(tiles, rooms);
 
       if (!room) return;
-      // F8.7 (v1.13.0): no room-type filter, no door buffer.
+      // F8.7 (v1.13.0): без фильтра по типу комнаты, без буфера у двери.
       if (hasCollision(tiles, furniture, catalogMap)) return;
 
       addFurniture({
@@ -97,19 +97,19 @@ export function Stage3FineFinish() {
         mirrored: false,
       });
 
-      // F8.6.1 (v1.12.0): single-shot — drop placement mode after a successful
-      // commit so accidental further canvas clicks don't spawn another piece.
-      // Mirrors F11.2.9 (single-shot tool) in the layout editor.
+      // F8.6.1 (v1.12.0): single-shot — после успешного commit'а выходим из режима
+      // размещения, чтобы случайные дальнейшие клики не создавали ещё один предмет.
+      // Зеркалит F11.2.9 (single-shot tool) в редакторе планировок.
       setPlacingItem(null);
       setPlacingRotation(0);
     },
     [placingItem, placingRotation, rooms, furniture, addFurniture],
   );
 
-  // Keyboard handlers split into two effects so the dependency lists stay tight.
-  // 1) Placement-mode keys: R rotates, Escape cancels.
+  // Обработчики клавиатуры разделены на два эффекта, чтобы списки зависимостей оставались узкими.
+  // 1) Клавиши в режиме размещения: R вращает, Escape отменяет.
   // F8.5.3-fix (v1.17.0): используем `e.code` вместо `e.key` для буквенных
-  // клавиш — `e.key` зависит от раскладки (русская К на физической R дает
+  // клавиш — `e.key` зависит от раскладки (русская К на физической R даёт
   // `e.key === 'к'`, не `'R'`). Стрелки/Delete/Escape остаются на `e.key`,
   // т.к. они layout-independent.
   useEffect(() => {
@@ -126,12 +126,12 @@ export function Stage3FineFinish() {
     return () => window.removeEventListener('keydown', handleKey);
   }, [placingItem]);
 
-  // 2) F8.5.3 (v1.13.0) — selection-mode keys: R rotate, M mirror,
-  //    Delete/Backspace remove, arrow keys nudge by 1 tile (validated).
+  // 2) F8.5.3 (v1.13.0) — клавиши в режиме selection: R вращает, M зеркалит,
+  //    Delete/Backspace удаляет, стрелки сдвигают на 1 тайл (с валидацией).
   useEffect(() => {
     if (placingItem || !selectedFurnitureId || activeTab !== 'furniture') return;
     const handleKey = (e: KeyboardEvent) => {
-      // Don't grab keys when the user is typing in an input/textarea.
+      // Не перехватываем клавиши, пока пользователь печатает в input/textarea.
       const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
       const f = furniture.find((x) => x.id === selectedFurnitureId);
@@ -164,7 +164,7 @@ export function Stage3FineFinish() {
       }
       if (e.code === 'KeyM') {
         if (!item.mirrorable) return;
-        // Mirror keeps footprint symmetric for current catalog, no validation needed.
+        // Mirror в текущем каталоге сохраняет симметричный footprint, валидация не нужна.
         updateFurniture(f.id, { mirrored: !f.mirrored });
         e.preventDefault();
         return;
@@ -182,7 +182,7 @@ export function Stage3FineFinish() {
       const dx = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
       const dy = e.key === 'ArrowDown' ? -1 : e.key === 'ArrowUp' ? 1 : 0;
       if (dx === 0 && dy === 0) return;
-      // Tile y-axis is up (View2D inverts on render); Up arrow → +y in tile space.
+      // Ось y тайлов направлена вверх (View2D инвертирует при рендере); Up arrow → +y в tile-space.
       const nx = f.position.x + dx;
       const ny = f.position.y + dy;
       const tiles = getFurnitureTiles({ x: nx, y: ny }, item, f.rotation);
@@ -256,7 +256,7 @@ export function Stage3FineFinish() {
                         const tiles = getFurnitureTiles(pos, placingItem, placingRotation);
                         const room = findContainingRoom(tiles, rooms);
                         if (!room) return false;
-                        // F8.7 (v1.13.0): no room-type filter, no door buffer.
+                        // F8.7 (v1.13.0): без фильтра по типу комнаты, без буфера у двери.
                         if (hasCollision(tiles, furniture, catalogMap)) return false;
                         return true;
                       },

@@ -8,23 +8,23 @@ test.describe('Estimate grouping (F9.1)', () => {
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
 
     // Stage 4
-    await page.locator('nav[aria-label="Этапы"] button').nth(3).click();
+    await page.locator('nav[aria-label="Этапы"] button').nth(3).click(); // переход на этап 4
     await expect(page.getByRole('heading', { name: 'Итоговая смета' })).toBeVisible();
 
-    // F9.1.5 — first row in the rough section should be «Стяжка пола»
+    // F9.1.5 — первая строка в разделе «Черновая отделка» должна быть «Стяжка пола»
     const screedRow = page.getByRole('button', { name: /Стяжка пола/ });
     await expect(screedRow).toBeVisible();
     await expect(screedRow).toHaveAttribute('aria-expanded', 'false');
 
-    // Detail rows should not be visible while collapsed
+    // Строки-детали не должны быть видимы, пока группа свёрнута
     await expect(page.getByText(/Стяжка пола — /)).not.toBeVisible();
 
-    // Click → expanded; detail rows under «Стяжка пола» become visible
+    // Клик → развёрнуто; строки-детали под «Стяжка пола» становятся видимыми
     await screedRow.click();
     await expect(screedRow).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByText(/Стяжка пола — /).first()).toBeVisible();
 
-    // Click again → collapsed; detail rows hidden
+    // Клик снова → свёрнуто; строки-детали скрыты
     await screedRow.click();
     await expect(screedRow).toHaveAttribute('aria-expanded', 'false');
     await expect(page.getByText(/Стяжка пола — /)).not.toBeVisible();
@@ -35,7 +35,7 @@ test.describe('Estimate grouping (F9.1)', () => {
     await page.getByRole('button', { name: /Выбрать Планировка 1/ }).click();
     await page.locator('nav[aria-label="Этапы"] button').nth(3).click();
 
-    // The total ribbon contains «Итого:» and at least two ₽-formatted numbers
+    // Лента итога содержит «Итого:» и хотя бы два числа в формате ₽
     await expect(page.getByText('Итого:')).toBeVisible();
     const rubles = page.getByText(/₽/);
     expect(await rubles.count()).toBeGreaterThanOrEqual(2);

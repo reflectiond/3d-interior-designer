@@ -1,11 +1,11 @@
-// Design tokens: sizes, spacing, constants
+// Design-токены: размеры, отступы, константы
 export const TOKENS = {
-  /** Tile size in meters */
+  /** Размер тайла в метрах. */
   tileSize: 0.25,
-  /** Default room height in meters */
+  /** Высота комнаты по умолчанию в метрах. */
   roomHeight: 2.7,
-  /** Wire diameter in meters (3D) */
+  /** Диаметр провода в метрах (3D). */
   wireDiameter: 0.02,
-  /** localStorage autosave debounce in ms */
+  /** Debounce автосохранения в localStorage, мс. */
   autosaveDebounce: 500,
 } as const;

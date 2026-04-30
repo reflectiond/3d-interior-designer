@@ -2,24 +2,23 @@ import type { Room, FurnitureInstance } from '../domain/geometry/types';
 import type { CatalogItem } from '../domain/furniture/placement';
 import { getEffectiveSize } from '../domain/furniture/placement';
 
-export const CEILING_ICON_SIZE_TILES = 0.6; // 0.15 m diameter (F6.3.1) plus padding for label
-// F6.3.6 (v1.8.0): bumped from 0.4 → 1.0 tile (= 0.25 m). The label text under
-// the icon is rendered with width LABEL_WIDTH_FACTOR × icon_size (centered on
-// the icon center), so on the wall-adjacent side it extends past the icon by
-// (factor − 1) × iconSize / 2. With factor = 4, iconSize = 0.6, inset = 1.0
-// the label fits inside the smallest typical room (4×4 tiles) with ~0.1 tile
-// margin to the closest wall.
+export const CEILING_ICON_SIZE_TILES = 0.6; // диаметр 0.15 м (F6.3.1) + отступ под подпись
+// F6.3.6 (v1.8.0): увеличен с 0.4 → 1.0 тайла (= 0.25 м). Подпись под иконкой
+// рендерится шириной LABEL_WIDTH_FACTOR × icon_size (по центру иконки), поэтому
+// со стороны ближайшей стены она выходит за иконку на (factor − 1) × iconSize / 2.
+// При factor = 4, iconSize = 0.6, inset = 1.0 подпись помещается в самой маленькой
+// типичной комнате (4×4 тайла) с зазором ~0.1 тайла до ближайшей стены.
 export const CEILING_ICON_INSET_TILES = 1.0;
-// F6.3.6 (v1.8.1): bumped 3 → 4 so «Гипсокартон» (11 cyrillic chars at
-// fontSize 10 ≈ 66 px) fits in the layout box without word-wrap. View2D pairs
-// this with `wrap="none"` so an unexpectedly long label clips horizontally
-// instead of breaking onto a second line.
+// F6.3.6 (v1.8.1): увеличен с 3 → 4, чтобы «Гипсокартон» (11 кириллических символов
+// при fontSize 10 ≈ 66 px) поместился в layout-бокс без переноса по словам. View2D
+// сочетает это с `wrap="none"`, чтобы неожиданно длинная подпись обрезалась по
+// горизонтали, а не уходила на вторую строку.
 export const CEILING_ICON_LABEL_WIDTH_FACTOR = 4;
 
 export type CornerName = 'TR' | 'BR' | 'BL' | 'TL';
 
 export interface CeilingIconAnchor {
-  /** Tile-space coordinates of the icon's bottom-left corner (y-up) */
+  /** Координаты левого нижнего угла иконки в tile-space (y-up). */
   tx: number;
   ty: number;
   corner: CornerName;
@@ -58,9 +57,9 @@ function collidesWithFurniture(
 }
 
 /**
- * Picks a corner inside the room for the ceiling type icon. Tries top-right
- * first, then BR, BL, TL (clockwise per F6.3.3). Falls back to TR if every
- * corner overlaps with furniture.
+ * Выбирает угол внутри комнаты для иконки типа потолка. Сначала пробует
+ * верхний правый, затем BR, BL, TL (по часовой стрелке, F6.3.3). Если все
+ * углы перекрываются мебелью — возвращает TR.
  */
 export function pickCeilingIconAnchor(
   room: Room,

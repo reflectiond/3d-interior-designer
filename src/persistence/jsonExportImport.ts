@@ -15,7 +15,7 @@ const layoutsById = new Map([
   [3, LayoutSchema.parse(layout3Data)],
 ]);
 
-// Strict Zod schema for imported project JSON — rejects unknown fields (SEC-6)
+// Строгая Zod-схема для импортируемого JSON проекта — отклоняет неизвестные поля (SEC-6)
 const ProjectJSONSchema = z.object({
   version: z.literal('1.0'),
   layoutId: z.union([z.literal(1), z.literal(2), z.literal(3), z.null()]),
@@ -43,7 +43,7 @@ const ProjectJSONSchema = z.object({
   ),
 });
 
-/** Sanitize all string values in an object tree to prevent XSS (SEC-1) */
+/** Санитизировать все строки в дереве объекта для защиты от XSS (SEC-1). */
 function sanitizeStrings<T>(obj: T): T {
   if (typeof obj === 'string') {
     return DOMPurify.sanitize(obj) as T;
@@ -88,10 +88,10 @@ export function importProjectJSON(jsonText: string) {
   try {
     const raw = JSON.parse(jsonText);
 
-    // Validate schema — rejects unknown fields (SEC-6)
+    // Валидируем схему — отклоняем неизвестные поля (SEC-6)
     const parsed = ProjectJSONSchema.parse(raw);
 
-    // Sanitize all strings (SEC-1)
+    // Санитизируем все строки (SEC-1)
     const data = sanitizeStrings(parsed);
 
     const store = useProjectStore.getState();

@@ -30,7 +30,7 @@ export interface Estimate {
 
 const pricing = pricingData;
 
-/** Calculate total wire length in meters from routes */
+/** Вычислить суммарную длину провода в метрах по маршрутам. */
 function wireLength(routes: ElectricalRoute[]): number {
   let total = 0;
   for (const route of routes) {
@@ -55,9 +55,9 @@ export function computeEstimate(
 ): Estimate {
   const items: EstimateLineItem[] = [];
 
-  // --- Rough finish ---
+  // --- Черновая отделка ---
 
-  // 1. Screed (F12.2 v1.9.0: corridor and wardrobe count too)
+  // 1. Стяжка (F12.2 v1.9.0: коридор и гардеробная тоже учитываются)
   for (const room of rooms) {
     const ft = flooring[room.id] ?? 'screed';
     const area = room.area;
@@ -80,7 +80,7 @@ export function computeEstimate(
     }
   }
 
-  // 2. Electrical
+  // 2. Электрика
   const wireLenM = wireLength(electricalRoutes);
   if (wireLenM > 0) {
     items.push({
@@ -92,10 +92,10 @@ export function computeEstimate(
     });
   }
 
-  // 3. Plaster (all rooms)
-  // F2.3.4 (v1.9.0): use wallAreaForRoom so internal openings are subtracted
-  // from BOTH adjacent rooms — pre-1.9 the global subtraction counted each
-  // internal door only once, which over-billed plaster.
+  // 3. Штукатурка (все комнаты)
+  // F2.3.4 (v1.9.0): используем wallAreaForRoom, чтобы внутренние проёмы вычитались
+  // из ОБЕИХ смежных комнат — до v1.9 глобальное вычитание считало каждую внутреннюю
+  // дверь только один раз, и штукатурка переоценивалась.
   const totalWallArea = totalPlasterArea(rooms, windows, doors);
   items.push({
     category: 'rough',
@@ -105,7 +105,7 @@ export function computeEstimate(
     priceMax: Math.round(totalWallArea * pricing.rough_finish.plaster_per_m2.max),
   });
 
-  // 4. Ceiling (F12.2 v1.9.0: corridor and wardrobe count too)
+  // 4. Потолок (F12.2 v1.9.0: коридор и гардеробная тоже учитываются)
   for (const room of rooms) {
     const ct = ceiling[room.id] ?? 'stretch';
     const area = room.area;
@@ -120,12 +120,12 @@ export function computeEstimate(
     });
   }
 
-  // --- Fine finish ---
+  // --- Чистовая отделка ---
 
-  // 5. Floor covering (F12.2 v1.9.0: corridor and wardrobe count too)
+  // 5. Напольное покрытие (F12.2 v1.9.0: коридор и гардеробная тоже учитываются)
   for (const room of rooms) {
     const fc = floorCovering[room.id];
-    // F3.1.3 (v1.9.0): `none` and missing entries both skip the line item.
+    // F3.1.3 (v1.9.0): `none` и отсутствие записи одинаково пропускают строку.
     if (!fc || fc === 'none') continue;
     const area = room.area;
     const priceKey = `floor_${fc}_per_m2` as keyof typeof pricing.fine_finish;
@@ -146,12 +146,12 @@ export function computeEstimate(
     });
   }
 
-  // 6. Wall covering (F12.2 v1.9.0: corridor and wardrobe count too)
+  // 6. Настенное покрытие (F12.2 v1.9.0: коридор и гардеробная тоже учитываются)
   for (const room of rooms) {
     const wc = wallCovering[room.id];
-    // F3.2.5 (v1.9.0): `none` and missing entries both skip the line item.
+    // F3.2.5 (v1.9.0): `none` и отсутствие записи одинаково пропускают строку.
     if (!wc || wc === 'none') continue;
-    // F3.2.7 (v1.9.0): subtract per-room openings from the covering surface.
+    // F3.2.7 (v1.9.0): вычитаем проёмы конкретной комнаты из площади покрытия.
     const wa = wallAreaForRoom(room, windows, doors);
     const priceKey = `wall_${wc}_per_m2` as keyof typeof pricing.fine_finish;
     const p = pricing.fine_finish[priceKey];
@@ -166,7 +166,7 @@ export function computeEstimate(
     });
   }
 
-  // 7. Furniture
+  // 7. Мебель
   for (const f of furniture) {
     const item = catalog.get(f.catalogId);
     if (!item) continue;

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-// pdfjs-dist legacy build works in Node-side test environments
+// Legacy-сборка pdfjs-dist работает в Node-side тестовых окружениях
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 async function gotoStage4(page: import('@playwright/test').Page) {
@@ -33,17 +33,17 @@ async function downloadPdf(page: import('@playwright/test').Page) {
 async function pageHasImage(pdf: pdfjsLib.PDFDocumentProxy, pageNum: number): Promise<boolean> {
   const page = await pdf.getPage(pageNum);
   const ops = await page.getOperatorList();
-  // pdfjs-dist exposes OPS.paintImageXObject which is emitted whenever an image is drawn
+  // pdfjs-dist отдаёт OPS.paintImageXObject — он эмитится всегда, когда рисуется изображение
   return ops.fnArray.includes(pdfjsLib.OPS.paintImageXObject);
 }
 
-// F7.6 (v1.15.0) — Firefox+headless не инициализирует WebGL контекст для
-// offscreen-канвы (`left: -10000`) до того, как мы пытаемся прочитать
-// первый кадр. Manual `gl.render()`, double-rAF и `frameloop="demand"`
-// все были опробованы — в Firefox CI флаг `data-3d-ready` ни разу не
-// выставился (timeout 30s). Production-сценарий не страдает: real user
-// клики идут через секунды после mount'а, WebGL успевает инициализироваться.
-// Скип PDF-набора в Firefox — компромисс ради зелёного CI.
+// F7.6 (v1.15.0) — Firefox+headless не инициализирует WebGL-контекст для
+// офскрин-канвы (`left: -10000`) до того, как мы пытаемся прочитать
+// первый кадр. Ручной `gl.render()`, double-rAF и `frameloop="demand"` —
+// всё было опробовано: в Firefox CI флаг `data-3d-ready` ни разу не
+// выставлялся (timeout 30s). Production-сценарий не страдает: реальные
+// пользовательские клики идут через секунды после mount'а, WebGL успевает
+// инициализироваться. Скип PDF-набора в Firefox — компромисс ради зелёного CI.
 test.describe('Export — PDF', () => {
   test.skip(
     ({ browserName }) => browserName === 'firefox',
@@ -68,15 +68,15 @@ test.describe('Export — PDF', () => {
     const { pdf } = await downloadPdf(page);
 
     expect(pdf.numPages).toBe(3);
-    expect(await pageHasImage(pdf, 1)).toBe(true); // 2D plan
-    expect(await pageHasImage(pdf, 2)).toBe(true); // 3D view
+    expect(await pageHasImage(pdf, 1)).toBe(true); // план 2D
+    expect(await pageHasImage(pdf, 2)).toBe(true); // вид 3D
   });
 
   test('F10.2.5: page is A4 landscape (297×210 mm)', async ({ page }) => {
     const { pdf } = await downloadPdf(page);
     const firstPage = await pdf.getPage(1);
     const viewport = firstPage.getViewport({ scale: 1 });
-    // A4 in points: 297mm = 841.89pt, 210mm = 595.28pt — landscape: width > height
+    // A4 в пунктах: 297мм = 841.89pt, 210мм = 595.28pt — landscape: ширина > высота
     expect(viewport.width).toBeGreaterThan(viewport.height);
     expect(viewport.width).toBeGreaterThan(800);
     expect(viewport.width).toBeLessThan(900);
@@ -95,11 +95,11 @@ test.describe('Export — PDF', () => {
     const textContent = await estimatePage.getTextContent();
     const text = textContent.items.map((item) => ('str' in item ? item.str : '')).join(' ');
 
-    // Group title — work type without a room suffix
+    // Заголовок группы — тип работ без суффикса комнаты
     expect(text).toContain('Стяжка пола');
-    // Expanded detail row — same work type with " — RoomName" suffix
+    // Развёрнутая строка-деталь — тот же тип работ с суффиксом « — RoomName»
     expect(text).toMatch(/Стяжка пола\s+—\s+/);
-    // Group titles for the rough section header
+    // Заголовки групп для заголовка раздела черновой отделки
     expect(text).toContain('Черновая отделка');
   });
 });
@@ -116,7 +116,7 @@ test.describe('Export — PNG', () => {
     expect(downloadPath).not.toBeNull();
     const buffer = await readFile(downloadPath!);
 
-    // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+    // PNG-сигнатура: 89 50 4E 47 0D 0A 1A 0A
     expect(buffer.length).toBeGreaterThan(1000);
     expect(buffer[0]).toBe(0x89);
     expect(buffer[1]).toBe(0x50);
@@ -139,7 +139,7 @@ test.describe('Export — filename safety (SEC-8)', () => {
   test('SEC-8: download filenames contain only safe characters', async ({ page }) => {
     await gotoStage4(page);
 
-    // PDF
+    // PDF-экспорт
     const pdfPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Сохранить как PDF' }).click();
     const pdfName = (await pdfPromise).suggestedFilename();
@@ -149,13 +149,13 @@ test.describe('Export — filename safety (SEC-8)', () => {
     expect(pdfName).not.toContain('/');
     expect(pdfName).not.toContain('\\');
 
-    // PNG
+    // PNG-экспорт
     const pngPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Сохранить как PNG' }).click();
     const pngName = (await pngPromise).suggestedFilename();
     expect(pngName).toMatch(/^[a-zA-Z0-9_.-]+$/);
 
-    // JSON
+    // JSON-экспорт
     const jsonPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Сохранить проект (JSON)' }).click();
     const jsonName = (await jsonPromise).suggestedFilename();

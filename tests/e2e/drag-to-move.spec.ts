@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
-// E2E-12 (F8.4.1) — full drag-to-move round-trip. Playwright's synthetic
-// pointer events do not cross Konva's drag-distance threshold reliably in
-// headless Chromium, so the helper drives the drag pipeline through
-// `Konva.stages[0].find(...)` + `node.fire(...)` directly. See the
-// `konvaDragFurniture` doc comment for details.
+// E2E-12 (F8.4.1) — полный round-trip drag-to-move. Синтетические pointer-события
+// Playwright ненадёжно пересекают drag-distance threshold Konva в headless
+// Chromium, поэтому хелпер пробрасывает drag-пайплайн напрямую через
+// `Konva.stages[0].find(...)` + `node.fire(...)`. Подробности — в doc-комментарии
+// `konvaDragFurniture`.
 
 const STORE_KEY = '3d-interior-designer-project';
 
@@ -26,21 +26,21 @@ async function readFurniture(page: import('@playwright/test').Page) {
 }
 
 /**
- * Drives Konva's drag-to-move pipeline by firing the same events the real
- * pointer events would fire. Playwright's synthetic mouse events do not
- * deterministically cross Konva's drag-distance threshold in headless
- * Chromium, so we go through Konva's public Node.fire / Stage APIs directly.
+ * Прогоняет drag-to-move пайплайн Konva, эмитируя те же события, что и реальные
+ * pointer-события. Синтетические события мыши Playwright не детерминированно
+ * пересекают drag-distance threshold Konva в headless Chromium, поэтому идём
+ * напрямую через публичные Node.fire / Stage API Konva.
  *
- * The View2D handlers store progress in React state (dragState) between
- * dragstart, dragmove and dragend, so we must let React flush after each
- * event — otherwise dragend reads a stale (null) dragState and bails out.
+ * Обработчики View2D хранят прогресс в React-состоянии (dragState) между
+ * dragstart, dragmove и dragend, поэтому нужно дать React сделать flush после
+ * каждого события — иначе dragend прочитает устаревший (null) dragState и выйдет.
  */
 async function konvaDragFurniture(
   page: import('@playwright/test').Page,
   furnitureIndex: number,
   targetCanvasInternal: { x: number; y: number },
 ) {
-  // Step 1 — pin pointer position and fire dragstart
+  // Шаг 1 — фиксируем позицию указателя и эмитим dragstart
   await page.evaluate(
     ({ index, target }) => {
       type AnyNode = { fire: (evt: string, e?: object, bubble?: boolean) => void };
@@ -59,7 +59,7 @@ async function konvaDragFurniture(
     },
     { index: furnitureIndex, target: targetCanvasInternal },
   );
-  // Let React flush state from dragstart so the dragmove/end closures see it
+  // Даём React сделать flush после dragstart, чтобы замыкания dragmove/end увидели обновлённое состояние
   await page.waitForTimeout(80);
   await page.evaluate(() => {
     const node = (
@@ -84,20 +84,20 @@ test.describe('Drag-to-move (F8.1, E2E-12)', () => {
   test('E2E-12a: dragging to a valid tile commits the new position', async ({ page }) => {
     await gotoStage3Furniture(page);
 
-    // «Стул» — 2×2 tiles, allowed_rooms: null (fits anywhere inside a room)
+    // «Стул» — 2×2 тайла, allowed_rooms: null (помещается в любой комнате)
     await page.getByRole('button', { name: /Стул/ }).first().click();
     const canvas = page.locator('.konvajs-content canvas').first();
     const box = await canvas.boundingBox();
     expect(box).not.toBeNull();
 
-    // Place chair near layout-1 living-room area (right-center of the canvas)
+    // Ставим стул в области гостиной layout-1 (справа по центру канвы)
     const placeX = box!.x + box!.width * 0.7;
     const placeY = box!.y + box!.height * 0.4;
     await page.mouse.click(placeX, placeY);
     await page.keyboard.press('Escape');
-    // Confirm the chair landed in the placed-furniture list before checking storage
+    // Убеждаемся, что стул попал в список размещённой мебели до проверки storage
     await expect(page.getByText('Размещённая мебель')).toBeVisible();
-    // Auto-save is debounced 500 ms — wait through it
+    // Автосохранение debounced на 500 мс — выжидаем
     await page.waitForTimeout(700);
 
     const before = await readFurniture(page);
@@ -105,11 +105,11 @@ test.describe('Drag-to-move (F8.1, E2E-12)', () => {
     expect(before!.length).toBe(1);
     const startPos = before![0].position;
 
-    // Drag chair to a new tile. Layout 1 living room covers x=20..36, y=6..32
-    // (in tile coords). Aim at internal canvas pos that maps to tile (22, 12):
+    // Тащим стул в новый тайл. Гостиная Layout 1 — x=20..36, y=6..32 (в координатах
+    // тайлов). Целимся в внутреннюю позицию канвы, которая мапится в тайл (22, 12):
     //   internal x = 22 * SCALE + chair.w/2*SCALE = 22*30 + 30 = 690
     //   internal y = (32 - 12 - 1) * SCALE = 19 * 30 = 570
-    // (View2D inverts Y; ty = round(gridHeight - posY/SCALE - h/2))
+    // (View2D инвертирует Y; ty = round(gridHeight - posY/SCALE - h/2))
     await konvaDragFurniture(page, 0, { x: 690, y: 570 });
     await page.waitForTimeout(750);
 
@@ -141,17 +141,17 @@ test.describe('Drag-to-move (F8.1, E2E-12)', () => {
     expect(before!.length).toBe(1);
     const startPos = before![0].position;
 
-    // Drag toward the top-left edge of the canvas — beyond layout 1 grid
-    // (layout 1 covers tiles 0..36, 0..32; corners outside any room → invalid).
-    // Aim very close to top-left to land outside any rooms.
-    // Aim outside layout 1 grid (gridWidth*SCALE=1080, gridHeight*SCALE=960).
-    // Internal pos (-200, -200) lands far above and left of any room.
+    // Тащим к верхне-левому краю канвы — за сетку Layout 1 (Layout 1 покрывает
+    // тайлы 0..36, 0..32; углы вне любой комнаты → invalid). Целимся очень близко
+    // к верхнему левому углу, чтобы попасть вне всех комнат.
+    // Целимся за сетку Layout 1 (gridWidth*SCALE=1080, gridHeight*SCALE=960).
+    // Внутренняя позиция (-200, -200) лежит сильно выше и левее любой комнаты.
     await konvaDragFurniture(page, 0, { x: -200, y: -200 });
-    // 500 ms invalid-flash + 500 ms debounced save
+    // 500 мс invalid-вспышка + 500 мс debounced-сохранения
     await page.waitForTimeout(1100);
 
     const after = await readFurniture(page);
-    // Invalid drop must leave the position unchanged
+    // Невалидный drop должен оставить позицию без изменений
     expect(after![0].position).toEqual(startPos);
   });
 });

@@ -13,9 +13,9 @@ async function openEditor(page: Page) {
 }
 
 /**
- * SCALE in EditorCanvas is 24 px/tile, default grid is 32×32 → 768×768.
- * Tile (tx,ty) maps to a stage-pixel rectangle [(tx*24, ty*24), ((tx+1)*24, (ty+1)*24)).
- * We aim for the centre (tx*24+12, ty*24+12).
+ * SCALE в EditorCanvas — 24 px/тайл, дефолтная сетка 32×32 → 768×768.
+ * Тайл (tx,ty) маппится в stage-пиксельный прямоугольник [(tx*24, ty*24), ((tx+1)*24, (ty+1)*24)).
+ * Целимся в центр (tx*24+12, ty*24+12).
  */
 const SCALE = 24;
 function tilePoint(tx: number, ty: number) {
@@ -61,7 +61,7 @@ async function countTintedPixels(
 ) {
   return page.evaluate(
     ({ target, tol }) => {
-      // Konva renders each Layer to its own <canvas>; sum pixels across all of them
+      // Konva рендерит каждый Layer в собственный <canvas>; суммируем пиксели по всем
       const canvases = document.querySelectorAll<HTMLCanvasElement>(
         '[data-testid="layout-editor-canvas"] canvas',
       );
@@ -92,7 +92,7 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
     await page.getByTestId('tool-room').click();
     await dragTile(page, { x: 2, y: 2 }, { x: 11, y: 9 });
 
-    // Properties panel reflects the new room (default type = bedroom)
+    // Панель свойств показывает новую комнату (дефолтный тип — bedroom)
     await expect(page.getByTestId('properties-panel')).toContainText('bedroom_1');
     await expect(page.getByTestId('room-type-select')).toBeVisible();
   });
@@ -102,7 +102,7 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
     await page.getByTestId('tool-panel').click();
     await clickTile(page, 5, 5);
 
-    // PALETTE.electrical.panel is #D32F2F (rgb 211, 47, 47) — heavy red pixels.
+    // PALETTE.electrical.panel — #D32F2F (rgb 211, 47, 47), насыщенно-красные пиксели.
     const red = await countTintedPixels(page, { r: 211, g: 47, b: 47 }, 50);
     expect(red).toBeGreaterThan(50);
     await expect(page.getByTestId('properties-panel')).toContainText('Электрощиток');
@@ -136,11 +136,11 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
     const redBefore = await countTintedPixels(page, { r: 211, g: 47, b: 47 }, 50);
     expect(redBefore).toBeGreaterThan(50);
 
-    // Switch back to select tool, then shift+click on the panel tile.
+    // Переключаемся обратно на select, потом shift+click по тайлу со щитом.
     await page.getByTestId('tool-select').click();
     await clickTile(page, 6, 6, { shift: true });
 
-    // Primary signal: panel state cleared. Properties panel — DOM-уровень,
+    // Главный сигнал: panel state очищен. Панель свойств — DOM-уровень,
     // обновляется сразу при React commit'е.
     await expect(page.getByTestId('properties-panel')).toContainText('Объект не выбран');
 
@@ -152,7 +152,7 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
       () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))),
     );
 
-    // Secondary signal: red pixel count drops dramatically.
+    // Второй сигнал: количество красных пикселей резко падает.
     const redAfter = await countTintedPixels(page, { r: 211, g: 47, b: 47 }, 50);
     expect(redAfter).toBeLessThan(redBefore / 4);
   });
@@ -172,24 +172,24 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
   }) => {
     await openEditor(page);
 
-    // 1) Room tool — drag once to commit a room. Single-shot resets to select.
+    // 1) Инструмент room — один drag коммитит комнату. Single-shot возвращает на select.
     await page.getByTestId('tool-room').click();
     await dragTile(page, { x: 2, y: 2 }, { x: 9, y: 9 });
     await expect(page.getByTestId('properties-panel')).toContainText('bedroom_1');
-    // A second drag in empty space with the (now-select) tool just clears the
-    // selection — it must NOT create bedroom_2.
+    // Второй drag по пустому месту инструментом (теперь — select) просто
+    // снимает выделение — bedroom_2 не должна создаться.
     await dragTile(page, { x: 20, y: 20 }, { x: 27, y: 27 });
     await expect(page.getByTestId('properties-panel')).toContainText('Объект не выбран');
     await expect(page.getByTestId('properties-panel')).not.toContainText('bedroom_2');
 
-    // 2) Panel tool — single click commits, single-shot resets to select.
+    // 2) Инструмент panel — один клик коммитит, single-shot возвращает на select.
     await page.getByTestId('tool-panel').click();
     await clickTile(page, 14, 14);
     await expect(page.getByTestId('properties-panel')).toContainText('Электрощиток');
-    // A second click on a different empty tile must NOT relocate the panel.
+    // Второй клик по другому пустому тайлу не должен переносить щит.
     await clickTile(page, 25, 25);
-    // After the select-mode click on empty space the panel selection is cleared,
-    // but the placed panel is still on tile (14, 14) — verify by re-selecting it.
+    // После клика по пустому месту в режиме select выделение panel снимается,
+    // но сам щит всё ещё на тайле (14, 14) — проверяем повторным выбором.
     await clickTile(page, 14, 14);
     await expect(page.getByTestId('properties-panel')).toContainText('14, 14');
   });
@@ -214,11 +214,10 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
     await page.mouse.move(box.x + end.x, box.y + end.y, { steps: 10 });
     await page.waitForTimeout(150); // дать React+Konva отрисовать HUD
 
-    // The Konva Text node lives inside the Stage canvas; we read it via the
-    // pixel data check by sampling text. Since Text rendering through Konva
-    // doesn't expose DOM selectors, we instead verify the HUD by sampling a
-    // characteristic blue pixel from the HUD's stroke (PALETTE.editor.selection
-    // = #1565C0 → rgb(21, 101, 192)) near the cursor position.
+    // Konva Text-узел живёт внутри Stage canvas; читаем его через проверку
+    // пиксельных данных, сэмплируя текст. Konva-Text не выдаёт DOM-селекторов,
+    // поэтому HUD проверяем по характерному синему пикселю обводки HUD
+    // (PALETTE.editor.selection = #1565C0 → rgb(21, 101, 192)) рядом с позицией курсора.
     const hudPixels = await page.evaluate(
       ({ targetX, targetY }) => {
         const canvases = document.querySelectorAll<HTMLCanvasElement>(
@@ -228,7 +227,7 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
         for (const c of canvases) {
           const ctx = c.getContext('2d');
           if (!ctx) continue;
-          // Sample a 200×40 region around the HUD position
+          // Сэмплируем область 200×40 вокруг позиции HUD
           const x = Math.max(0, targetX - 5);
           const y = Math.max(0, targetY - 5);
           const w = Math.min(c.width - x, 200);
@@ -236,7 +235,7 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
           if (w <= 0 || h <= 0) continue;
           const { data } = ctx.getImageData(x, y, w, h);
           for (let i = 0; i < data.length; i += 4) {
-            // Near PALETTE.editor.selection #1565C0
+            // Близко к PALETTE.editor.selection #1565C0
             if (data[i] < 60 && data[i + 1] >= 80 && data[i + 1] <= 130 && data[i + 2] >= 170) {
               count++;
             }
@@ -247,10 +246,10 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
       { targetX: end.x, targetY: end.y },
     );
 
-    // Even with anti-aliasing, the HUD stroke + text contribute many blue pixels.
+    // Даже с anti-aliasing'ом обводка HUD + текст дают много синих пикселей.
     expect(hudPixels).toBeGreaterThan(20);
 
-    // Release the drag — HUD disappears, room is committed
+    // Отпускаем drag — HUD пропадает, комната коммитится
     await page.mouse.up();
     await expect(page.getByTestId('properties-panel')).toContainText('bedroom_1');
   });
@@ -261,7 +260,7 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
     await dragTile(page, { x: 1, y: 1 }, { x: 8, y: 8 });
     await page.getByTestId('tool-panel').click();
     await clickTile(page, 4, 4);
-    // Give autosave debounce time to fire if it ever did
+    // Даём времени debounce-автосохранению сработать, если оно вообще запускается
     await page.waitForTimeout(700);
 
     const projectKey = await page.evaluate(() =>
