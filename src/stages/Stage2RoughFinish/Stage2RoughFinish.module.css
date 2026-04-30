@@ -17,6 +17,8 @@
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+  /* Та же причина что и .viewToggle — не схлопываться flex-родителем. */
+  flex-shrink: 0;
 }
 
 .backBtn,
@@ -54,6 +56,10 @@
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 1rem;
+  /* Sprint 22 fix: viewport-fixed layout (App.css `height: 100vh`) делает
+     `.canvas` flex column'ом ограниченным по высоте. Без flex-shrink:0
+     родитель схлопывал toggle-bar в недостаточную высоту, обрезая текст. */
+  flex-shrink: 0;
 }
 
 .toggleBtn {
