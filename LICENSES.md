@@ -27,6 +27,12 @@
 | `public/models/kenney/kitchenFridge.glb`       | `kitchen_column`       |
 | `public/models/kenney/toilet.glb`              | `toilet`               |
 | `public/models/kenney/kitchenSink.glb`         | `sink`                 |
+| `public/models/kenney/bathtub.glb`             | `bathtub`              |
+| `public/models/kenney/shower.glb`              | `shower`               |
+| `public/models/kenney/bookcaseOpen.glb`        | `bookshelf`            |
+| `public/models/kenney/tableCoffee.glb`         | `coffee_table`         |
+| `public/models/kenney/bedSingle.glb`           | `bed_single`           |
+| `public/models/kenney/loungeChair.glb`         | `armchair`             |
 
 ## Шрифты
 
