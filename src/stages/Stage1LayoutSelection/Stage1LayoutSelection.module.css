@@ -11,6 +11,35 @@
   font-weight: 600;
 }
 
+/* F14.1 — toolbar над сеткой с кнопкой импорта. */
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.importBtn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #1976d2;
+  background: white;
+  color: #1976d2;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.importBtn:hover {
+  background: #1976d2;
+  color: white;
+}
+
+.hiddenInput {
+  display: none;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

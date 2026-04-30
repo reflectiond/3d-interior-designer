@@ -6,15 +6,45 @@ interface LayoutCardProps {
   layout: Layout;
   isSelected: boolean;
   onSelect: (layout: Layout) => void;
+  /** F14.3 — маркер импортированной карточки + кнопка удаления. */
+  isCustom?: boolean;
+  /** F14.4 — обработчик кнопки «×». Вызывается после confirm-диалога. */
+  onDelete?: () => void;
 }
 
-export function LayoutCard({ layout, isSelected, onSelect }: LayoutCardProps) {
+export function LayoutCard({ layout, isSelected, onSelect, isCustom, onDelete }: LayoutCardProps) {
   const totalTiles = layout.rooms.reduce((sum, r) => sum + r.width * r.height, 0);
   const totalArea = (totalTiles * TILE_AREA).toFixed(1);
   const roomNames = layout.rooms.map((r) => r.name).join(', ');
 
+  const handleDelete = () => {
+    if (!onDelete) return;
+    if (window.confirm(`Удалить «${layout.name}»? Это действие нельзя отменить.`)) {
+      onDelete();
+    }
+  };
+
   return (
-    <div className={`${styles.card} ${isSelected ? styles.selected : ''}`}>
+    <div
+      className={`${styles.card} ${isSelected ? styles.selected : ''}`}
+      style={{ position: 'relative' }}
+    >
+      {isCustom && (
+        <>
+          <span className={styles.customBadge} aria-label="Своя планировка">
+            Своя
+          </span>
+          <button
+            type="button"
+            className={styles.deleteBtn}
+            onClick={handleDelete}
+            aria-label={`Удалить ${layout.name}`}
+            data-testid="layout-card-delete"
+          >
+            ×
+          </button>
+        </>
+      )}
       <div className={styles.preview}>
         <MiniMap layout={layout} />
       </div>

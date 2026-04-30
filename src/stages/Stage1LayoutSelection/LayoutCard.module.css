@@ -106,3 +106,44 @@
 .card.selected .button {
   background: #4caf50;
 }
+
+/* F14.3 (v1.14.0) — маркер для импортированных карточек. */
+.customBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #1976d2;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  letter-spacing: 0.02em;
+}
+
+.cardWrapper {
+  position: relative;
+  display: flex;
+}
+
+/* F14.4 — крестик удаления только для импортированных карточек. */
+.deleteBtn {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(229, 57, 53, 0.9);
+  color: white;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.deleteBtn:hover {
+  background: #c62828;
+}
