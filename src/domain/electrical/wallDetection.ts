@@ -12,8 +12,14 @@ interface WallEdge {
 }
 
 /**
- * Given a click position in tile coordinates, find the nearest wall edge.
- * Returns null if the click is not close enough to any wall.
+ * Given a click position in tile coordinates, find the nearest wall edge of
+ * the containing room. The returned edge's `tile` is the boundary tile on
+ * the wall closest to the click (snapped along the wall axis).
+ *
+ * Возвращает null только если клик пришёлся вне любой комнаты. Если клик
+ * внутри комнаты — гарантированно возвращает ближайшую стену; раньше
+ * (до v1.17.1) функция требовала, чтобы клик пришёлся РОВНО на boundary
+ * тайл, и для интерьерных кликов отдавала null → точка не ставилась.
  */
 export function findNearestWallEdge(
   tileX: number,
@@ -22,7 +28,6 @@ export function findNearestWallEdge(
   gridWidth: number,
   gridHeight: number,
 ): WallEdge | null {
-  // Convert to tile integers
   const tx = Math.floor(tileX);
   const ty = Math.floor(tileY);
 
@@ -36,76 +41,46 @@ export function findNearestWallEdge(
   );
   if (!room) return null;
 
-  // Fractional position within the tile (0..1)
-  const fx = tileX - tx;
-  const fy = tileY - ty;
+  const { x: rx, y: ry, width: rw, height: rh } = room.rect;
 
-  // Check each edge of the tile — is it a room boundary?
-  const edges: WallEdge[] = [];
+  // Distance from click to each of 4 walls (in tile-units).
+  // Walls — линии тайлов на границе rect'а.
+  const distLeft = tileX - rx; // расстояние до западной стены
+  const distRight = rx + rw - tileX; // до восточной (ширина rect'а в тайлах)
+  const distBottom = tileY - ry; // до южной
+  const distTop = ry + rh - tileY; // до северной
 
-  // Left edge (x = room.rect.x)
-  if (tx === room.rect.x) {
-    edges.push({
-      tile: { x: tx, y: ty },
-      side: 'left',
-      isExternal: tx === 0,
-      roomId: room.id,
-    });
-  }
-  // Right edge (x = room.rect.x + room.rect.width - 1)
-  if (tx === room.rect.x + room.rect.width - 1) {
-    edges.push({
-      tile: { x: tx, y: ty },
-      side: 'right',
-      isExternal: tx + 1 >= gridWidth,
-      roomId: room.id,
-    });
-  }
-  // Bottom edge (y = room.rect.y)
-  if (ty === room.rect.y) {
-    edges.push({
-      tile: { x: tx, y: ty },
-      side: 'bottom',
-      isExternal: ty === 0,
-      roomId: room.id,
-    });
-  }
-  // Top edge (y = room.rect.y + room.rect.height - 1)
-  if (ty === room.rect.y + room.rect.height - 1) {
-    edges.push({
-      tile: { x: tx, y: ty },
-      side: 'top',
-      isExternal: ty + 1 >= gridHeight,
-      roomId: room.id,
-    });
+  const sides: { side: WallEdge['side']; dist: number }[] = [
+    { side: 'left', dist: distLeft },
+    { side: 'right', dist: distRight },
+    { side: 'bottom', dist: distBottom },
+    { side: 'top', dist: distTop },
+  ];
+  const bestSide = sides.reduce((a, b) => (b.dist < a.dist ? b : a)).side;
+
+  // Snap click to the boundary tile of the chosen wall.
+  // Для горизонтальных стен (top/bottom) фиксируем X на оси клика, Y
+  // ставим на boundary; для вертикальных — наоборот.
+  let snappedTile: TileCoord;
+  let isExternal: boolean;
+  switch (bestSide) {
+    case 'left':
+      snappedTile = { x: rx, y: ty };
+      isExternal = rx === 0;
+      break;
+    case 'right':
+      snappedTile = { x: rx + rw - 1, y: ty };
+      isExternal = rx + rw >= gridWidth;
+      break;
+    case 'bottom':
+      snappedTile = { x: tx, y: ry };
+      isExternal = ry === 0;
+      break;
+    case 'top':
+      snappedTile = { x: tx, y: ry + rh - 1 };
+      isExternal = ry + rh >= gridHeight;
+      break;
   }
 
-  if (edges.length === 0) return null;
-
-  // Pick the edge closest to the click position
-  let best = edges[0];
-  let bestDist = Infinity;
-  for (const edge of edges) {
-    let dist: number;
-    switch (edge.side) {
-      case 'left':
-        dist = fx;
-        break;
-      case 'right':
-        dist = 1 - fx;
-        break;
-      case 'bottom':
-        dist = fy;
-        break;
-      case 'top':
-        dist = 1 - fy;
-        break;
-    }
-    if (dist < bestDist) {
-      bestDist = dist;
-      best = edge;
-    }
-  }
-
-  return best;
+  return { tile: snappedTile, side: bestSide, isExternal, roomId: room.id };
 }
