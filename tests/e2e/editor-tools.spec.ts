@@ -131,18 +131,28 @@ test.describe('Layout editor — drawing tools (F11.2.x)', () => {
     await openEditor(page);
     await page.getByTestId('tool-panel').click();
     await clickTile(page, 6, 6);
+    await expect(page.getByTestId('properties-panel')).toContainText('Электрощиток');
 
     const redBefore = await countTintedPixels(page, { r: 211, g: 47, b: 47 }, 50);
     expect(redBefore).toBeGreaterThan(50);
 
-    // Switch back to select tool, then shift+click on the panel tile
+    // Switch back to select tool, then shift+click on the panel tile.
     await page.getByTestId('tool-select').click();
     await clickTile(page, 6, 6, { shift: true });
 
-    // Selection cleared and red pixels count drops dramatically. We tolerate
-    // a small residue from anti-aliased grid/preview overlap; the key signal
-    // is "much less than before".
+    // Primary signal: panel state cleared. Properties panel — DOM-уровень,
+    // обновляется сразу при React commit'е.
     await expect(page.getByTestId('properties-panel')).toContainText('Объект не выбран');
+
+    // Konva рендерит на canvas в отдельном фрейме после React commit'а.
+    // Без короткого ожидания countTintedPixels иногда читает старый
+    // фрейм (с панелью), и счётчик не падает достаточно. RAF-tick гарантирует,
+    // что canvas обновлён.
+    await page.evaluate(
+      () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null)))),
+    );
+
+    // Secondary signal: red pixel count drops dramatically.
     const redAfter = await countTintedPixels(page, { r: 211, g: 47, b: 47 }, 50);
     expect(redAfter).toBeLessThan(redBefore / 4);
   });
