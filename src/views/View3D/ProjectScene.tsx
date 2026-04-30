@@ -7,6 +7,7 @@ import { getEffectiveSize } from '../../domain/furniture/placement';
 import type { CatalogItem } from '../../domain/furniture/placement';
 import type { Room, CeilingType, FloorType, FloorCovering } from '../../domain/geometry/types';
 import { getFloorPatternCanvas, getPatternUnitSize } from '../floorPatterns';
+import { buildWallGeometry, holesForWall, Z_OFFSET_INTO_ROOM } from './wallOpenings';
 import catalogData from '../../data/furniture-catalog.json';
 
 const catalogMap = new Map<string, CatalogItem>();
@@ -92,6 +93,7 @@ function RoomMesh({
 
 function WallMeshes({ room }: { room: Room }) {
   const r = room.rect;
+  const { layout } = useProjectStore();
   const x0 = r.x * TILE_SIZE;
   const z0 = r.y * TILE_SIZE;
   const w = r.width * TILE_SIZE;
@@ -99,22 +101,49 @@ function WallMeshes({ room }: { room: Room }) {
   const h = ROOM_HEIGHT;
   const wallColor = PALETTE.walls.plaster;
 
+  // F7.5.1, F7.5.2 (v1.15.0) — стены строятся как ShapeGeometry с вырезами
+  // под окна и двери. Двери становятся пустыми проёмами (door-mesh убран),
+  // окна — стекло, смещённое на ε внутрь комнаты (рисуется отдельно).
+  const openings = useMemo(
+    () => ({
+      windows: layout?.windows ?? [],
+      doors: layout?.doors ?? [],
+    }),
+    [layout?.windows, layout?.doors],
+  );
+
+  const wallSides = useMemo(() => {
+    const north = buildWallGeometry(w, h, holesForWall('north', room, openings));
+    const south = buildWallGeometry(w, h, holesForWall('south', room, openings));
+    const west = buildWallGeometry(d, h, holesForWall('west', room, openings));
+    const east = buildWallGeometry(d, h, holesForWall('east', room, openings));
+    return { north, south, west, east };
+  }, [room, openings, w, d, h]);
+
   return (
     <group>
-      <mesh position={[x0 + w / 2, h / 2, z0]}>
-        <planeGeometry args={[w, h]} />
+      <mesh position={[x0 + w / 2, h / 2, z0]} geometry={wallSides.north}>
         <meshStandardMaterial color={wallColor} side={2} />
       </mesh>
-      <mesh position={[x0 + w / 2, h / 2, z0 + d]} rotation={[0, Math.PI, 0]}>
-        <planeGeometry args={[w, h]} />
+      <mesh
+        position={[x0 + w / 2, h / 2, z0 + d]}
+        rotation={[0, Math.PI, 0]}
+        geometry={wallSides.south}
+      >
         <meshStandardMaterial color={wallColor} side={2} />
       </mesh>
-      <mesh position={[x0, h / 2, z0 + d / 2]} rotation={[0, Math.PI / 2, 0]}>
-        <planeGeometry args={[d, h]} />
+      <mesh
+        position={[x0, h / 2, z0 + d / 2]}
+        rotation={[0, Math.PI / 2, 0]}
+        geometry={wallSides.west}
+      >
         <meshStandardMaterial color={wallColor} side={2} />
       </mesh>
-      <mesh position={[x0 + w, h / 2, z0 + d / 2]} rotation={[0, -Math.PI / 2, 0]}>
-        <planeGeometry args={[d, h]} />
+      <mesh
+        position={[x0 + w, h / 2, z0 + d / 2]}
+        rotation={[0, -Math.PI / 2, 0]}
+        geometry={wallSides.east}
+      >
         <meshStandardMaterial color={wallColor} side={2} />
       </mesh>
     </group>
@@ -156,8 +185,15 @@ function WireSegments() {
 }
 
 function WindowMeshes() {
-  const { layout } = useProjectStore();
+  const { layout, rooms } = useProjectStore();
   if (!layout || layout.windows.length === 0) return null;
+
+  // F7.5.1, F7.5.3 (v1.15.0) — окно как стеклянная плоскость, смещённая
+  // на ε внутрь комнаты от плоскости стены, чтобы избежать z-fighting
+  // (стекло и стена компланарны без сдвига). Сторона смещения определяется
+  // тем, в какой комнате лежит соседний тайл: если окно горизонтальное
+  // (start.y === end.y), стена тянется вдоль оси X на y=start.y; комната
+  // примыкает либо со стороны y-1, либо y+1.
   return (
     <group>
       {layout.windows.map((win) => {
@@ -168,8 +204,11 @@ function WindowMeshes() {
         const cy = win.sill_height_m + win.height_m / 2;
         const isVertical = win.start.x === win.end.x;
         const rotY = isVertical ? Math.PI / 2 : 0;
+        const offset = computeOpeningOffset(win, rooms);
+        const dx = isVertical ? offset : 0;
+        const dz = isVertical ? 0 : offset;
         return (
-          <mesh key={win.id} position={[cx, cy, cz]} rotation={[0, rotY, 0]}>
+          <mesh key={win.id} position={[cx + dx, cy, cz + dz]} rotation={[0, rotY, 0]}>
             <planeGeometry args={[lengthM, win.height_m]} />
             <meshStandardMaterial
               color={PALETTE.openings.window_glass}
@@ -184,33 +223,34 @@ function WindowMeshes() {
   );
 }
 
-function DoorMeshes() {
-  const { layout } = useProjectStore();
-  if (!layout || layout.doors.length === 0) return null;
-  return (
-    <group>
-      {layout.doors.map((door) => {
-        const cx = ((door.start.x + door.end.x) / 2) * TILE_SIZE;
-        const cz = ((door.start.y + door.end.y) / 2) * TILE_SIZE;
-        const lengthM =
-          (Math.abs(door.start.x - door.end.x) + Math.abs(door.start.y - door.end.y)) * TILE_SIZE;
-        const cy = door.height_m / 2;
-        const isVertical = door.start.x === door.end.x;
-        const rotY = isVertical ? Math.PI / 2 : 0;
-        return (
-          <mesh key={door.id} position={[cx, cy, cz]} rotation={[0, rotY, 0]}>
-            <planeGeometry args={[lengthM, door.height_m]} />
-            <meshStandardMaterial
-              color={PALETTE.openings.door_frame}
-              transparent
-              opacity={0.4}
-              side={2}
-            />
-          </mesh>
-        );
-      })}
-    </group>
-  );
+/**
+ * F7.5.1 — найти, в какую сторону относительно линии проёма (start.y или
+ * start.x в зависимости от ориентации) сместить плоскость окна, чтобы она
+ * оказалась НА ε ВНУТРИ примыкающей комнаты. Если комнаты по обе стороны
+ * (внутреннее окно), смещаем в любую — выбираем «+».
+ */
+function computeOpeningOffset(
+  o: { start: { x: number; y: number }; end: { x: number; y: number } },
+  rooms: Room[],
+): number {
+  const horizontal = o.start.y === o.end.y;
+  const sampleAlong = (offsetSide: number): { x: number; y: number } => {
+    if (horizontal) {
+      const ox = (o.start.x + o.end.x) / 2;
+      return { x: Math.floor(ox), y: o.start.y + offsetSide };
+    }
+    const oy = (o.start.y + o.end.y) / 2;
+    return { x: o.start.x + offsetSide, y: Math.floor(oy) };
+  };
+  const tileInRoom = (t: { x: number; y: number }) =>
+    rooms.some((r) => r.tiles.some((rt) => rt.x === t.x && rt.y === t.y));
+  // Знак: для горизонтального проёма (на оси X) комната «+» = y возрастает
+  // (z-в мире), значит cz должен быть смещён на +ε. «−» = y убывает.
+  const plusInRoom = tileInRoom(sampleAlong(0));
+  const minusInRoom = tileInRoom(sampleAlong(-1));
+  if (plusInRoom) return Z_OFFSET_INTO_ROOM;
+  if (minusInRoom) return -Z_OFFSET_INTO_ROOM;
+  return Z_OFFSET_INTO_ROOM;
 }
 
 function FurnitureMeshes() {
@@ -271,11 +311,11 @@ export function ProjectScene() {
         <WallMeshes key={`wall-${room.id}`} room={room} />
       ))}
 
-      {/* F7.2.2 / F7.3.3 — windows and door openings overlay the wall meshes
-          since we don't CSG-cut them; semi-transparent so the wall stays
-          legible while the opening is unmistakable. */}
+      {/* F7.5 (v1.15.0) — стены теперь несут вырезы под проёмы (см.
+          buildWallGeometry в wallOpenings.ts). Двери — это пустые проёмы
+          (никаких mesh), окна — стеклянная плоскость со смещением ε
+          внутрь комнаты, чтобы избежать z-fighting со стеной. */}
       <WindowMeshes />
-      <DoorMeshes />
 
       <WireSegments />
       <FurnitureMeshes />
