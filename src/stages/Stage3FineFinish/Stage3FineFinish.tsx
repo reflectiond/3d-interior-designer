@@ -108,10 +108,14 @@ export function Stage3FineFinish() {
 
   // Keyboard handlers split into two effects so the dependency lists stay tight.
   // 1) Placement-mode keys: R rotates, Escape cancels.
+  // F8.5.3-fix (v1.17.0): используем `e.code` вместо `e.key` для буквенных
+  // клавиш — `e.key` зависит от раскладки (русская К на физической R дает
+  // `e.key === 'к'`, не `'R'`). Стрелки/Delete/Escape остаются на `e.key`,
+  // т.к. они layout-independent.
   useEffect(() => {
     if (!placingItem) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'r' || e.key === 'R') {
+      if (e.code === 'KeyR') {
         setPlacingRotation((prev) => ((prev + 90) % 360) as 0 | 90 | 180 | 270);
       }
       if (e.key === 'Escape') {
@@ -135,7 +139,7 @@ export function Stage3FineFinish() {
       const item = catalogMap.get(f.catalogId);
       if (!item) return;
 
-      if (e.key === 'r' || e.key === 'R') {
+      if (e.code === 'KeyR') {
         if (!item.rotatable) return;
         const nextRot = ((f.rotation + 90) % 360) as 0 | 90 | 180 | 270;
         // F8.5.3-fix (v1.17.0): вращаем вокруг центра footprint'а.
@@ -158,7 +162,7 @@ export function Stage3FineFinish() {
         e.preventDefault();
         return;
       }
-      if (e.key === 'm' || e.key === 'M') {
+      if (e.code === 'KeyM') {
         if (!item.mirrorable) return;
         // Mirror keeps footprint symmetric for current catalog, no validation needed.
         updateFurniture(f.id, { mirrored: !f.mirrored });
