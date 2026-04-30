@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useProjectStore } from '../../store/projectStore';
 import { TILE_SIZE } from '../../domain/geometry/tiles';
 import { ProjectScene } from '../../views/View3D/ProjectScene';
@@ -9,31 +9,44 @@ const SNAPSHOT_WIDTH = 1200;
 const SNAPSHOT_HEIGHT = 900;
 
 /**
- * F7.6.1 (v1.15.0) — после регистрации хендлов форсим первый `gl.render()`,
- * чтобы framebuffer был непустым. Затем сигналим «готово» родителю —
- * это снимает race в e2e и в `capture3DSnapshot`: `toDataURL` стабильно
- * возвращает PNG с пиксельными данными, а не прозрачную пустоту.
+ * F7.6.1 (v1.15.0) — двух-частный сигнал готовности офскрин 3D-канвы:
  *
- * Раньше первый рендер случался только внутри `capture3DSnapshot()` (при
- * клике «Сохранить как PDF»). В Firefox+headless это давало флэйкующие
- * результаты — иногда `r3fHandles` ещё `null` к моменту вызова, иногда
- * рендер не успевал заполнить буфер.
+ *  1) `HandleRegistrar` регистрирует gl/scene/camera в синглтон и вызывает
+ *     `invalidate()` — это просит R3F (`frameloop="demand"`) отрисовать
+ *     один кадр.
+ *  2) `FirstFrameSignal` слушает `useFrame` и сигналит родителю после
+ *     первого реального рендера. К этому моменту WebGL framebuffer
+ *     гарантированно содержит пиксели, а `gl.domElement.toDataURL()` в
+ *     `capture3DSnapshot()` отдаёт непустой PNG.
+ *
+ * Раньше использовался `frameloop="never"` + ручной `gl.render()` в
+ * useEffect. В Firefox+headless это давало flake'и: иногда useEffect
+ * срабатывал до того, как WebGL контекст был полностью инициализирован,
+ * и первый кадр оставался прозрачным.
  */
-function HandleRegistrar({ onReady }: { onReady: () => void }) {
+function HandleRegistrar() {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
+  const invalidate = useThree((s) => s.invalidate);
 
   useEffect(() => {
     registerR3FHandles({ gl, scene, camera });
-    // Сцена смонтирована (children R3F-канвы — синхронные мемо без async-load),
-    // вызываем рендер сразу. Если в будущем появятся async-ассеты (glTF и т.п.),
-    // готовность нужно будет привязывать к их Suspense-разрешению.
-    gl.render(scene, camera);
-    onReady();
+    invalidate();
     return () => registerR3FHandles(null);
-  }, [gl, scene, camera, onReady]);
+  }, [gl, scene, camera, invalidate]);
 
+  return null;
+}
+
+function FirstFrameSignal({ onReady }: { onReady: () => void }) {
+  const [signaled, setSignaled] = useState(false);
+  useFrame(() => {
+    if (!signaled) {
+      setSignaled(true);
+      onReady();
+    }
+  });
   return null;
 }
 
@@ -62,7 +75,7 @@ export function View3DSnapshot() {
       data-testid="view3d-snapshot"
     >
       <Canvas
-        frameloop="never"
+        frameloop="demand"
         camera={{
           position: [totalW / 2, totalW * 0.8, totalD + totalW * 0.5],
           fov: 50,
@@ -72,7 +85,8 @@ export function View3DSnapshot() {
         gl={{ preserveDrawingBuffer: true, antialias: true }}
         style={{ width: SNAPSHOT_WIDTH, height: SNAPSHOT_HEIGHT }}
       >
-        <HandleRegistrar onReady={() => setReady(true)} />
+        <HandleRegistrar />
+        <FirstFrameSignal onReady={() => setReady(true)} />
         <ProjectScene />
       </Canvas>
     </div>
