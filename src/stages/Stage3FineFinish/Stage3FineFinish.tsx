@@ -265,7 +265,10 @@ export function Stage3FineFinish() {
             onSelectFurniture={activeTab === 'furniture' ? setSelectedFurnitureId : undefined}
           />
         ) : (
-          <View3D />
+          <View3D
+            selectedFurnitureId={activeTab === 'furniture' ? selectedFurnitureId : null}
+            onSelectFurniture={activeTab === 'furniture' ? setSelectedFurnitureId : undefined}
+          />
         )}
         <div className={stageStyles.actions}>
           <button className={stageStyles.backBtn} onClick={() => setStage(2)}>

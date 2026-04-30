@@ -23,7 +23,13 @@ function FirstFrameSignal({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-export function View3D() {
+export function View3D({
+  selectedFurnitureId = null,
+  onSelectFurniture,
+}: {
+  selectedFurnitureId?: string | null;
+  onSelectFurniture?: (id: string | null) => void;
+} = {}) {
   const { layout } = useProjectStore();
   const [ready, setReady] = useState(false);
 
@@ -52,9 +58,14 @@ export function View3D() {
           far: 100,
         }}
         gl={{ preserveDrawingBuffer: true }}
+        // F15.D (v1.17.0) — клик на пустую область канвы снимает выделение.
+        onPointerMissed={() => onSelectFurniture?.(null)}
       >
         <FirstFrameSignal onReady={() => setReady(true)} />
-        <ProjectScene />
+        <ProjectScene
+          selectedFurnitureId={selectedFurnitureId}
+          onSelectFurniture={onSelectFurniture}
+        />
         <OrbitControls
           target={[totalW / 2, ROOM_HEIGHT_M / 2, totalD / 2]}
           maxPolarAngle={Math.PI / 2}
