@@ -10,7 +10,8 @@
     "color_key": "table",
     "allowed_rooms": null,
     "price_min": 8000,
-    "price_max": 35000
+    "price_max": 35000,
+    "model3d": { "url": "/models/kenney/tableCross.glb" }
   },
   {
     "id": "chair",
@@ -23,7 +24,8 @@
     "color_key": "chair",
     "allowed_rooms": null,
     "price_min": 2500,
-    "price_max": 15000
+    "price_max": 15000,
+    "model3d": { "url": "/models/kenney/chair.glb" }
   },
   {
     "id": "sofa",
@@ -36,7 +38,8 @@
     "color_key": "sofa",
     "allowed_rooms": ["living", "bedroom"],
     "price_min": 30000,
-    "price_max": 120000
+    "price_max": 120000,
+    "model3d": { "url": "/models/kenney/loungeSofa.glb" }
   },
   {
     "id": "bed",
@@ -49,7 +52,8 @@
     "color_key": "bed",
     "allowed_rooms": ["bedroom"],
     "price_min": 25000,
-    "price_max": 95000
+    "price_max": 95000,
+    "model3d": { "url": "/models/kenney/bedDouble.glb" }
   },
   {
     "id": "wardrobe",
@@ -62,7 +66,8 @@
     "color_key": "wardrobe",
     "allowed_rooms": null,
     "price_min": 18000,
-    "price_max": 80000
+    "price_max": 80000,
+    "model3d": { "url": "/models/kenney/cabinetBedDrawer.glb" }
   },
   {
     "id": "chair_office",
@@ -75,7 +80,8 @@
     "color_key": "chair_office",
     "allowed_rooms": null,
     "price_min": 8000,
-    "price_max": 45000
+    "price_max": 45000,
+    "model3d": { "url": "/models/kenney/chairDesk.glb" }
   },
   {
     "id": "desk",
@@ -88,7 +94,8 @@
     "color_key": "desk",
     "allowed_rooms": null,
     "price_min": 7000,
-    "price_max": 30000
+    "price_max": 30000,
+    "model3d": { "url": "/models/kenney/desk.glb" }
   },
   {
     "id": "kitchen_lower",
@@ -101,7 +108,8 @@
     "color_key": "kitchen_lower",
     "allowed_rooms": ["kitchen"],
     "price_min": 15000,
-    "price_max": 50000
+    "price_max": 50000,
+    "model3d": { "url": "/models/kenney/kitchenCabinet.glb" }
   },
   {
     "id": "kitchen_upper",
@@ -114,7 +122,8 @@
     "color_key": "kitchen_upper",
     "allowed_rooms": ["kitchen"],
     "price_min": 8000,
-    "price_max": 30000
+    "price_max": 30000,
+    "model3d": { "url": "/models/kenney/kitchenCabinetUpper.glb" }
   },
   {
     "id": "kitchen_column",
@@ -127,7 +136,8 @@
     "color_key": "kitchen_column",
     "allowed_rooms": ["kitchen"],
     "price_min": 20000,
-    "price_max": 70000
+    "price_max": 70000,
+    "model3d": { "url": "/models/kenney/kitchenFridge.glb" }
   },
   {
     "id": "toilet",
@@ -140,7 +150,8 @@
     "color_key": "toilet",
     "allowed_rooms": ["bathroom"],
     "price_min": 6000,
-    "price_max": 30000
+    "price_max": 30000,
+    "model3d": { "url": "/models/kenney/toilet.glb" }
   },
   {
     "id": "sink",
@@ -153,6 +164,7 @@
     "color_key": "sink",
     "allowed_rooms": ["bathroom"],
     "price_min": 4000,
-    "price_max": 25000
+    "price_max": 25000,
+    "model3d": { "url": "/models/kenney/kitchenSink.glb" }
   }
 ]

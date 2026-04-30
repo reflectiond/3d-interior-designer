@@ -10,9 +10,23 @@
 
 ## 3D-модели (glTF / GLB)
 
-| Файл  | Объект каталога (`id`) | Автор | Источник | Лицензия |
-| ----- | ---------------------- | ----- | -------- | -------- |
-| _нет_ | _нет_                  | _нет_ | _нет_    | _нет_    |
+Все 12 моделей мебели — из набора **Kenney Furniture Kit (v2.0, 2018)**:
+автор [Kenney Vleugels](https://kenney.nl/), источник <https://kenney.nl/assets/furniture-kit>, лицензия **CC0 1.0 Universal** ([deed](https://creativecommons.org/publicdomain/zero/1.0/)). Атрибуция не обязательна по лицензии, указана для прозрачности.
+
+| Файл                                           | Объект каталога (`id`) |
+| ---------------------------------------------- | ---------------------- |
+| `public/models/kenney/tableCross.glb`          | `table`                |
+| `public/models/kenney/chair.glb`               | `chair`                |
+| `public/models/kenney/loungeSofa.glb`          | `sofa`                 |
+| `public/models/kenney/bedDouble.glb`           | `bed`                  |
+| `public/models/kenney/cabinetBedDrawer.glb`    | `wardrobe`             |
+| `public/models/kenney/chairDesk.glb`           | `chair_office`         |
+| `public/models/kenney/desk.glb`                | `desk`                 |
+| `public/models/kenney/kitchenCabinet.glb`      | `kitchen_lower`        |
+| `public/models/kenney/kitchenCabinetUpper.glb` | `kitchen_upper`        |
+| `public/models/kenney/kitchenFridge.glb`       | `kitchen_column`       |
+| `public/models/kenney/toilet.glb`              | `toilet`               |
+| `public/models/kenney/kitchenSink.glb`         | `sink`                 |
 
 ## Шрифты
 
