@@ -30,8 +30,14 @@ function App() {
     return () => clearTimeout(timer);
   }, [state]);
 
+  // Stage 1 показывает выбор планировки + полноразмерный 2D-просмотр
+  // под ним (вертикальный page-scroll допустим). Stage 2-4 имеют
+  // длинную боковую панель и канву — нужен viewport-fixed layout
+  // (см. App.css → .app--fixed).
+  const fixedViewport = currentStage > 1;
+
   return (
-    <div className="app">
+    <div className={`app${fixedViewport ? ' app--fixed' : ''}`}>
       <header className="app-header">
         <h1>3D Interior Designer</h1>
       </header>
