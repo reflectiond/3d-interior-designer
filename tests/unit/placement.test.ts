@@ -3,7 +3,6 @@ import {
   getEffectiveSize,
   getFurnitureTiles,
   isInsideRoom,
-  isAllowedInRoom,
   hasCollision,
   validatePlacement,
 } from '../../src/domain/furniture/placement';
@@ -127,26 +126,6 @@ describe('isInsideRoom', () => {
   it('returns false when tiles exceed room bounds', () => {
     const tiles = getFurnitureTiles({ x: 15, y: 0 }, sofa, 0); // x goes to 22, room ends at 20
     expect(isInsideRoom(tiles, livingRoom)).toBe(false);
-  });
-});
-
-describe('isAllowedInRoom', () => {
-  it('allows sofa in living room', () => {
-    expect(isAllowedInRoom(sofa, 'living')).toBe(true);
-  });
-
-  it('denies toilet in kitchen', () => {
-    expect(isAllowedInRoom(toilet, 'kitchen')).toBe(false);
-  });
-
-  it('allows toilet in bathroom', () => {
-    expect(isAllowedInRoom(toilet, 'bathroom')).toBe(true);
-  });
-
-  it('allows chair anywhere (null allowed_rooms)', () => {
-    expect(isAllowedInRoom(chair, 'kitchen')).toBe(true);
-    expect(isAllowedInRoom(chair, 'bathroom')).toBe(true);
-    expect(isAllowedInRoom(chair, 'living')).toBe(true);
   });
 });
 

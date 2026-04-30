@@ -75,12 +75,6 @@ export function findContainingRoom(tiles: TileCoord[], rooms: Room[]): Room | nu
   return null;
 }
 
-/** Check if furniture is allowed in the given room type */
-export function isAllowedInRoom(item: CatalogItem, roomType: string): boolean {
-  if (item.allowed_rooms === null) return true;
-  return item.allowed_rooms.includes(roomType);
-}
-
 /** Check if furniture tiles overlap with any existing furniture */
 export function hasCollision(
   tiles: TileCoord[],
@@ -110,11 +104,9 @@ export interface PlacementResult {
 /**
  * Full validation of furniture placement.
  *
- * F8.7 (v1.13.0): the `allowed_rooms` filter is no longer applied — any
- * furniture can be placed in any room. The function still requires
- * containment (must fit inside one room) and rejects collisions with
- * existing pieces. {@link isAllowedInRoom} stays exported for any future
- * caller that wants opt-in advisory checks.
+ * F8.7 (v1.13.0): `allowed_rooms` filter removed — any furniture can be
+ * placed in any room. Validation requires containment (must fit inside
+ * one room) and rejects collisions with existing pieces.
  */
 export function validatePlacement(
   position: TileCoord,

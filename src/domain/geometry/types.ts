@@ -24,14 +24,19 @@ export const VerandaType = z.literal('veranda');
 
 // --- Layout JSON schema (as stored in layout files) ---
 
+// F11.3 (v1.14.0): минимум комнаты — площадь ≥ 4 м² (64 тайла²),
+// per-side минимум 2 тайла (= 0.5 м) — чтобы исключить вырожденные
+// 1-tile-wide, но не блокировать узкие 2×32 / 4×16 формы.
+// Семантическая проверка площади остаётся в `validateEditor`
+// (issue-уровень, не блокирующий импорт).
 export const LayoutRoomSchema = z.object({
   id: z.string(),
   type: RoomType,
   name: z.string(),
   x: z.int().min(0),
   y: z.int().min(0),
-  width: z.int().min(4),
-  height: z.int().min(4),
+  width: z.int().min(2),
+  height: z.int().min(2),
 });
 export type LayoutRoom = z.infer<typeof LayoutRoomSchema>;
 
