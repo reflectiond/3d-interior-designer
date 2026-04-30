@@ -15,6 +15,18 @@ import react from '@vitejs/plugin-react';
 //   frame-ancestors *;
 export default defineConfig({
   plugins: [react()],
+  // `preview` обслуживает `dist/` через локальный сервер (порт 4173). По
+  // умолчанию Vite блокирует входящие запросы с unknown hosts (защита от
+  // DNS rebinding). Для разового демо через Cloudflare Tunnel
+  // (`*.trycloudflare.com`) или ngrok разрешаем эти hosts.
+  preview: {
+    allowedHosts: [
+      '.trycloudflare.com', // Cloudflare quick tunnel
+      '.ngrok.io',
+      '.ngrok-free.app', // ngrok free
+      '.loca.lt', // localtunnel
+    ],
+  },
   test: {
     globals: true,
     environment: 'jsdom',
